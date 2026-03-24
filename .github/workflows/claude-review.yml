@@ -16,6 +16,7 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           review_comment: |
             Review this PR for bugs, security issues, and code quality.
             Focus on: accessibility, performance, SEO, and responsive design.
