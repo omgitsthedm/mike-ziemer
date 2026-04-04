@@ -1,0 +1,184 @@
+/**
+ * Deckspace — Base HTML Layout
+ *
+ * All pages render through this layout.
+ * Keeps the MySpace-era blue nav bar, sailing context bar,
+ * and consistent page wrapper.
+ */
+
+/**
+ * @param {object} opts
+ * @param {string}  opts.title
+ * @param {string}  opts.body          — inner HTML content
+ * @param {object}  [opts.user]        — current authenticated user
+ * @param {object}  [opts.sailing]     — current sailing record
+ * @param {string}  [opts.activeNav]   — which nav item is active
+ * @param {number}  [opts.notifCount]  — unread notification count
+ * @param {string}  [opts.flash]       — flash message HTML
+ * @param {boolean} [opts.readOnly]    — post-cruise archive mode
+ * @param {string}  [opts.themeClass]  — profile theme CSS class
+ */
+export function layout({
+  title,
+  body,
+  user = null,
+  sailing = null,
+  activeNav = '',
+  notifCount = 0,
+  flash = '',
+  readOnly = false,
+  themeClass = '',
+}) {
+  const pageTitle = title ? `${title} | Deckspace` : 'Deckspace';
+  const themeId = user?.profiles?.theme_id || 'classic';
+  const bodyClass = ['theme-' + themeId, themeClass].filter(Boolean).join(' ');
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#003399">
+  <title>${esc(pageTitle)}</title>
+  <link rel="stylesheet" href="/css/deckspace.css">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+</head>
+<body class="${bodyClass}">
+
+${renderNav(user, activeNav, notifCount)}
+${sailing ? renderSailingBar(sailing, readOnly) : ''}
+
+<div id="ds-page">
+  ${flash ? flash : ''}
+  ${readOnly ? renderArchiveBanner(sailing) : ''}
+  ${body}
+</div>
+
+<script src="/js/app.js" defer></script>
+</body>
+</html>`;
+}
+
+/* ============================================================
+   TOP NAVIGATION
+   ============================================================ */
+function renderNav(user, activeNav, notifCount) {
+  const navLinks = user
+    ? [
+        { href: '/',              label: 'Home',    key: 'home' },
+        { href: '/people',        label: 'People',  key: 'people' },
+        { href: '/events',        label: 'Events',  key: 'events' },
+        { href: '/photos',        label: 'Photos',  key: 'photos' },
+      ]
+    : [];
+
+  const links = navLinks.map(n =>
+    `<a href="${n.href}" class="${activeNav === n.key ? 'active' : ''}">${n.label}</a>`
+  ).join('');
+
+  const rightSide = user
+    ? `<div id="ds-nav-right">
+        <span class="nav-user-name">Hi, <strong>${esc(user.display_name)}</strong></span>
+        ${notifCount > 0
+          ? `<a href="/notifications" class="nav-notif-badge">${notifCount} new</a>`
+          : `<a href="/notifications" style="color:#99bbff;font-size:11px">Alerts</a>`}
+        <a href="/profile/${esc(user.username)}" style="color:#99bbff;font-size:11px">My Profile</a>
+        ${['admin','moderator'].includes(user.role) ? `<a href="/admin" style="color:#ffcc66;font-size:11px">Admin</a>` : ''}
+        <a href="/logout" style="color:#99bbff;font-size:11px">Sign Out</a>
+      </div>`
+    : `<div id="ds-nav-right">
+        <a href="/login" style="color:#ccddff;font-size:11px">Sign In</a>
+      </div>`;
+
+  return `<nav id="ds-nav" role="navigation" aria-label="Main navigation">
+  <div id="ds-nav-inner">
+    <a href="/" id="ds-logo"><span class="logo-deck">Deck</span><span class="logo-space">space</span></a>
+    <div id="ds-nav-links">${links}</div>
+    ${rightSide}
+  </div>
+</nav>`;
+}
+
+/* ============================================================
+   SAILING BAR
+   ============================================================ */
+function renderSailingBar(sailing, readOnly) {
+  const status = readOnly ? ' &mdash; <em>Archive Mode</em>' : '';
+  return `<div id="ds-sailing-bar">
+  <strong>${esc(sailing.ship_name)}</strong> &mdash; ${esc(sailing.name)}${status}
+</div>`;
+}
+
+/* ============================================================
+   ARCHIVE BANNER
+   ============================================================ */
+function renderArchiveBanner(sailing) {
+  if (!sailing) return '';
+  const ends = sailing.archive_ends_at
+    ? new Date(sailing.archive_ends_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    : 'soon';
+  return `<div class="archive-banner">
+  <strong>Deckspace is now in Archive Mode.</strong>
+  Profiles and memories are read-only. This community closes on ${ends}.
+</div>`;
+}
+
+/* ============================================================
+   FLASH MESSAGE FACTORY
+   ============================================================ */
+export function flash(type, message) {
+  return `<div class="ds-flash ${esc(type)}" data-dismiss="6000">${message}</div>`;
+}
+
+/* ============================================================
+   HTML ESCAPE
+   ============================================================ */
+export function esc(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
+/**
+ * Render a relative time string ("3 min ago", "2 days ago")
+ */
+export function relTime(dateStr) {
+  if (!dateStr) return '';
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const s = Math.floor(diff / 1000);
+  if (s < 60)  return 'just now';
+  if (s < 3600) return Math.floor(s / 60) + 'm ago';
+  if (s < 86400) return Math.floor(s / 3600) + 'h ago';
+  return Math.floor(s / 86400) + 'd ago';
+}
+
+/**
+ * Format a date for display.
+ */
+export function fmtDate(dateStr, { time = false } = {}) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  const opts = { month: 'short', day: 'numeric', year: 'numeric' };
+  if (time) { opts.hour = 'numeric'; opts.minute = '2-digit'; }
+  return d.toLocaleDateString('en-US', opts);
+}
+
+/**
+ * Paginator HTML
+ */
+export function paginator(currentPage, hasMore, baseUrl) {
+  const parts = [];
+  if (currentPage > 1) {
+    parts.push(`<a href="${baseUrl}?page=${currentPage - 1}">&laquo; Prev</a>`);
+  }
+  parts.push(`<span class="current">Page ${currentPage}</span>`);
+  if (hasMore) {
+    parts.push(`<a href="${baseUrl}?page=${currentPage + 1}">Next &raquo;</a>`);
+  }
+  if (parts.length <= 1) return '';
+  return `<div class="ds-pager">${parts.join('')}</div>`;
+}

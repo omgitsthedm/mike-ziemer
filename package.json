@@ -1,0 +1,19 @@
+{
+  "name": "deckspace",
+  "version": "1.0.0",
+  "description": "OG MySpace-style private cruise social network",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler pages dev . --compatibility-date=2024-09-23",
+    "deploy": "wrangler pages deploy .",
+    "db:migrate": "echo 'Run db/schema.sql against your Supabase project'"
+  },
+  "dependencies": {
+    "hono": "^4.4.0",
+    "@supabase/supabase-js": "^2.45.0"
+  },
+  "devDependencies": {
+    "wrangler": "^3.78.0"
+  }
+}

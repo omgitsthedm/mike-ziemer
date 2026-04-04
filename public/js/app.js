@@ -1,0 +1,327 @@
+/**
+ * Deckspace — Minimal Client JS
+ *
+ * Goals:
+ *   - Progressive enhancement only — the product works without this
+ *   - Improve UX under bad connectivity (retry, pending states, feedback)
+ *   - Never block page load or critical text content
+ *
+ * No framework. Vanilla JS only. Target bundle: < 8KB unminified.
+ */
+
+(function () {
+  'use strict';
+
+  /* ============================================================
+     RETRY-AWARE FORM SUBMISSION
+     Forms with data-retry="true" get auto-retry on network failure.
+     Shows pending state, clear error, and retry button on failure.
+     ============================================================ */
+  function initRetryForms() {
+    document.querySelectorAll('form[data-retry]').forEach(function (form) {
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        submitWithRetry(form);
+      });
+    });
+  }
+
+  function submitWithRetry(form, attempt) {
+    attempt = attempt || 1;
+    var maxAttempts = 3;
+    var data = new FormData(form);
+    var method = (form.method || 'POST').toUpperCase();
+    var action = form.action || window.location.href;
+
+    // Mark as pending
+    setFormPending(form, true);
+    clearFormError(form);
+
+    fetch(action, {
+      method: method,
+      body: method === 'POST' ? new URLSearchParams(data) : undefined,
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      signal: AbortSignal.timeout(12000)
+    })
+      .then(function (res) {
+        if (res.redirected) {
+          window.location.href = res.url;
+          return;
+        }
+        if (!res.ok) {
+          return res.text().then(function (text) {
+            throw new Error(text || 'Server error ' + res.status);
+          });
+        }
+        // For fragment responses (htmx-style), swap if target specified
+        var target = form.dataset.target;
+        if (target) {
+          return res.text().then(function (html) {
+            var el = document.querySelector(target);
+            if (el) el.innerHTML = html;
+            setFormPending(form, false);
+          });
+        }
+        // Default: reload the page
+        window.location.reload();
+      })
+      .catch(function (err) {
+        setFormPending(form, false);
+        var isNetworkErr = (err.name === 'TypeError' || err.name === 'AbortError');
+        if (isNetworkErr && attempt < maxAttempts) {
+          var delay = Math.pow(2, attempt) * 500; // 1s, 2s, 4s
+          showFormRetrying(form, attempt, delay);
+          setTimeout(function () {
+            submitWithRetry(form, attempt + 1);
+          }, delay);
+        } else {
+          showFormError(form, isNetworkErr
+            ? 'Network error — check your connection and try again.'
+            : (err.message || 'Something went wrong. Please try again.'));
+        }
+      });
+  }
+
+  function setFormPending(form, pending) {
+    var btns = form.querySelectorAll('button[type=submit], input[type=submit]');
+    btns.forEach(function (btn) {
+      btn.disabled = pending;
+      if (pending) {
+        btn.dataset.origText = btn.textContent;
+        btn.textContent = btn.dataset.loadingText || 'Saving...';
+      } else if (btn.dataset.origText) {
+        btn.textContent = btn.dataset.origText;
+      }
+    });
+  }
+
+  function clearFormError(form) {
+    var el = form.querySelector('.ds-form-error');
+    if (el) el.remove();
+    var retrying = form.querySelector('.ds-form-retrying');
+    if (retrying) retrying.remove();
+  }
+
+  function showFormError(form, msg) {
+    clearFormError(form);
+    var el = document.createElement('div');
+    el.className = 'ds-flash error ds-form-error';
+    el.innerHTML = msg + ' <a href="#" class="retry-link">Retry</a>';
+    el.querySelector('.retry-link').addEventListener('click', function (e) {
+      e.preventDefault();
+      clearFormError(form);
+      submitWithRetry(form);
+    });
+    form.prepend(el);
+  }
+
+  function showFormRetrying(form, attempt, delay) {
+    clearFormError(form);
+    var el = document.createElement('div');
+    el.className = 'ds-retry-block ds-form-retrying';
+    el.textContent = 'Connection issue — retrying (' + attempt + '/3)...';
+    form.prepend(el);
+  }
+
+  /* ============================================================
+     PHOTO PREVIEW
+     Show a preview of selected image before upload.
+     ============================================================ */
+  function initPhotoPreview() {
+    document.querySelectorAll('input[type=file][data-preview]').forEach(function (input) {
+      var targetId = input.dataset.preview;
+      var target = document.getElementById(targetId);
+      if (!target) return;
+
+      input.addEventListener('change', function () {
+        var file = input.files[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+          target.textContent = 'Not an image.';
+          return;
+        }
+        var reader = new FileReader();
+        reader.onload = function (e) {
+          target.innerHTML = '';
+          var img = document.createElement('img');
+          img.src = e.target.result;
+          img.style.maxWidth = '120px';
+          img.style.maxHeight = '120px';
+          img.style.border = '1px solid #ccc';
+          target.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+  }
+
+  /* ============================================================
+     PROFILE SONG — tap to play only, never autoplay
+     ============================================================ */
+  function initSongPlayer() {
+    document.querySelectorAll('[data-song-url]').forEach(function (btn) {
+      var url = btn.dataset.songUrl;
+      if (!url) return;
+      var audio = null;
+
+      btn.addEventListener('click', function () {
+        if (!audio) {
+          audio = new Audio(url);
+          audio.addEventListener('ended', function () {
+            btn.textContent = '▶ Play';
+          });
+        }
+        if (audio.paused) {
+          audio.play().catch(function () {
+            btn.textContent = '▶ Play (error)';
+          });
+          btn.textContent = '⏸ Pause';
+        } else {
+          audio.pause();
+          btn.textContent = '▶ Play';
+        }
+      });
+    });
+  }
+
+  /* ============================================================
+     FLASH MESSAGE AUTO-DISMISS
+     Flash messages with data-dismiss="5000" auto-disappear.
+     ============================================================ */
+  function initFlashDismiss() {
+    document.querySelectorAll('.ds-flash[data-dismiss]').forEach(function (el) {
+      var delay = parseInt(el.dataset.dismiss, 10) || 5000;
+      setTimeout(function () {
+        el.style.transition = 'opacity 0.4s';
+        el.style.opacity = '0';
+        setTimeout(function () { el.remove(); }, 400);
+      }, delay);
+    });
+  }
+
+  /* ============================================================
+     CONFIRM ACTIONS
+     Buttons/links with data-confirm="Are you sure?" prompt before acting.
+     ============================================================ */
+  function initConfirmActions() {
+    document.addEventListener('click', function (e) {
+      var el = e.target.closest('[data-confirm]');
+      if (!el) return;
+      var msg = el.dataset.confirm || 'Are you sure?';
+      if (!window.confirm(msg)) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    });
+  }
+
+  /* ============================================================
+     MARK NOTIFICATIONS READ
+     On notifications page load, ping the read-all endpoint.
+     ============================================================ */
+  function initNotifRead() {
+    var page = document.getElementById('notifications-page');
+    if (!page) return;
+    fetch('/notifications/mark-read', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    }).catch(function () { /* silent — non-critical */ });
+    // Update nav badge
+    var badge = document.querySelector('.nav-notif-badge');
+    if (badge) badge.remove();
+  }
+
+  /* ============================================================
+     LAZY LOAD IMAGES
+     Images with data-src are loaded when they scroll into view.
+     Falls back to immediate load if IntersectionObserver unavailable.
+     ============================================================ */
+  function initLazyImages() {
+    var imgs = document.querySelectorAll('img[data-src]');
+    if (!imgs.length) return;
+
+    if (!('IntersectionObserver' in window)) {
+      imgs.forEach(function (img) { img.src = img.dataset.src; });
+      return;
+    }
+
+    var obs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          var img = entry.target;
+          img.src = img.dataset.src;
+          img.removeAttribute('data-src');
+          obs.unobserve(img);
+        }
+      });
+    }, { rootMargin: '50px' });
+
+    imgs.forEach(function (img) { obs.observe(img); });
+  }
+
+  /* ============================================================
+     VIBE TAG INPUT
+     Comma-separated tag input with visual chips.
+     ============================================================ */
+  function initTagInput() {
+    document.querySelectorAll('[data-tag-input]').forEach(function (container) {
+      var hidden = container.querySelector('input[type=hidden]');
+      var text   = container.querySelector('input[type=text]');
+      var chips  = container.querySelector('.tag-chips');
+      if (!hidden || !text || !chips) return;
+
+      var tags = hidden.value ? hidden.value.split(',').map(function (t) { return t.trim(); }).filter(Boolean) : [];
+
+      function renderChips() {
+        chips.innerHTML = '';
+        tags.forEach(function (tag) {
+          var chip = document.createElement('span');
+          chip.className = 'vibe-tag';
+          chip.style.cursor = 'default';
+          chip.innerHTML = tag + ' <button type="button" style="background:none;border:none;cursor:pointer;font-size:10px;color:#666;padding:0 0 0 3px">✕</button>';
+          chip.querySelector('button').addEventListener('click', function () {
+            tags = tags.filter(function (t) { return t !== tag; });
+            hidden.value = tags.join(',');
+            renderChips();
+          });
+          chips.appendChild(chip);
+        });
+        hidden.value = tags.join(',');
+      }
+
+      text.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ',') {
+          e.preventDefault();
+          var val = text.value.trim().replace(/,/g, '');
+          if (val && tags.length < 10 && !tags.includes(val)) {
+            tags.push(val);
+            renderChips();
+          }
+          text.value = '';
+        }
+      });
+
+      renderChips();
+    });
+  }
+
+  /* ============================================================
+     INIT
+     ============================================================ */
+  function init() {
+    initRetryForms();
+    initPhotoPreview();
+    initSongPlayer();
+    initFlashDismiss();
+    initConfirmActions();
+    initNotifRead();
+    initLazyImages();
+    initTagInput();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
