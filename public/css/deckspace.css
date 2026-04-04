@@ -49,8 +49,8 @@
 }
 
 html {
-  font-size: 13px;
-  line-height: 1.4;
+  font-size: 12px;
+  line-height: 1.35;
   scroll-behavior: smooth;
 }
 
@@ -200,7 +200,7 @@ ul {
 #ds-page {
   max-width: 960px;
   margin: 0 auto;
-  padding: 8px 6px;
+  padding: 5px 4px;
 }
 
 /* Full-width override */
@@ -215,7 +215,7 @@ ul {
 .ds-module {
   background: var(--ds-white);
   border: 1px solid var(--ds-border);
-  margin-bottom: 8px;
+  margin-bottom: 5px;
   overflow: hidden;
 }
 
@@ -263,7 +263,7 @@ ul {
 .profile-wrap {
   display: grid;
   grid-template-columns: 200px 1fr;
-  gap: 8px;
+  gap: 6px;
   align-items: start;
 }
 
@@ -282,9 +282,9 @@ ul {
 .profile-photo-block {
   background: var(--ds-white);
   border: 1px solid var(--ds-border);
-  padding: 6px;
+  padding: 5px;
   text-align: center;
-  margin-bottom: 8px;
+  margin-bottom: 5px;
 }
 
 .profile-photo-block img.avatar {
@@ -475,8 +475,8 @@ ul {
   border: 1px solid var(--ds-blue-mid);
   color: var(--ds-navy);
   font-size: 10px;
-  padding: 1px 5px;
-  border-radius: 2px;
+  padding: 1px 4px;
+  border-radius: 0;
   white-space: nowrap;
 }
 
@@ -871,7 +871,7 @@ ul {
   font-size: 12px;
 }
 .ds-form-row {
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 .ds-form-row label {
   display: block;
@@ -1054,7 +1054,7 @@ ul {
    STATUS / SYSTEM INDICATORS
    ============================================================ */
 .ds-empty-state {
-  padding: 12px 8px;
+  padding: 8px 6px;
   text-align: center;
   color: var(--ds-text-light);
   font-size: 11px;
@@ -1097,7 +1097,7 @@ ul {
 .home-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 6px;
 }
 
 .activity-item {

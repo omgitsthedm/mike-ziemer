@@ -103,7 +103,7 @@ function renderNav(user, activeNav, notifCount) {
    SAILING BAR
    ============================================================ */
 function renderSailingBar(sailing, readOnly) {
-  const status = readOnly ? ' &mdash; <em>Archive Mode</em>' : '';
+  const status = readOnly ? ' &mdash; <em>The ship has docked.</em>' : '';
   return `<div id="ds-sailing-bar">
   <strong>${esc(sailing.ship_name)}</strong> &mdash; ${esc(sailing.name)}${status}
 </div>`;
@@ -114,12 +114,27 @@ function renderSailingBar(sailing, readOnly) {
    ============================================================ */
 function renderArchiveBanner(sailing) {
   if (!sailing) return '';
-  const ends = sailing.archive_ends_at
-    ? new Date(sailing.archive_ends_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-    : 'soon';
+
+  // Calculate days remaining until close
+  const now      = new Date();
+  const closeAt  = new Date(sailing.archive_ends_at);
+  const daysLeft = Math.max(0, Math.ceil((closeAt - now) / 86400000));
+
+  const closeDateStr = closeAt.toLocaleDateString('en-US', {
+    weekday: 'long', month: 'long', day: 'numeric'
+  });
+
+  const countdownLine = daysLeft === 0
+    ? 'This is the last day. The lights go off tonight.'
+    : daysLeft === 1
+    ? 'One day left. Take a last look around.'
+    : `The scrapbook closes in <strong>${daysLeft} days</strong> — on ${closeDateStr}.`;
+
   return `<div class="archive-banner">
-  <strong>Deckspace is now in Archive Mode.</strong>
-  Profiles and memories are read-only. This community closes on ${ends}.
+  <strong>The sailing has ended.</strong>
+  The ship has docked, but your Deckspace is still here &mdash; read-only, just for a little while longer.
+  ${countdownLine}
+  New posts, wall comments, and RSVPs are closed.
 </div>`;
 }
 
