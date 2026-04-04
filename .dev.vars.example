@@ -1,0 +1,24 @@
+# Deckspace local development environment variables
+# Copy this file to .dev.vars and fill in your values.
+# .dev.vars is gitignored — never commit it.
+
+SUPABASE_URL=https://xxxx.supabase.co
+SUPABASE_ANON_KEY=eyJ...
+SUPABASE_SERVICE_KEY=eyJ...
+
+# Generate with: openssl rand -hex 20
+JWT_SECRET=change-this-to-a-random-40-char-string
+
+# Use Cloudflare's always-pass test keys for local dev:
+# https://developers.cloudflare.com/turnstile/troubleshooting/testing/
+TURNSTILE_SITE_KEY=1x00000000000000000000AA
+TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
+
+# UUID of the sailing row in your Supabase sailings table
+SAILING_ID=replace-with-uuid-from-sailings-table
+
+# Public R2 bucket URL (no trailing slash)
+R2_PUBLIC_URL=https://pub-xxxx.r2.dev
+
+# 'development' shows error stack traces; 'production' hides them
+ENVIRONMENT=development
