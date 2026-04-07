@@ -175,20 +175,18 @@ app.notFound(async (c) => {
 app.onError(async (err, c) => {
   console.error('[Deckspace Error]', err);
   const user = c.get('user');
-
-  const isDev = c.env.ENVIRONMENT === 'development';
-  const message = isDev ? err.message : 'Something went wrong. Please try again.';
+  const isDev = c.env?.ENVIRONMENT === 'development';
 
   return c.html(layout({
     title: 'Error',
     user,
-    body: `<div style="max-width:400px;margin:30px auto">
+    body: `<div style="max-width:600px;margin:30px auto">
       <div class="ds-module">
         <div class="ds-module-header">Error</div>
         <div class="ds-module-body">
-          <div class="ds-flash error">${message}</div>
+          <div class="ds-flash error">${isDev ? esc(err.message || String(err)) : 'Something went wrong. Please try again.'}</div>
+          ${isDev ? `<pre style="font-size:10px;margin-top:8px;overflow:auto;white-space:pre-wrap;background:#f5f5f5;padding:6px;border:1px solid #ccc">${esc(err.stack || String(err))}</pre>` : ''}
           <a href="/" class="ds-btn">Go Home</a>
-          ${isDev ? `<pre style="font-size:10px;margin-top:8px;overflow:auto">${err.stack || ''}</pre>` : ''}
         </div>
       </div>
     </div>`
