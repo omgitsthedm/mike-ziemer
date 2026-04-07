@@ -74,8 +74,8 @@ events.get('/events', async (c) => {
     { key: 'user', label: 'User-Created' },
   ];
 
-  const tabNav = `<div style="display:flex;gap:0;border-bottom:2px solid #003399;margin-bottom:8px">
-    ${tabs.map(t => `<a href="/events?tab=${t.key}" style="padding:4px 10px;font-size:11px;background:${tab===t.key?'#003399':'#e8f0f8'};color:${tab===t.key?'#fff':'#003399'};text-decoration:none;border:1px solid #ccc;border-bottom:none;margin-right:2px">${t.label}</a>`).join('')}
+  const tabNav = `<div class="ds-tabs">
+    ${tabs.map(t => `<a href="/events?tab=${t.key}" class="ds-tab${tab===t.key?' ds-tab-active':''}">${t.label}</a>`).join('')}
   </div>`;
 
   const eventListHtml = events_data.length
@@ -396,9 +396,9 @@ function eventDetailPage({ event, comments, userRsvp, attendees, viewer, sailing
 
   const editLink = isCreator ? `<a href="/events/${esc(event.id)}/edit" class="ds-btn ds-btn-sm">Edit Event</a>` : '';
 
-  return `<div class="event-detail-header ds-module" style="padding:0">
+  return `<div class="event-detail-header ds-module">
   <div class="ds-module-header blue">${esc(event.event_type === 'official' ? 'Official Event' : 'Event')}</div>
-  <div style="padding:8px">
+  <div class="ds-module-body">
     ${coverImg}
     <div class="event-detail-title">${esc(event.title)}</div>
     <div class="event-detail-meta">
@@ -407,9 +407,9 @@ function eventDetailPage({ event, comments, userRsvp, attendees, viewer, sailing
       <br><strong>Host:</strong> <a href="/profile/${esc(creator?.username || '')}">${esc(creator?.display_name || 'Unknown')}</a>
       ${event.category ? `<br><strong>Type:</strong> ${esc(event.category)}` : ''}
     </div>
-    <div style="margin:8px 0;font-size:14px;font-weight:bold;color:#003399">${event.rsvp_count} going</div>
-    <div style="margin-bottom:8px">${rsvpHtml} ${editLink}</div>
-    ${event.description ? `<div style="border-top:1px solid #eee;padding-top:8px;font-size:12px;line-height:1.5">${esc(event.description)}</div>` : ''}
+    <div class="event-rsvp-count">${event.rsvp_count} going</div>
+    <div class="event-rsvp-actions">${rsvpHtml} ${editLink}</div>
+    ${event.description ? `<div class="event-description">${esc(event.description)}</div>` : ''}
   </div>
 </div>
 

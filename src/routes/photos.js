@@ -253,19 +253,19 @@ photos.get('/photos/:id', async (c) => {
 
   const body = `<div class="ds-module">
   <div class="ds-module-header blue">Photo</div>
-  <div style="text-align:center;background:#111;padding:8px">
+  <div class="photo-view-img">
     ${mediumUrl
-      ? `<img src="${esc(mediumUrl)}" alt="${esc(photo.caption || '')}" style="max-width:100%;max-height:500px;object-fit:contain" loading="lazy">`
-      : `<div class="ds-empty-state" style="color:#fff">Image unavailable</div>`}
+      ? `<img src="${esc(mediumUrl)}" alt="${esc(photo.caption || '')}" loading="lazy">`
+      : `<div class="ds-empty-state photo-view-unavailable">Image unavailable</div>`}
   </div>
-  <div style="padding:8px">
-    ${photo.caption ? `<div style="font-size:13px;margin-bottom:6px">${esc(photo.caption)}</div>` : ''}
+  <div class="ds-module-body">
+    ${photo.caption ? `<div class="photo-view-caption">${esc(photo.caption)}</div>` : ''}
     <div class="text-small text-muted">
       Uploaded by <a href="/profile/${esc(photo.users?.username || '')}">${esc(photo.users?.display_name || 'Unknown')}</a>
       ${relTime(photo.created_at)}
       ${photo.events ? `&mdash; <a href="/events/${esc(photo.events.id)}">${esc(photo.events.title)}</a>` : ''}
     </div>
-    <div style="margin-top:6px">${deleteBtn}${reportLink}</div>
+    <div class="photo-view-actions">${deleteBtn}${reportLink}</div>
   </div>
 </div>
 ${module({

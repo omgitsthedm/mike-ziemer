@@ -137,11 +137,11 @@ function homePage({ user, sailing, cdnBase, tonightEvents, upcomingEvents, recen
     ? recentPeople.slice(0, 4).map(p => {
         const thumbUrl = p.profiles?.avatar_thumb_url ? `${cdnBase}/${p.profiles.avatar_thumb_url}` : null;
         const img = thumbUrl
-          ? `<img src="${esc(thumbUrl)}" width="44" height="44" loading="lazy" style="border:1px solid #ccc">`
-          : `<div style="width:44px;height:44px;background:#e8e8e8;border:1px solid #ccc;display:flex;align-items:center;justify-content:center;font-size:11px;color:#aaa">${esc((p.display_name || '?').charAt(0))}</div>`;
-        return `<div style="display:inline-block;text-align:center;margin:3px;vertical-align:top;width:64px">
+          ? `<img src="${esc(thumbUrl)}" width="44" height="44" loading="lazy">`
+          : `<div class="home-member-thumb-placeholder">${esc((p.display_name || '?').charAt(0))}</div>`;
+        return `<div class="home-member-item">
   <a href="/profile/${esc(p.username)}">${img}</a>
-  <a href="/profile/${esc(p.username)}" style="font-size:10px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.display_name)}</a>
+  <a href="/profile/${esc(p.username)}" class="home-member-name">${esc(p.display_name)}</a>
 </div>`;
       }).join('')
     : `<div class="ds-empty-state">No members yet.</div>`;
@@ -149,7 +149,7 @@ function homePage({ user, sailing, cdnBase, tonightEvents, upcomingEvents, recen
   const peopleModule = module({
     header: 'New Members',
     headerRight: `<a href="/people">Browse All</a>`,
-    body: `<div style="padding:4px">${peopleHtml}</div>`
+    body: `<div class="home-member-grid">${peopleHtml}</div>`
   });
 
   // Recent photos module

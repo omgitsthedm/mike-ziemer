@@ -315,7 +315,7 @@ export function eventCard({ event, cdnBase }) {
   <div class="event-info">
     <a href="/events/${esc(event.id)}" class="event-title">${esc(event.title)}${typeBadge}${catBadge}</a>
     <div class="event-meta">${fmtDate(event.start_at, { time: true })}${event.location ? ` &mdash; ${esc(event.location)}` : ''}</div>
-    <div class="event-rsvp-count">${event.rsvp_count} going</div>
+    <div class="event-card-rsvp-count">${event.rsvp_count} going</div>
   </div>
 </div>`;
 }
