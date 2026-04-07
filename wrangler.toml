@@ -2,10 +2,11 @@ name = "deckspace"
 compatibility_date = "2024-09-23"
 pages_build_output_dir = "public"
 
-[vars]
-APP_NAME = "Deckspace"
-
-# Secrets — set via: wrangler secret put <KEY>
+# All env vars (including APP_NAME) are managed via the Cloudflare Pages
+# dashboard / API instead of wrangler.toml. Defining [vars] here causes
+# `wrangler pages deploy` to overwrite the project's env vars on each deploy.
+#
+# Set via: wrangler secret put <KEY>
 # or in Cloudflare Pages dashboard → Settings → Environment Variables
 #
 # Required secrets:
