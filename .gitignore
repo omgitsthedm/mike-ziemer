@@ -6,3 +6,4 @@ dist/
 .dev.vars
 *.local
 .DS_Store
+supabase/.temp/
