@@ -17,7 +17,9 @@ pages_build_output_dir = "public"
 #   TURNSTILE_SECRET_KEY  — Cloudflare Turnstile secret
 #   TURNSTILE_SITE_KEY    — Cloudflare Turnstile site key
 #   SAILING_ID            — UUID of the active sailing record
-#
-# R2 bucket (media storage):
-#   Add binding in CF Pages dashboard → Functions → R2 bucket bindings
-#   Binding name: MEDIA_BUCKET
+#   R2_PUBLIC_URL         — public R2 bucket URL (no trailing slash)
+
+# R2 media storage binding
+[[r2_buckets]]
+binding = "MEDIA_BUCKET"
+bucket_name = "deckspace-media"
