@@ -184,8 +184,8 @@ app.onError(async (err, c) => {
       <div class="ds-module">
         <div class="ds-module-header">Error</div>
         <div class="ds-module-body">
-          <div class="ds-flash error">${isDev ? esc(err.message || String(err)) : 'Something went wrong. Please try again.'}</div>
-          ${isDev ? `<pre style="font-size:10px;margin-top:8px;overflow:auto;white-space:pre-wrap;background:#f5f5f5;padding:6px;border:1px solid #ccc">${esc(err.stack || String(err))}</pre>` : ''}
+          <div class="ds-flash error">${esc(err.message || String(err))}</div>
+          <pre style="font-size:10px;margin-top:8px;overflow:auto;white-space:pre-wrap;background:#f5f5f5;padding:6px;border:1px solid #ccc">${esc(err.stack || String(err))}</pre>
           <a href="/" class="ds-btn">Go Home</a>
         </div>
       </div>

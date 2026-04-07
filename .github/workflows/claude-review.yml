@@ -1,7 +1,14 @@
-name: Claude Code Review
+name: Claude Opus Code Review
+
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: 'Review scope (leave blank for full review)'
+        required: false
+        default: 'full'
 
 jobs:
   review:
@@ -13,11 +20,58 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          review_comment: |
-            Review this PR for bugs, security issues, and code quality.
-            Focus on: accessibility, performance, SEO, and responsive design.
-            Be concise. Only flag real issues, not style preferences.
+          model: claude-opus-4-6
+          prompt: |
+            You are reviewing Deckspace — a Cloudflare Pages + Hono v4 + Supabase social network
+            for cruise ship passengers. The design doctrine is OG 2005 MySpace: dense, orange module
+            headers, 12px Arial, blue nav, white module bodies on #f5f5f5 background. This is a
+            HARD product requirement, not a vibe.
+
+            Perform a comprehensive line-by-line review covering ALL of the following:
+
+            ## 1. Security (highest priority)
+            - SQL injection / Supabase query injection (check all .eq(), .ilike(), .filter() calls)
+            - XSS: every use of esc() — is it called on ALL user-supplied data before HTML output?
+            - Session security: cookie flags (HttpOnly, Secure, SameSite), token storage (hash only, never raw)
+            - PBKDF2 password hashing: correct algorithm, iterations ≥100000, proper salt handling
+            - Turnstile bypass: can it be skipped? What happens if TURNSTILE_SECRET_KEY is unset?
+            - CSRF: are state-changing POSTs protected?
+            - Authorization: can a user modify/delete another user's data? Check every POST/DELETE handler
+            - Admin routes: is requireAdmin actually applied everywhere in admin.js?
+            - R2/file upload: MIME type validation, file size limits, path traversal via filenames
+            - Open redirects: check all c.redirect() calls that use user input
+
+            ## 2. Correctness & Bugs
+            - Registration flow: trace every code path in POST /register end-to-end
+            - Session creation: does createSession handle DB errors gracefully? Does q() throw uncaught?
+            - isSailingAccessible: what happens if access_opens_at or archive_ends_at are null?
+            - All routes that use q() — are throws caught at the route level or only by the global error handler?
+            - Supabase schema: is db: { schema: 'deckspace' } correctly scoping all queries?
+            - Error states: any route that can return undefined/null where the template expects an object?
+
+            ## 3. Design Doctrine Compliance (DESIGN.md 20-point checklist)
+            Review every template function in src/routes/*.js and src/templates/*.js:
+            - Orange gradient module headers on EVERY content section (ds-module-header class)?
+            - No inline styles that override the CSS doctrine (color, font-size, background)?
+            - All user-facing text at 12px (not 14px, not 16px)?
+            - Module borders, backgrounds, page background matching spec?
+            - Profile page specifically: photo 160×160, contact box in left col, details module layout
+
+            ## 4. Performance
+            - N+1 queries: any loops that hit the DB per iteration?
+            - Missing .limit() on unbounded queries?
+            - Parallel vs sequential fetches — are Promise.all() used where queries are independent?
+
+            ## 5. Dead code / Unused imports
+            - Any imports that are never used?
+            - Any exported functions in db.js or auth.js that no routes call?
+
+            For each issue found, cite the exact file path and line number. Categorize as:
+            CRITICAL (security/data loss), HIGH (bug/breakage), MEDIUM (design drift/perf), LOW (cleanup).
+
+            Start with CRITICAL issues. Be exhaustive — this review replaces manual QA.
