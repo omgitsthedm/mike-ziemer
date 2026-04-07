@@ -320,30 +320,63 @@ A theme is a color filter applied over the same structure. It is not a layout ch
 
 ---
 
-## Reference: OG MySpace Profile Visual Landmarks
+## 20-Point Screenshot QA Checklist
 
-When QAing any profile page against this doctrine, verify these specific items exist and look correct:
+Pull up a real 2005 MySpace profile screenshot alongside a Deckspace profile. Go through every item below. This is not a vibe check — it is a pass/fail comparison. If any item fails, the build does not ship.
 
-- [ ] Top nav is blue with white links
-- [ ] Profile photo is square, 160x160, in the left column, upper area
-- [ ] Display name is bold, 14px, directly below or beside photo
-- [ ] Online indicator is visible if user is active
-- [ ] Contact/action box is in left column with labeled action buttons
-- [ ] Profile URL appears in left column
-- [ ] Details table shows hometown / interests in left column
-- [ ] "About Me" is an orange-headed module in the right column
-- [ ] "Friend Space" is an orange-headed module with a 4x2 thumbnail grid
-- [ ] Friend count appears above the friend grid
-- [ ] Wall posts have author avatars, author name as a link, and timestamp
-- [ ] Wall post form is at the bottom of the wall module
-- [ ] Guestbook is a separate orange-headed module below wall posts
-- [ ] All module headers are orange gradient
-- [ ] All module borders are 1px solid #ccc
-- [ ] Font throughout is Arial 12px
-- [ ] Page background is light gray (#f5f5f5)
-- [ ] Module backgrounds are white (#ffffff)
+---
 
-If any of these are missing or wrong, the profile page has not shipped.
+### NAV BAR
+
+- [ ] **1. Nav gradient is visible and deep blue.** The bar must shade from `#003399` at the top edge to `#002277` at the bottom. Not flat navy. Not charcoal. Not black. Hold a color picker up to it.
+- [ ] **2. Nav links are pale blue-white at 11px with no underline.** They should read as `#ccddff` — faintly blue against the dark bar, not pure white, not gray. Hover turns them white.
+- [ ] **3. Nav has a 2px bottom border (`#001166`) that hard-separates it from the page.** There should be a visible darker-blue seam. Not a shadow. Not a gradient fade-out.
+
+---
+
+### SAILING BAR
+
+- [ ] **4. Sailing bar is flat `#336699` with 11px white text.** It reads as a secondary blue band. Distinct from the darker nav above. One color — no gradient. Ship name and sailing name are both visible.
+
+---
+
+### LEFT COLUMN
+
+- [ ] **5. Profile photo is 160×160px, square, with a 1px `#999999` border.** No rounded corners. No drop shadow. No circle crop. It should look like a framed thumbnail, not a profile picture from a modern app.
+- [ ] **6. Display name is bold, 14px, directly below the photo.** Not in a hero. Not overlaid on the photo. It sits below as a plain label in the flow.
+- [ ] **7. Contact box is an orange-headed module in the left column with at minimum: Add Friend, Write on Wall, Sign Guestbook.** Button labels are text, not icons. The buttons are full-width, stacked.
+- [ ] **8. Details module is orange-headed, in the left column, with a label:value table at 11px.** "Hometown:", "Interests:", "Member since:" etc. A narrow two-column table. Not a paragraph.
+- [ ] **9. Links module is orange-headed, in the left column, with "View My Photos", "My Events", and the profile URL.** All three present. The profile URL is a real copyable link.
+
+---
+
+### RIGHT COLUMN
+
+- [ ] **10. "About Me" is the first orange-headed module in the right column.** Not a paragraph that lives outside a module. Not a bio that floats without a header bar. An orange module.
+- [ ] **11. Friend Space shows a 4-column grid of 60×60px square thumbnails.** Not circular. Not 3 columns. Not oversized. The grid looks dense.
+- [ ] **12. Friend count ("X friends") appears above the thumbnail grid inside Friend Space.** The number must be visible before the thumbnails, in the module body.
+- [ ] **13. Wall posts show: 40×40px square avatar (left) + bold blue author name (link) + 10px gray timestamp + body text.** Every post has all four of these. Missing any one is a fail.
+
+---
+
+### GLOBAL MODULE RULES
+
+- [ ] **14. Every content section has an orange gradient header bar.** Scroll the entire profile. If any section has a plain text label, a gray header, a blue header (except event detail pages), or no header, it is drift.
+- [ ] **15. Every module has a 1px solid `#cccccc` border on all four sides.** No section floats without a box. No section uses only a top border. No section has a box-shadow instead of a border.
+- [ ] **16. Module bodies are pure white (`#ffffff`).** Not `#fafafa`. Not `#f8f8f8`. Not transparent over the gray background. The contrast between the white interior and gray page background should be visible.
+- [ ] **17. Page background outside modules is `#f5f5f5`.** The gray page canvas is visible between and around modules. It is not white. It is not darker gray.
+
+---
+
+### TYPOGRAPHY AND DENSITY
+
+- [ ] **18. Body copy is 12px Arial throughout.** Open DevTools and inspect any paragraph on the page. `font-size` must be 12px. `font-family` must begin with `Arial`. If you see 14px or 16px anywhere in the content area, it is wrong.
+- [ ] **19. The page reads as dense, not clean.** Stand back from the screen. If you would describe the page as "clean," "minimal," "spacious," "airy," or "modern" — it has drifted. The correct description is "packed" or "old internet."
+- [ ] **20. No rounded corners are visible anywhere on the profile.** Modules are square. Avatars are square. Buttons are square. Vibe tags are square. If you can see a curved corner anywhere, it is drift.
+
+---
+
+**All 20 must pass before a profile build ships. A score of 19/20 is a fail.**
 
 ---
 
