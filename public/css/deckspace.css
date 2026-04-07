@@ -619,6 +619,277 @@ ul {
 }
 
 /* ============================================================
+   SHATTERED SHORES SCHEDULE PAGE
+   MySpace-style two-column events layout
+   ============================================================ */
+
+/* Outer grid: narrow left rail + main content */
+.ss-wrap {
+  display: grid;
+  grid-template-columns: 190px 1fr;
+  gap: 8px;
+  align-items: start;
+}
+
+/* ---- LEFT RAIL ---- */
+.ss-rail {}
+.ss-rail-module { margin-bottom: 6px; }
+.ss-rail-module .ds-module-body { padding: 5px 6px; font-size: 11px; }
+
+/* Badge / logo block */
+.ss-rail-badge {
+  background: linear-gradient(to bottom, #003399 0%, #001166 100%);
+  color: #fff;
+  text-align: center;
+  padding: 10px 6px 8px;
+  margin-bottom: 6px;
+  border: 1px solid #001166;
+}
+.ss-badge-title {
+  font-size: 14px;
+  font-weight: bold;
+  font-style: italic;
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+.ss-badge-sub {
+  font-size: 10px;
+  color: #ffcc66;
+  margin-top: 3px;
+}
+.ss-badge-ship {
+  font-size: 9px;
+  color: #aabbee;
+  margin-top: 2px;
+}
+
+/* Now Boarding info table */
+.ss-info-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+  line-height: 1.5;
+}
+.ss-info-table td { padding: 1px 2px; vertical-align: top; }
+.ss-info-key {
+  font-weight: bold;
+  color: #333;
+  white-space: nowrap;
+  padding-right: 4px !important;
+  width: 60px;
+}
+.ss-status-val { color: #cc0000; font-style: italic; }
+
+/* Top 8 list */
+.ss-top8 {
+  margin: 0;
+  padding: 0 0 0 14px;
+  font-size: 10px;
+  line-height: 1.8;
+  color: #333;
+}
+.ss-top8 li { padding: 0; }
+
+/* Bulletin */
+.ss-bulletin {
+  font-size: 10px;
+  font-style: italic;
+  line-height: 1.5;
+  color: #333;
+}
+
+/* Who's Here */
+.ss-online-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+  line-height: 1.7;
+}
+.ss-online-table td { padding: 0 2px; vertical-align: top; }
+.ss-online-num {
+  font-weight: bold;
+  color: var(--ds-navy);
+  text-align: right;
+  padding-right: 5px !important;
+  width: 24px;
+}
+
+/* Legend */
+.ss-legend-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+  line-height: 1.8;
+}
+.ss-legend-table td { padding: 0 3px; vertical-align: middle; }
+.ss-legend-table td:first-child { width: 18px; text-align: center; }
+
+/* Create event link in rail */
+.ss-create-link {
+  margin-top: 6px;
+  font-size: 11px;
+  text-align: center;
+}
+
+/* ---- MAIN CONTENT ---- */
+.ss-main {}
+
+/* Title banner */
+.ss-banner {
+  background: linear-gradient(to bottom, #003399 0%, #002277 100%);
+  color: #fff;
+  padding: 10px 12px 8px;
+  margin-bottom: 6px;
+  border: 1px solid #001166;
+}
+.ss-banner-title {
+  font-size: 16px;
+  font-weight: bold;
+  font-style: italic;
+  line-height: 1.1;
+}
+.ss-banner-sub {
+  font-size: 11px;
+  color: #aaccff;
+  margin-top: 4px;
+}
+
+/* Status bar */
+.ss-status-bar {
+  background: #ffffcc;
+  border: 1px solid #cccc66;
+  padding: 4px 8px;
+  font-size: 10px;
+  color: #333;
+  margin-bottom: 6px;
+  line-height: 1.6;
+}
+.ss-status-sep {
+  margin: 0 6px;
+  color: #999;
+}
+
+/* Intro copy */
+.ss-intro {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #333;
+  background: #f9f9f9;
+  border: 1px solid #cccccc;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+}
+
+/* Day module header */
+.ss-day-module { margin-bottom: 6px; }
+.ss-day-header {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.ss-day-label {
+  font-weight: bold;
+  font-size: 12px;
+}
+.ss-day-sub {
+  font-size: 10px;
+  font-weight: normal;
+  opacity: 0.9;
+}
+
+/* Schedule table */
+.ss-schedule {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+.ss-schedule thead tr {
+  background: #f0f0f0;
+  border-bottom: 1px solid #cccccc;
+}
+.ss-schedule th {
+  padding: 4px 6px;
+  text-align: left;
+  font-size: 10px;
+  font-weight: bold;
+  color: #444;
+  white-space: nowrap;
+}
+.ss-th-time  { width: 64px; }
+.ss-th-icon  { width: 18px; text-align: center; }
+.ss-th-loc   { width: 28%; }
+.ss-th-rsvp  { width: 52px; text-align: right; }
+
+.ss-row { border-bottom: 1px solid #eeeeee; }
+.ss-row:last-child { border-bottom: none; }
+.ss-row:hover { background: #fffbe6; }
+
+.ss-row td { padding: 5px 6px; vertical-align: top; }
+.ss-time {
+  white-space: nowrap;
+  font-size: 10px;
+  color: #666;
+  width: 64px;
+}
+.ss-icon {
+  text-align: center;
+  font-size: 12px;
+  width: 18px;
+}
+.ss-evtitle {
+  font-weight: bold;
+  font-size: 11px;
+}
+.ss-evtitle a { color: #003399; }
+.ss-evtitle a:hover { text-decoration: underline; }
+.ss-loc {
+  font-size: 10px;
+  color: #555;
+}
+.ss-rsvp {
+  font-size: 10px;
+  color: #888;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Random Incidents */
+.ss-incidents {
+  margin: 0;
+  padding: 0 0 0 14px;
+  font-size: 11px;
+  line-height: 1.8;
+  color: #333;
+}
+
+/* Fake comments */
+.ss-fake-comment {
+  padding: 6px 10px;
+  border-bottom: 1px solid #eeeeee;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.ss-fake-comment:last-child { border-bottom: none; }
+.ss-fc-user {
+  font-weight: bold;
+  color: #003399;
+}
+.ss-fc-body { color: #333; }
+
+/* Mobile: stack to single column */
+@media (max-width: 640px) {
+  .ss-wrap {
+    grid-template-columns: 1fr;
+  }
+  .ss-status-bar {
+    display: none; /* too cramped on mobile */
+  }
+  .ss-th-loc, .ss-loc,
+  .ss-th-rsvp, .ss-rsvp { display: none; }
+}
+
+/* ============================================================
    EVENTS — list cards
    ============================================================ */
 .event-list {

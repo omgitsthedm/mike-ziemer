@@ -21,72 +21,32 @@ import { module, eventCard, commentEntry, paginator } from '../templates/compone
 const events = new Hono();
 
 /* ============================================================
-   EVENTS LIST
+   EVENTS LIST — Shattered Shores MySpace-style schedule
    ============================================================ */
 events.get('/events', async (c) => {
   const viewer  = await resolveSession(c.env, c.req.raw);
   const db      = getDb(c.env);
   const sailing = await getSailing(db, c.env.SAILING_ID).catch(() => null);
-  const cdnBase = c.env.R2_PUBLIC_URL || '';
-  const page    = parseInt(c.req.query('page') || '1', 10);
-  const tab     = c.req.query('tab') || 'today';
 
-  const now = new Date();
-  const todayStart = new Date(now); todayStart.setHours(0,0,0,0);
-  const todayEnd   = new Date(now); todayEnd.setHours(23,59,59,999);
+  // Fetch all visible public events for the sailing, ordered by time
+  const { data: allEventsRaw } = await db.from('events')
+    .select('id, title, location, start_at, category, event_type, rsvp_count, description')
+    .eq('sailing_id', c.env.SAILING_ID)
+    .eq('moderation_status', 'visible')
+    .eq('visibility', 'public')
+    .order('start_at', { ascending: true })
+    .limit(120);
 
-  let events_data = [];
-  if (tab === 'today') {
-    const { data } = await db.from('events')
-      .select('id, title, location, start_at, end_at, event_type, category, rsvp_count, cover_image_url')
-      .eq('sailing_id', c.env.SAILING_ID).eq('moderation_status', 'visible').eq('visibility', 'public')
-      .gte('start_at', todayStart.toISOString()).lte('start_at', todayEnd.toISOString())
-      .order('start_at', { ascending: true }).limit(30);
-    events_data = data || [];
-  } else if (tab === 'upcoming') {
-    const { data } = await db.from('events')
-      .select('id, title, location, start_at, end_at, event_type, category, rsvp_count, cover_image_url')
-      .eq('sailing_id', c.env.SAILING_ID).eq('moderation_status', 'visible').eq('visibility', 'public')
-      .gt('start_at', todayEnd.toISOString())
-      .order('start_at', { ascending: true }).range((page-1)*20, page*20-1);
-    events_data = data || [];
-  } else if (tab === 'official') {
-    const { data } = await db.from('events')
-      .select('id, title, location, start_at, end_at, event_type, category, rsvp_count, cover_image_url')
-      .eq('sailing_id', c.env.SAILING_ID).eq('moderation_status', 'visible').eq('visibility', 'public')
-      .eq('event_type', 'official')
-      .order('start_at', { ascending: true }).range((page-1)*20, page*20-1);
-    events_data = data || [];
-  } else {
-    // All user events
-    const { data } = await db.from('events')
-      .select('id, title, location, start_at, end_at, event_type, category, rsvp_count, cover_image_url')
-      .eq('sailing_id', c.env.SAILING_ID).eq('moderation_status', 'visible').eq('visibility', 'public')
-      .eq('event_type', 'user')
-      .order('start_at', { ascending: false }).range((page-1)*20, page*20-1);
-    events_data = data || [];
+  // Group by calendar date (UTC date = YYYY-MM-DD prefix of ISO string)
+  const dayMap = new Map();
+  for (const ev of allEventsRaw || []) {
+    const d = ev.start_at.slice(0, 10);
+    if (!dayMap.has(d)) dayMap.set(d, []);
+    dayMap.get(d).push(ev);
   }
+  const days = [...dayMap.entries()]; // [[date, events[]], ...]
 
-  const tabs = [
-    { key: 'today', label: "Today" },
-    { key: 'upcoming', label: 'Upcoming' },
-    { key: 'official', label: 'Official' },
-    { key: 'user', label: 'User-Created' },
-  ];
-
-  const tabNav = `<div class="ds-tabs">
-    ${tabs.map(t => `<a href="/events?tab=${t.key}" class="ds-tab${tab===t.key?' ds-tab-active':''}">${t.label}</a>`).join('')}
-  </div>`;
-
-  const eventListHtml = events_data.length
-    ? events_data.map(e => eventCard({ event: e, cdnBase })).join('')
-    : `<div class="ds-empty-state">No events here yet. ${viewer ? `<a href="/events/create">Create one!</a>` : ''}</div>`;
-
-  const pager = paginator(page, events_data.length === 20, '/events', `&tab=${tab}`);
-
-  const createBtn = viewer ? `<div style="margin-bottom:8px"><a href="/events/create" class="ds-btn ds-btn-orange">+ Create Event</a></div>` : '';
-
-  const body = `${createBtn}${tabNav}${module({ header: 'Events', body: `<div class="event-list">${eventListHtml}</div>${pager}` })}`;
+  const body = eventsSchedulePage({ viewer, sailing, days });
 
   return c.html(layout({
     title: 'Events',
@@ -351,6 +311,229 @@ events.post('/events/:id/edit', requireAuth, async (c) => {
 
   return c.redirect('/events/' + eventId);
 });
+
+/* ============================================================
+   SCHEDULE PAGE TEMPLATE
+   ============================================================ */
+const DAY_HEADERS = [
+  { label: 'Day 1', sub: 'Embarkation / &ldquo;We&rsquo;re Really Doing This&rdquo;' },
+  { label: 'Day 2', sub: 'Socially Active, Spiritually Unwell' },
+  { label: 'Day 3', sub: 'The Point of No Return' },
+  { label: 'Day 4', sub: 'Disembarkation, Denial, and Questionable Closure' },
+];
+
+const CAT_ICONS = {
+  karaoke:   '&#127928;',  // 🎸
+  trivia:    '&#128220;',  // 📼
+  dinner:    '&#127860;',  // 🍽
+  deck:      '&#127754;',  // 🌊
+  social:    '&#128148;',  // 💔
+  excursion: '&#9875;',    // ⚓
+  drinks:    '&#127865;',  // 🍹
+  poker:     '&#9824;',    // ♠
+  theme:     '&#127917;',  // 🎭
+  other:     '&#128420;',  // 🖤
+};
+
+function fmtTime(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+}
+
+function eventsSchedulePage({ viewer, sailing, days }) {
+  const shipName = sailing?.ship_name || 'the ship';
+
+  // ---- LEFT RAIL ----
+  const top8Items = [
+    'Missed Call Confessional',
+    'Battle of the Side Parts',
+    'Breakup Letter Swap Meet',
+    'Silent Disco: Internal Monologue Edition',
+    'Cringe Archive Screening',
+    'Acoustic Set You Weren&rsquo;t Ready For',
+    'Away Message Workshop',
+    'The Deck at 3:17 AM',
+  ];
+
+  const leftRail = `<div class="ss-rail">
+  <div class="ss-rail-badge">
+    <div class="ss-badge-title">Shattered Shores</div>
+    <div class="ss-badge-sub">Cruise Events</div>
+    <div class="ss-badge-ship">${esc(shipName)}</div>
+  </div>
+
+  <div class="ds-module ss-rail-module">
+    <div class="ds-module-header">Now Boarding</div>
+    <div class="ds-module-body ss-nowboarding">
+      <table class="ss-info-table">
+        <tr><td class="ss-info-key">Theme:</td><td>Emo / Rock / Scene</td></tr>
+        <tr><td class="ss-info-key">Produced By:</td><td>Whet Travel</td></tr>
+        <tr><td class="ss-info-key">Status:</td><td class="ss-status-val">emotionally unstable</td></tr>
+        <tr><td class="ss-info-key">Dress Code:</td><td>black, white, striped, dramatic</td></tr>
+        <tr><td class="ss-info-key">Vibe Level:</td><td>late-night top-deck honesty</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="ds-module ss-rail-module">
+    <div class="ds-module-header">Top 8 Events</div>
+    <div class="ds-module-body">
+      <ol class="ss-top8">
+        ${top8Items.map(t => `<li>${t}</li>`).join('')}
+      </ol>
+    </div>
+  </div>
+
+  <div class="ds-module ss-rail-module">
+    <div class="ds-module-header">Cruise Bulletin</div>
+    <div class="ds-module-body ss-bulletin">
+      Whoever keeps leaving fully devastating voice messages in Missed Call Confessional needs to either be stopped or given a headlining slot.
+    </div>
+  </div>
+
+  <div class="ds-module ss-rail-module">
+    <div class="ds-module-header">Who&rsquo;s Here</div>
+    <div class="ds-module-body">
+      <table class="ss-online-table">
+        <tr><td class="ss-online-num">148</td><td>guests online now</td></tr>
+        <tr><td class="ss-online-num">23</td><td>currently overthinking</td></tr>
+        <tr><td class="ss-online-num">11</td><td>reorganizing their Top 8</td></tr>
+        <tr><td class="ss-online-num">6</td><td>pretending they &ldquo;don&rsquo;t really dance&rdquo;</td></tr>
+        <tr><td class="ss-online-num">1</td><td>definitely in a stairwell crying in a cool way</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="ds-module ss-rail-module">
+    <div class="ds-module-header">Event Legend</div>
+    <div class="ds-module-body">
+      <table class="ss-legend-table">
+        <tr><td>&#127928;</td><td>Live Set</td></tr>
+        <tr><td>&#128148;</td><td>Social Damage</td></tr>
+        <tr><td>&#128220;</td><td>Late Night</td></tr>
+        <tr><td>&#128222;</td><td>Interactive</td></tr>
+        <tr><td>&#128420;</td><td>Emotional Hazard</td></tr>
+        <tr><td>&#127754;</td><td>Deck / Unscheduled</td></tr>
+      </table>
+    </div>
+  </div>
+
+  ${viewer ? `<div class="ss-create-link"><a href="/events/create">+ Create Event</a></div>` : ''}
+</div>`;
+
+  // ---- MAIN CONTENT ----
+
+  // Status bar
+  const statusBar = `<div class="ss-status-bar">
+  <span class="ss-status-item"><strong>Mood:</strong> cautiously devastated</span>
+  <span class="ss-status-sep">|</span>
+  <span class="ss-status-item"><strong>Listening To:</strong> ocean sounds + a song that still has too much power over you</span>
+  <span class="ss-status-sep">|</span>
+  <span class="ss-status-item"><strong>Status:</strong> on board / emotionally buffering</span>
+  <span class="ss-status-sep">|</span>
+  <span class="ss-status-item"><strong>Last Updated:</strong> 2:13 AM</span>
+</div>`;
+
+  // Intro blurb
+  const intro = `<div class="ss-intro">
+  Welcome aboard <strong>Shattered Shores Cruise</strong>. This is your official-ish guide to what&rsquo;s happening on ${esc(shipName)}.
+  Some events are planned. Some just happen. Some should maybe not happen, but here we are.
+  Check back often, reshuffle your emotional priorities accordingly, and remember:
+  missing an event may haunt you longer than attending it.
+</div>`;
+
+  // Day schedule modules
+  const dayModules = days.map(([date, evs], idx) => {
+    const dayInfo = DAY_HEADERS[idx] || { label: `Day ${idx + 1}`, sub: '' };
+    const rows = evs.map(ev => {
+      const icon = CAT_ICONS[ev.category] || CAT_ICONS.other;
+      const time = fmtTime(ev.start_at);
+      return `<tr class="ss-row">
+  <td class="ss-time">${time}</td>
+  <td class="ss-icon">${icon}</td>
+  <td class="ss-evtitle"><a href="/events/${esc(ev.id)}">${esc(ev.title)}</a></td>
+  <td class="ss-loc">${esc(ev.location || '')}</td>
+  <td class="ss-rsvp">${ev.rsvp_count > 0 ? `${ev.rsvp_count} going` : ''}</td>
+</tr>`;
+    }).join('');
+
+    return `<div class="ds-module ss-day-module">
+  <div class="ds-module-header ss-day-header">
+    <span class="ss-day-label">${dayInfo.label}</span>
+    <span class="ss-day-sub">&mdash; ${dayInfo.sub}</span>
+  </div>
+  <div class="ds-module-body" style="padding:0">
+    <table class="ss-schedule">
+      <thead><tr>
+        <th class="ss-th-time">Time</th>
+        <th class="ss-th-icon"></th>
+        <th class="ss-th-title">Event</th>
+        <th class="ss-th-loc">Location</th>
+        <th class="ss-th-rsvp">RSVPs</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>
+</div>`;
+  }).join('');
+
+  // No events fallback
+  const noEventsMsg = days.length === 0
+    ? `<div class="ds-empty-state">No events scheduled yet. ${viewer ? '<a href="/events/create">Create the first one.</a>' : 'Check back soon.'}</div>`
+    : '';
+
+  // Random Incidents
+  const incidents = [
+    'Found on Deck: one single black Converse, owner unknown.',
+    'Flash Poll: best black eyeliner survival technique in ocean humidity.',
+    'Emergency Bulletin: someone changed their Top 8 and the ship is still recovering.',
+    'Tiny Set Alert: stairwell performance in 10 minutes. act casual.',
+    'Weather Report: emotionally overcast with isolated breakthroughs.',
+    'Photo Drop: new blurry photos added at the Crisis Center.',
+  ];
+  const incidentsModule = `<div class="ds-module">
+  <div class="ds-module-header">Random Incidents</div>
+  <div class="ds-module-body">
+    <ul class="ss-incidents">
+      ${incidents.map(i => `<li>${i}</li>`).join('')}
+    </ul>
+  </div>
+</div>`;
+
+  // Fake comments
+  const fakeComments = [
+    { user: 'xX_bleedingxheart_Xx', body: 'whoever scheduled stay in your cabin &amp; spiral is sick for that' },
+    { user: 'sidepartsurvivor',      body: 'battle of the side parts changed my life and my center of gravity' },
+    { user: 'portsideghost',         body: 'missed call confessional should legally count as therapy' },
+    { user: 'lowercaseforever',       body: 'i came here for the music and left with 4 new mutuals and one unresolved situation' },
+    { user: 'cringe_archivist',      body: 'the lyric notebook exhibition ruined me in the most healing possible way' },
+  ];
+  const commentsModule = `<div class="ds-module">
+  <div class="ds-module-header">Comments</div>
+  <div class="ds-module-body" style="padding:0">
+    ${fakeComments.map(fc => `<div class="ss-fake-comment">
+  <span class="ss-fc-user">${fc.user}</span>:
+  <span class="ss-fc-body">&ldquo;${fc.body}&rdquo;</span>
+</div>`).join('')}
+  </div>
+</div>`;
+
+  const mainContent = `<div class="ss-main">
+  <div class="ss-banner">
+    <div class="ss-banner-title">Shattered Shores Cruise &mdash; Events</div>
+    <div class="ss-banner-sub">4 days at sea, 37 emotional incidents, 1 smaller ship, no escape.</div>
+  </div>
+  ${statusBar}
+  ${intro}
+  ${noEventsMsg}
+  ${dayModules}
+  ${incidentsModule}
+  ${commentsModule}
+</div>`;
+
+  return `<div class="ss-wrap">${leftRail}${mainContent}</div>`;
+}
 
 /* ============================================================
    TEMPLATES
