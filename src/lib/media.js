@@ -123,10 +123,13 @@ export async function processPhotoUpload(env, bucket, { file, sailingId, userId,
   // via URL params. If not available, serve original with CSS max-width.
   // In a later phase, add a background Worker to generate actual resized copies.
 
+  // v1: no server-side resizing. thumb/medium keys are null so callers
+  // fall back to storageKey. CF Image Resizing (if enabled on the zone)
+  // can handle resizing at CDN edge via URL params.
   return {
     storageKey: sk,
-    thumbKey: tk === sk ? null : tk,   // null means "use original"
-    mediumKey: mk === sk ? null : mk,
+    thumbKey: null,
+    mediumKey: null,
     fileSizeBytes: buf.byteLength
   };
 }

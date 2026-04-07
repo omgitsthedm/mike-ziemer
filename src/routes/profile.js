@@ -362,7 +362,7 @@ function mediaLinksModule(user, profile, cdnBase) {
     `<a href="/events?user=${esc(user.username)}">My Events</a>`,
   ];
   return `<div class="ds-module">
-  <div class="ds-module-header" style="font-size:10px">Links</div>
+  <div class="ds-module-header">Links</div>
   <div class="ds-module-body" style="padding:5px 6px">
     ${links.map(l => `<div>${l}</div>`).join('')}
     <div class="profile-url-field" style="border-top:0;padding:4px 0 0">
@@ -374,7 +374,7 @@ function mediaLinksModule(user, profile, cdnBase) {
 
 function editTopFriendsLink() {
   return `<div class="ds-module">
-  <div class="ds-module-header" style="font-size:10px">Top Friends</div>
+  <div class="ds-module-header">Top Friends</div>
   <div class="ds-module-body">
     <a href="/friends/manage-top" class="ds-btn ds-btn-sm w-full" style="display:block;text-align:center">Manage Top Friends</a>
   </div>

@@ -85,7 +85,7 @@ export function contactBox({ targetUser, viewerUser, friendStatus }) {
   }
 
   return `<div class="contact-box">
-  <div class="ds-module-header" style="font-size:10px">Contacting ${esc(targetUser.display_name)}</div>
+  <div class="ds-module-header">Contacting ${esc(targetUser.display_name)}</div>
   <div class="contact-actions">
     ${friendAction}
     <a href="#wall-post-form" class="contact-btn">&#128394; Write on Wall</a>

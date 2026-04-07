@@ -283,14 +283,6 @@ admin.post('/admin/content/:type/:id/restore', async (c) => {
 });
 
 /* ============================================================
-   REPORT — accessible by regular users
-   ============================================================ */
-admin.get('/report', async (c) => {
-  // Public route for reporting content
-  return c.html('<div>Report form placeholder</div>');
-});
-
-/* ============================================================
    HELPERS
    ============================================================ */
 function tableForType(type) {
