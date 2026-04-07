@@ -110,171 +110,172 @@ BEGIN
   -- -------------------------------------------------------
   DELETE FROM events WHERE sailing_id = sail_id AND event_type = 'official';
 
-  INSERT INTO events (sailing_id, creator_user_id, event_type, category, title, description, location, start_at, visibility, moderation_status, rsvp_count) VALUES
+  -- cover_image_url values reference R2 public bucket: https://pub-d8796810a5404aa6b17bad4a5c1d9887.r2.dev
+  INSERT INTO events (sailing_id, creator_user_id, event_type, category, title, description, location, start_at, visibility, moderation_status, rsvp_count, cover_image_url) VALUES
 
   -- DAY 1: April 7, 2026 — Embarkation
   (sail_id, crew_id, 'official', 'social',
     'Port Check-In & Personal Lore Intake',
     'Board the ship, get your wristband, and quietly decide whether you''re here for closure, chaos, or both.',
-    'Terminal Entrance', '2026-04-07 17:00:00+00', 'public', 'visible', 47),
+    'Terminal Entrance', '2026-04-07 17:00:00+00', 'public', 'visible', 47, NULL),
 
   (sail_id, crew_id, 'official', 'social',
     'Cabin Key Pickup + Mirror Check Spiral',
     'First official moment to stare at yourself in terrible lighting and think, "interesting."',
-    'Cabin Decks', '2026-04-07 19:00:00+00', 'public', 'visible', 89),
+    'Cabin Decks', '2026-04-07 19:00:00+00', 'public', 'visible', 89, NULL),
 
   (sail_id, crew_id, 'official', 'social',
     'Welcome Aboard: Add Me or Don''t Mixer',
     'A low-stakes social mixer for making friends, avoiding eye contact, and deciding who seems emotionally unsafe in an exciting way.',
-    'Top 8 Lounge', '2026-04-07 20:30:00+00', 'public', 'visible', 134),
+    'Top 8 Lounge', '2026-04-07 20:30:00+00', 'public', 'visible', 134, 'demo/01-bar-lounge.jpg'),
 
   (sail_id, crew_id, 'official', 'other',
     'Safety Drill But Make It Dramatic',
     'Yes, this is mandatory. Try not to make it your whole personality.',
-    'Main Deck', '2026-04-07 22:00:00+00', 'public', 'visible', 312),
+    'Main Deck', '2026-04-07 22:00:00+00', 'public', 'visible', 312, NULL),
 
   (sail_id, crew_id, 'official', 'karaoke',
     'Sail Away Set: Sad Songs, Open Water',
     'The ship leaves port. The band starts. Everyone pretends they are in a music video for at least six minutes.',
-    'Pool Stage', '2026-04-07 23:30:00+00', 'public', 'visible', 201),
+    'Pool Stage', '2026-04-07 23:30:00+00', 'public', 'visible', 201, 'demo/02-pool-deck.jpg'),
 
   (sail_id, crew_id, 'official', 'social',
     'Default Profile Picture Crisis Center',
     'Take the worst possible flash photo of yourself on purpose. Choose one image to emotionally represent you for the rest of the cruise.',
-    'Photo Booth Lounge', '2026-04-08 01:00:00+00', 'public', 'visible', 98),
+    'Photo Booth Lounge', '2026-04-08 01:00:00+00', 'public', 'visible', 98, NULL),
 
   (sail_id, crew_id, 'official', 'other',
     'Missed Call Confessional Opens',
     'Pick up the phone. Hear the prompt. Leave the message you should probably keep to yourself.',
-    'Offline Deck Phone Booths', '2026-04-08 02:30:00+00', 'public', 'visible', 77),
+    'Offline Deck Phone Booths', '2026-04-08 02:30:00+00', 'public', 'visible', 77, NULL),
 
   (sail_id, crew_id, 'official', 'deck',
     'Late Night Deck Drift',
     'No official programming. Just wind, salt air, side conversations, and suspiciously honest eye contact.',
-    'Outer Deck', '2026-04-08 03:45:00+00', 'public', 'visible', 55),
+    'Outer Deck', '2026-04-08 03:45:00+00', 'public', 'visible', 55, NULL),
 
   -- DAY 2: April 8, 2026 — Full Ship Descent
   (sail_id, crew_id, 'official', 'other',
     'Coffee, Concealer, Recovery Hour',
     'A gentle start for those who made too many choices last night. Hydrate. Reassemble. Re-enter society.',
-    'Buffet / Pool Deck', '2026-04-08 14:00:00+00', 'public', 'visible', 143),
+    'Buffet / Pool Deck', '2026-04-08 14:00:00+00', 'public', 'visible', 143, NULL),
 
   (sail_id, crew_id, 'official', 'other',
     'Away Message Workshop',
     'Write the most cryptic and emotionally loaded away message possible. Extra respect for lowercase only and implied interpersonal conflict.',
-    'Internet Graveyard Cafe', '2026-04-08 15:30:00+00', 'public', 'visible', 67),
+    'Internet Graveyard Cafe', '2026-04-08 15:30:00+00', 'public', 'visible', 67, NULL),
 
   (sail_id, crew_id, 'official', 'social',
     'Battle of the Side Parts',
     'A live contest celebrating architectural hair decisions that should not survive ocean wind but somehow do.',
-    'Atrium Stage', '2026-04-08 17:00:00+00', 'public', 'visible', 188),
+    'Atrium Stage', '2026-04-08 17:00:00+00', 'public', 'visible', 188, 'demo/04-atrium.jpg'),
 
   (sail_id, crew_id, 'official', 'other',
     'The ''It''s Not a Phase'' Panel',
     'A fake-serious panel on aesthetic permanence, lyric memory, and what exactly happened to all of us.',
-    'Shoreline Theater', '2026-04-08 18:30:00+00', 'public', 'visible', 211),
+    'Shoreline Theater', '2026-04-08 18:30:00+00', 'public', 'visible', 211, NULL),
 
   (sail_id, crew_id, 'official', 'social',
     'Comment for Comment IRL',
     'You compliment someone, they must compliment you back. No one leaves unchanged.',
-    'Promenade', '2026-04-08 20:00:00+00', 'public', 'visible', 156),
+    'Promenade', '2026-04-08 20:00:00+00', 'public', 'visible', 156, NULL),
 
   (sail_id, crew_id, 'official', 'other',
     'Merch Table Social Dynamics Simulator',
     'An interactive comedy event about awkward band-merch encounters, unnecessary small talk, and post-purchase social confusion.',
-    'Black Parade Hall', '2026-04-08 21:30:00+00', 'public', 'visible', 89),
+    'Black Parade Hall', '2026-04-08 21:30:00+00', 'public', 'visible', 89, NULL),
 
   (sail_id, crew_id, 'official', 'karaoke',
     'Main Stage Live Set',
     'Big energy. Big chorus moments. Several people point dramatically at the sky for reasons they cannot explain.',
-    'Pool Stage', '2026-04-08 23:00:00+00', 'public', 'visible', 287),
+    'Pool Stage', '2026-04-08 23:00:00+00', 'public', 'visible', 287, NULL),
 
   (sail_id, crew_id, 'official', 'social',
     'Breakup Letter Swap Meet',
     'Anonymous breakup letters are drawn and performed aloud by strangers who commit far too hard.',
-    'Heart-Shaped Wreck Room', '2026-04-09 01:30:00+00', 'public', 'visible', 122),
+    'Heart-Shaped Wreck Room', '2026-04-09 01:30:00+00', 'public', 'visible', 122, NULL),
 
   (sail_id, crew_id, 'official', 'other',
     'Cringe Archive Screening',
     'A late-night screening of old profile pages, cursed promo photos, forgotten edits, and internet artifacts that should have stayed buried at sea.',
-    'Screening Lounge', '2026-04-09 03:59:00+00', 'public', 'visible', 91),
+    'Screening Lounge', '2026-04-09 03:59:00+00', 'public', 'visible', 91, NULL),
 
   -- DAY 3: April 9, 2026 — Peak Cruise Delusion
   (sail_id, crew_id, 'official', 'other',
     'Overthinkers Anonymous (Live)',
     'Guests publicly share what they''ve overanalyzed. Crowd response determines whether it was a valid spiral or an avoidable one.',
-    'Small Theater', '2026-04-09 14:30:00+00', 'public', 'visible', 178),
+    'Small Theater', '2026-04-09 14:30:00+00', 'public', 'visible', 178, NULL),
 
   (sail_id, crew_id, 'official', 'other',
     'Lyric Notebook Exhibition',
     'A display of old journals, unfinished lyrics, abandoned band names, and painfully sincere writing that aged better than expected.',
-    'Gallery Hall', '2026-04-09 16:00:00+00', 'public', 'visible', 99),
+    'Gallery Hall', '2026-04-09 16:00:00+00', 'public', 'visible', 99, NULL),
 
   (sail_id, crew_id, 'official', 'social',
     'Top 8 Reshuffle Hour',
     'Publicly reorder your cruise friendships based on vibes, betrayal, and who made you laugh at breakfast.',
-    'MySpace Terminal Zone', '2026-04-09 17:30:00+00', 'public', 'visible', 245),
+    'MySpace Terminal Zone', '2026-04-09 17:30:00+00', 'public', 'visible', 245, NULL),
 
   (sail_id, crew_id, 'official', 'karaoke',
     'Acoustic Set You Weren''t Ready For',
     'This event appears without warning somewhere on the ship. If you find it, act like you were always meant to.',
-    '??? / Unlisted', '2026-04-09 19:00:00+00', 'public', 'visible', 133),
+    '??? / Unlisted', '2026-04-09 19:00:00+00', 'public', 'visible', 133, NULL),
 
   (sail_id, crew_id, 'official', 'other',
     'Stay in Your Cabin & Spiral',
     'A scheduled anti-event. No activities. No forced fun. Just you, the porthole, and whatever''s been catching up to you.',
-    'Your Cabin', '2026-04-09 20:30:00+00', 'public', 'visible', 312),
+    'Your Cabin', '2026-04-09 20:30:00+00', 'public', 'visible', 312, NULL),
 
   (sail_id, crew_id, 'official', 'deck',
     'RIP My Old Self Ceremony',
     'Write down something you''re leaving behind and release it in a controlled, symbolic, cruise-safe way.',
-    'Sunset Deck', '2026-04-09 22:30:00+00', 'public', 'visible', 267),
+    'Sunset Deck', '2026-04-09 22:30:00+00', 'public', 'visible', 267, NULL),
 
   (sail_id, crew_id, 'official', 'other',
     'Silent Disco: Internal Monologue Edition',
     'Three channels: emo anthems, soft acoustic damage, and spoken-word thoughts you should maybe journal instead.',
-    'Moonlit Deck', '2026-04-10 00:00:00+00', 'public', 'visible', 198),
+    'Moonlit Deck', '2026-04-10 00:00:00+00', 'public', 'visible', 198, NULL),
 
   (sail_id, crew_id, 'official', 'deck',
     'The Deck at 3:17 AM (Early Gathering)',
     'People start showing up way too early because everyone knows this becomes the real event whether anyone schedules it or not.',
-    'Outer Deck', '2026-04-10 03:00:00+00', 'public', 'visible', 77),
+    'Outer Deck', '2026-04-10 03:00:00+00', 'public', 'visible', 77, NULL),
 
   (sail_id, crew_id, 'official', 'deck',
     'The Deck at 3:17 AM',
     'No host. No lineup. Just ocean wind, confessions, accidental bonding, and somebody staring into the dark like they''re in a video treatment.',
-    'Outer Deck', '2026-04-10 03:17:00+00', 'public', 'visible', 148),
+    'Outer Deck', '2026-04-10 03:17:00+00', 'public', 'visible', 148, 'demo/03-night-deck.jpg'),
 
   -- DAY 4: April 10, 2026 — Disembarkation
   (sail_id, crew_id, 'official', 'dinner',
     'Brunch of Regret',
     'Coffee, carbs, and the realization that you now know far too much about several strangers.',
-    'Main Dining Room', '2026-04-10 13:30:00+00', 'public', 'visible', 234),
+    'Main Dining Room', '2026-04-10 13:30:00+00', 'public', 'visible', 234, 'demo/05-pool.jpg'),
 
   (sail_id, crew_id, 'official', 'social',
     'Profile Comments: Final Day Edition',
     'Leave one final fake MySpace-style comment for someone you met on board. Sweet, weird, evasive, or devastatingly sincere.',
-    'Promenade Kiosks', '2026-04-10 15:00:00+00', 'public', 'visible', 189),
+    'Promenade Kiosks', '2026-04-10 15:00:00+00', 'public', 'visible', 189, NULL),
 
   (sail_id, crew_id, 'official', 'other',
     'Missed Call Confessional Playback',
     'The most dramatic, funniest, and most alarmingly intimate anonymous confessions are played back for the crowd.',
-    'Shoreline Theater', '2026-04-10 16:30:00+00', 'public', 'visible', 301),
+    'Shoreline Theater', '2026-04-10 16:30:00+00', 'public', 'visible', 301, NULL),
 
   (sail_id, crew_id, 'official', 'social',
     'Group Photo for People Who Hate Group Photos',
     'One last badly organized photo with too many sunglasses, too much sun, and exactly the right amount of emotional residue.',
-    'Pool Stage', '2026-04-10 18:00:00+00', 'public', 'visible', 276),
+    'Pool Stage', '2026-04-10 18:00:00+00', 'public', 'visible', 276, NULL),
 
   (sail_id, crew_id, 'official', 'karaoke',
     'Closing Set: Last Song Before Shore',
     'The final set. Big sing-alongs. Real feelings. Someone absolutely cries and tries to play it off as wind.',
-    'Main Stage', '2026-04-10 20:00:00+00', 'public', 'visible', 312),
+    'Main Stage', '2026-04-10 20:00:00+00', 'public', 'visible', 312, NULL),
 
   (sail_id, crew_id, 'official', 'other',
     'Disembarkation Prep / Emotional Customs',
     'Pack your bag, steal one last hallway moment, and prepare to become internet mutuals with people who now know your whole deal.',
-    'Cabin Decks', '2026-04-10 22:00:00+00', 'public', 'visible', 178);
+    'Cabin Decks', '2026-04-10 22:00:00+00', 'public', 'visible', 178, NULL);
 
   -- -------------------------------------------------------
   -- 5. Friendships
@@ -314,6 +315,17 @@ BEGIN
     (uid_3, uid_7, 'can you please warn me next time before the stairwell set, i was not emotionally ready', 'visible'),
     (uid_2, uid_6, 'the lyric notebook exhibition genuinely ruined me in the best possible way', 'visible'),
     (uid_4, uid_9, 'rip my old self ceremony > therapy. i left something behind and felt it leave', 'visible');
+
+  -- -------------------------------------------------------
+  -- 7. Demo photos (visible in /photos gallery)
+  -- -------------------------------------------------------
+  INSERT INTO photos (sailing_id, user_id, storage_key, caption, moderation_status, created_at) VALUES
+    (sail_id, uid_2, 'demo/01-bar-lounge.jpg',  'Top 8 Lounge on night one. the neon is doing something to me',      'visible', now() - interval '1 day'),
+    (sail_id, uid_1, 'demo/02-pool-deck.jpg',   'sail away set hit different from up here',                          'visible', now() - interval '20 hours'),
+    (sail_id, uid_5, 'demo/03-night-deck.jpg',  'promenade at 2am. the lights stayed on. some of us didn''t.',       'visible', now() - interval '12 hours'),
+    (sail_id, uid_7, 'demo/04-atrium.jpg',       'the atrium before battle of the side parts. peaceful. for now.',   'visible', now() - interval '6 hours'),
+    (sail_id, uid_4, 'demo/05-pool.jpg',         'pool deck recovery hour. the water is helping.',                   'visible', now() - interval '3 hours')
+  ON CONFLICT DO NOTHING;
 
   RAISE NOTICE 'Seed complete. Sailing ID: %', sail_id;
 END $$;
