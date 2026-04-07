@@ -145,8 +145,7 @@ profile.post('/profile/avatar', requireAuth, async (c) => {
 
   if (!bucket) return c.redirect('/profile/edit?error=storage_unavailable');
 
-  const { v4: uuidv4 } = await import('https://esm.sh/uuid@9');
-  const photoId = uuidv4();
+  const photoId = crypto.randomUUID();
 
   try {
     const form = await c.req.formData();
@@ -247,7 +246,7 @@ profile.post('/guestbook/:profileUserId', requireAuth, async (c) => {
 
   const form = await c.req.formData();
   const body = (form.get('body') || '').toString().trim().slice(0, 500);
-  if (!body) return c.redirect('back');
+  if (!body) return c.redirect(c.req.header('referer') || '/');
 
   const { data: targetUser } = await db.from('users').select('id, username').eq('id', profileUserId).single();
   if (!targetUser) return c.text('Not found', 404);

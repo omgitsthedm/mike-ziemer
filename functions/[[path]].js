@@ -11,6 +11,8 @@ import { Hono } from 'hono';
 import { handle } from 'hono/cloudflare-pages';
 import { getDb, getUnreadNotifCount, getSailing } from '../src/lib/db.js';
 import { loadSession } from '../src/lib/auth.js';
+import { layout, esc } from '../src/templates/layout.js';
+import { module as dsModule } from '../src/templates/components.js';
 
 // Route modules
 import authRoutes          from '../src/routes/auth.js';
@@ -99,10 +101,7 @@ app.get('/report', loadSession, async (c) => {
 
   if (!user) return c.redirect('/login?next=/report');
 
-  const { layout, esc } = await import('../src/templates/layout.js');
-  const { module } = await import('../src/templates/components.js');
-
-  const body = module({
+  const body = dsModule({
     header: 'Report Content',
     body: `<div class="ds-module-body">
   <form method="POST" action="/report" class="ds-form">
@@ -114,7 +113,7 @@ app.get('/report', loadSession, async (c) => {
     </div>
     <div class="ds-form-row mt-8">
       <button type="submit" class="ds-btn ds-btn-primary">Submit Report</button>
-      <a href="javascript:history.back()" class="ds-btn" style="margin-left:6px">Cancel</a>
+      <button type="button" onclick="history.back()" class="ds-btn" style="margin-left:6px">Cancel</button>
     </div>
   </form>
 </div>`
@@ -154,7 +153,6 @@ app.get('/health', (c) => c.json({ ok: true, ts: new Date().toISOString() }));
    404 FALLBACK
    ============================================================ */
 app.notFound(async (c) => {
-  const { layout } = await import('../src/templates/layout.js');
   const user = c.get('user');
   return c.html(layout({
     title: 'Not Found',
@@ -176,7 +174,6 @@ app.notFound(async (c) => {
    ============================================================ */
 app.onError(async (err, c) => {
   console.error('[Deckspace Error]', err);
-  const { layout } = await import('../src/templates/layout.js');
   const user = c.get('user');
 
   const isDev = c.env.ENVIRONMENT === 'development';

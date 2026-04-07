@@ -192,7 +192,7 @@ friends.post('/friends/:userId/request', requireAuth, async (c) => {
   const targetId  = c.req.param('userId');
   const db        = getDb(c.env);
 
-  if (requester.id === targetId) return c.redirect('back');
+  if (requester.id === targetId) return c.redirect(c.req.header('referer') || '/');
 
   // Check not already friends/blocked
   const { data: existing } = await db.from('friendships')
@@ -200,7 +200,7 @@ friends.post('/friends/:userId/request', requireAuth, async (c) => {
     .or(`and(requester_id.eq.${requester.id},addressee_id.eq.${targetId}),and(requester_id.eq.${targetId},addressee_id.eq.${requester.id})`)
     .maybeSingle();
 
-  if (existing) return c.redirect('back');
+  if (existing) return c.redirect(c.req.header('referer') || '/');
 
   await q(db.from('friendships').insert({
     requester_id: requester.id,
@@ -217,7 +217,7 @@ friends.post('/friends/:userId/request', requireAuth, async (c) => {
     message: 'wants to be your friend.'
   });
 
-  return c.redirect('back');
+  return c.redirect(c.req.header('referer') || '/');
 });
 
 /* ============================================================
