@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "description": "Exclude static asset paths from Pages Function routing",
+  "include": ["/*"],
+  "exclude": ["/css/*", "/js/*", "/images/*", "/favicon.ico"]
+}
