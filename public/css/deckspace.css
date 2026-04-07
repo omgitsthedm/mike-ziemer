@@ -1275,6 +1275,202 @@ ul {
 .archive-banner strong { color: #664400; }
 
 /* ============================================================
+   LANDING PAGE (unauthenticated home)
+   OG MySpace split: 60% left marketing + people, 40% right login
+   ============================================================ */
+.landing-wrap {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 10px;
+  align-items: start;
+}
+.landing-left {}
+.landing-right {}
+
+/* Hero block */
+.landing-hero {
+  background: var(--ds-blue-bg);
+  border: 1px solid #aabbdd;
+  padding: 12px;
+  margin-bottom: 8px;
+}
+.landing-hero-title {
+  font-size: 20px;
+  font-weight: bold;
+  color: var(--ds-navy);
+  margin: 0 0 6px 0;
+  line-height: 1.2;
+}
+.landing-hero-sub {
+  font-size: 12px;
+  font-weight: bold;
+  color: #003399;
+  margin: 0 0 6px 0;
+}
+.landing-hero-copy {
+  font-size: 12px;
+  color: #333;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Cool New People module */
+.landing-people-module { margin-bottom: 0; }
+.landing-people-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.landing-person-item {
+  text-align: center;
+}
+.landing-person-item img,
+.landing-person-placeholder {
+  display: block;
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 3px;
+  border: 1px solid #cccccc;
+  background: #e8e8e8;
+  object-fit: cover;
+}
+.landing-person-placeholder {
+  line-height: 60px;
+  font-size: 22px;
+  font-weight: bold;
+  color: #999;
+  text-align: center;
+}
+.landing-person-name {
+  font-size: 10px;
+  color: #336699;
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Right column: logo */
+.landing-logo-wrap {
+  text-align: center;
+  padding: 12px 0 8px;
+}
+.landing-logo {
+  font-size: 32px;
+  font-weight: bold;
+  font-style: italic;
+  color: var(--ds-navy);
+}
+.landing-logo-accent { color: var(--ds-orange); }
+.landing-logo-sub {
+  font-size: 11px;
+  color: var(--ds-text-light);
+  margin-top: 2px;
+}
+
+/* Login box */
+.landing-login-module { margin-bottom: 8px; }
+.landing-login-form { width: 100%; }
+.landing-login-table { width: 100%; border-collapse: collapse; }
+.landing-login-label {
+  width: 72px;
+  padding: 3px 4px 3px 0;
+  font-size: 12px;
+  font-weight: bold;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.landing-login-input {
+  padding: 3px 0;
+  vertical-align: middle;
+}
+.landing-login-input .ds-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+.landing-login-btn { width: 100%; }
+
+/* Sign up CTA box */
+.landing-signup-box {
+  background: #fffbe6;
+  border: 1px solid #e6c800;
+  padding: 10px;
+}
+.landing-signup-header {
+  font-size: 13px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 5px;
+}
+.landing-signup-copy {
+  font-size: 11px;
+  color: #555;
+  line-height: 1.4;
+  margin: 0 0 8px 0;
+}
+.landing-signup-btn { width: 100%; text-align: center; }
+
+/* Mobile: stack columns */
+@media (max-width: 640px) {
+  .landing-wrap {
+    grid-template-columns: 1fr;
+  }
+  .landing-right {
+    order: -1; /* login box first on mobile */
+  }
+  .landing-people-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* ============================================================
+   REGISTRATION PAGE (two-column OG MySpace layout)
+   ============================================================ */
+.reg-wrap {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 10px;
+  align-items: start;
+}
+.reg-left {}
+.reg-right {}
+.reg-optional {
+  font-weight: normal;
+  color: #999;
+}
+
+/* Why Join box */
+.reg-why-body { padding: 8px 10px; }
+.reg-why-intro {
+  font-size: 12px;
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+}
+.reg-why-list {
+  margin: 0 0 10px 14px;
+  padding: 0;
+  font-size: 11px;
+  line-height: 1.6;
+  color: #333;
+}
+.reg-why-list li { margin-bottom: 4px; }
+.reg-why-footer {
+  font-size: 11px;
+  color: #555;
+  background: var(--ds-blue-bg);
+  border: 1px solid #aabbdd;
+  padding: 6px;
+  line-height: 1.4;
+}
+
+@media (max-width: 640px) {
+  .reg-wrap {
+    grid-template-columns: 1fr;
+  }
+  .reg-right { order: -1; }
+}
+
+/* ============================================================
    ACCESS / LOGIN PAGE
    ============================================================ */
 .access-page {

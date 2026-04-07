@@ -296,50 +296,63 @@ function loginForm({ next, siteKey, error }) {
 }
 
 function registerForm({ siteKey, error, values = {} }) {
-  return `<div class="access-page">
-  <div class="access-logo">
-    <div class="big-logo">Deck<span class="logo-space">space</span></div>
+  return `<div class="reg-wrap">
+  <div class="reg-left">
+    <div class="ds-module">
+      <div class="ds-module-header">Join Deckspace &mdash; It&rsquo;s Free!</div>
+      <div class="ds-module-body">
+        ${error ? `<div class="ds-flash error" style="margin-bottom:8px">${esc(error)}</div>` : ''}
+        <form method="POST" action="/register" class="ds-form" data-retry="true">
+          <div class="ds-form-row">
+            <label for="display_name">Display Name</label>
+            <input id="display_name" name="display_name" type="text" class="ds-input" value="${esc(values.displayName || '')}" required maxlength="50" placeholder="How others will see you" autofocus>
+          </div>
+          <div class="ds-form-row">
+            <label for="reg-username">Username</label>
+            <input id="reg-username" name="username" type="text" class="ds-input" value="${esc(values.username || '')}" required maxlength="30" pattern="[a-zA-Z0-9_]+" placeholder="letters, numbers, underscores">
+            <div class="hint">Your profile will be /profile/username</div>
+          </div>
+          <div class="ds-form-row">
+            <label for="email">Email <span class="reg-optional">(optional)</span></label>
+            <input id="email" name="email" type="email" class="ds-input" value="${esc(values.email || '')}" maxlength="200">
+          </div>
+          <div class="ds-form-row">
+            <label for="reg-password">Password</label>
+            <input id="reg-password" name="password" type="password" class="ds-input" required minlength="8" autocomplete="new-password">
+          </div>
+          <div class="ds-form-row">
+            <label for="password2">Confirm Password</label>
+            <input id="password2" name="password2" type="password" class="ds-input" required minlength="8" autocomplete="new-password">
+          </div>
+          ${siteKey ? `<div class="cf-turnstile" data-sitekey="${esc(siteKey)}" data-theme="light" style="margin:8px 0"></div>
+          <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>` : ''}
+          <div class="ds-form-row mt-8">
+            <button type="submit" class="ds-btn ds-btn-orange w-full" data-loading-text="Creating account...">Sign Up!</button>
+          </div>
+        </form>
+        <p class="text-small text-muted mt-8 text-center">
+          Already aboard? <a href="/login">Sign in here</a>
+        </p>
+      </div>
+    </div>
   </div>
-  <div class="access-tagline">Create your cruise profile</div>
-  <div class="access-explainer">
-    Deckspace is a private social network for passengers on this sailing.
-    Create a profile, add friends, plan events, and share photos.
-  </div>
-  ${error ? `<div class="ds-flash error">${esc(error)}</div>` : ''}
-  <div class="ds-module">
-    <div class="ds-module-header">Join Deckspace</div>
-    <div class="ds-module-body">
-      <form method="POST" action="/register" class="ds-form" data-retry="true">
-        <div class="ds-form-row">
-          <label for="display_name">Display Name</label>
-          <input id="display_name" name="display_name" type="text" class="ds-input" value="${esc(values.displayName || '')}" required maxlength="50" placeholder="How others will see you">
+
+  <div class="reg-right">
+    <div class="ds-module">
+      <div class="ds-module-header">Why Join Deckspace?</div>
+      <div class="ds-module-body reg-why-body">
+        <p class="reg-why-intro">This is your <strong>private cruise social network</strong> &mdash; for passengers only, for this sailing only.</p>
+        <ul class="reg-why-list">
+          <li><strong>Find your people</strong> &mdash; Browse fellow passengers and add friends before your first port.</li>
+          <li><strong>Plan your nights</strong> &mdash; See what&rsquo;s on, RSVP to events, and get people together.</li>
+          <li><strong>Share photos</strong> &mdash; Upload and browse trip photos with your fellow passengers.</li>
+          <li><strong>Wall posts &amp; messages</strong> &mdash; Classic MySpace-style walls. Post on anyone&rsquo;s page.</li>
+          <li><strong>It&rsquo;s yours forever</strong> &mdash; After the sailing ends, your Deckspace stays up as a scrapbook.</li>
+        </ul>
+        <div class="reg-why-footer">
+          It&rsquo;s free. It&rsquo;s just for this ship. No ads, no algorithms &mdash; just your people.
         </div>
-        <div class="ds-form-row">
-          <label for="reg-username">Username</label>
-          <input id="reg-username" name="username" type="text" class="ds-input" value="${esc(values.username || '')}" required maxlength="30" pattern="[a-zA-Z0-9_]+" placeholder="letters, numbers, underscores">
-          <div class="hint">Your profile URL will be /profile/username</div>
-        </div>
-        <div class="ds-form-row">
-          <label for="email">Email <span style="font-weight:normal;color:#999">(optional)</span></label>
-          <input id="email" name="email" type="email" class="ds-input" value="${esc(values.email || '')}" maxlength="200">
-        </div>
-        <div class="ds-form-row">
-          <label for="reg-password">Password</label>
-          <input id="reg-password" name="password" type="password" class="ds-input" required minlength="8" autocomplete="new-password">
-        </div>
-        <div class="ds-form-row">
-          <label for="password2">Confirm Password</label>
-          <input id="password2" name="password2" type="password" class="ds-input" required minlength="8" autocomplete="new-password">
-        </div>
-        ${siteKey ? `<div class="cf-turnstile" data-sitekey="${esc(siteKey)}" data-theme="light" style="margin:8px 0"></div>
-        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>` : ''}
-        <div class="ds-form-row mt-8">
-          <button type="submit" class="ds-btn ds-btn-primary w-full" data-loading-text="Creating account...">Create Account</button>
-        </div>
-      </form>
-      <p class="text-small text-muted mt-8 text-center">
-        Already have an account? <a href="/login">Sign in</a>
-      </p>
+      </div>
     </div>
   </div>
 </div>`;
