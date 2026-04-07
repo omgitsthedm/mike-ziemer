@@ -15,6 +15,7 @@ import { createClient } from '@supabase/supabase-js';
 export function getDb(env) {
   return createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
+    db: { schema: 'deckspace' },
     global: {
       headers: { 'x-deckspace-version': '1.0' }
     }

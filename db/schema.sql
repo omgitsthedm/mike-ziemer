@@ -1,21 +1,27 @@
 -- =============================================================
 -- DECKSPACE — Database Schema
--- Target: Supabase (PostgreSQL)
+-- Target: Supabase (PostgreSQL) — isolated in "deckspace" schema
 -- =============================================================
 -- Run this in your Supabase SQL editor or via psql.
 -- Extensions used: uuid-ossp, pgcrypto
+-- All objects live in the "deckspace" schema to stay completely
+-- separate from any other apps sharing the same Supabase project.
 -- =============================================================
 
--- Enable required extensions
-create extension if not exists "uuid-ossp";
-create extension if not exists "pgcrypto";
+-- Enable pgcrypto for password hashing (gen_random_uuid() is built-in, no extension needed)
+create extension if not exists "pgcrypto" with schema public;
+
+-- Create + activate the deckspace schema
+-- search_path includes public so gen_random_uuid() and pgcrypto are reachable
+create schema if not exists deckspace;
+set search_path to deckspace, public;
 
 -- =============================================================
 -- SAILINGS
 -- Represents a single cruise voyage. Everything is scoped to one.
 -- =============================================================
 create table if not exists sailings (
-  id            uuid primary key default uuid_generate_v4(),
+  id            uuid primary key default gen_random_uuid(),
   name          text not null,                          -- e.g. "Caribbean Jan 2025"
   ship_name     text not null,
   departs_at    timestamptz not null,
@@ -33,7 +39,7 @@ create table if not exists sailings (
 -- One account per passenger per sailing.
 -- =============================================================
 create table if not exists users (
-  id                  uuid primary key default uuid_generate_v4(),
+  id                  uuid primary key default gen_random_uuid(),
   sailing_id          uuid not null references sailings(id) on delete cascade,
   username            text not null,
   display_name        text not null,
@@ -63,7 +69,7 @@ create index if not exists users_last_active_idx on users(last_active_at desc);
 -- Lightweight server-side session tokens.
 -- =============================================================
 create table if not exists sessions (
-  id          uuid primary key default uuid_generate_v4(),
+  id          uuid primary key default gen_random_uuid(),
   user_id     uuid not null references users(id) on delete cascade,
   token_hash  text not null unique,                     -- sha256 of the raw token
   expires_at  timestamptz not null,
@@ -108,7 +114,7 @@ create table if not exists profiles (
 -- Bidirectional social connections.
 -- =============================================================
 create table if not exists friendships (
-  id            uuid primary key default uuid_generate_v4(),
+  id            uuid primary key default gen_random_uuid(),
   requester_id  uuid not null references users(id) on delete cascade,
   addressee_id  uuid not null references users(id) on delete cascade,
   status        text not null default 'pending'
@@ -140,7 +146,7 @@ create or replace view accepted_friendships as
 -- MySpace-style ordered top friends list (up to 8).
 -- =============================================================
 create table if not exists top_friends (
-  id              uuid primary key default uuid_generate_v4(),
+  id              uuid primary key default gen_random_uuid(),
   user_id         uuid not null references users(id) on delete cascade,
   friend_user_id  uuid not null references users(id) on delete cascade,
   position        smallint not null check (position between 1 and 8),
@@ -155,7 +161,7 @@ create table if not exists top_friends (
 -- Public notes left on a profile page.
 -- =============================================================
 create table if not exists wall_posts (
-  id                uuid primary key default uuid_generate_v4(),
+  id                uuid primary key default gen_random_uuid(),
   profile_user_id   uuid not null references users(id) on delete cascade,
   author_user_id    uuid not null references users(id) on delete cascade,
   body              text not null check (length(body) between 1 and 2000),
@@ -173,7 +179,7 @@ create index if not exists wall_posts_author_idx  on wall_posts(author_user_id);
 -- Lightweight public "thanks for the add" style notes.
 -- =============================================================
 create table if not exists guestbook_entries (
-  id                uuid primary key default uuid_generate_v4(),
+  id                uuid primary key default gen_random_uuid(),
   profile_user_id   uuid not null references users(id) on delete cascade,
   author_user_id    uuid not null references users(id) on delete cascade,
   body              text not null check (length(body) between 1 and 500),
@@ -189,7 +195,7 @@ create index if not exists guestbook_profile_idx on guestbook_entries(profile_us
 -- User-created and official onboard plans.
 -- =============================================================
 create table if not exists events (
-  id                uuid primary key default uuid_generate_v4(),
+  id                uuid primary key default gen_random_uuid(),
   sailing_id        uuid not null references sailings(id) on delete cascade,
   creator_user_id   uuid not null references users(id) on delete cascade,
   event_type        text not null default 'user'
@@ -219,7 +225,7 @@ create index if not exists events_type_idx       on events(event_type);
 -- EVENT RSVPs
 -- =============================================================
 create table if not exists event_rsvps (
-  id          uuid primary key default uuid_generate_v4(),
+  id          uuid primary key default gen_random_uuid(),
   event_id    uuid not null references events(id) on delete cascade,
   user_id     uuid not null references users(id) on delete cascade,
   status      text not null default 'going'
@@ -254,7 +260,7 @@ create trigger event_rsvps_sync_count
 -- EVENT COMMENTS
 -- =============================================================
 create table if not exists event_comments (
-  id                uuid primary key default uuid_generate_v4(),
+  id                uuid primary key default gen_random_uuid(),
   event_id          uuid not null references events(id) on delete cascade,
   author_user_id    uuid not null references users(id) on delete cascade,
   body              text not null check (length(body) between 1 and 1000),
@@ -270,7 +276,7 @@ create index if not exists event_comments_event_idx on event_comments(event_id, 
 -- Simple photo collections.
 -- =============================================================
 create table if not exists albums (
-  id              uuid primary key default uuid_generate_v4(),
+  id              uuid primary key default gen_random_uuid(),
   owner_user_id   uuid not null references users(id) on delete cascade,
   title           text not null check (length(title) between 1 and 100),
   description     text check (length(description) <= 500),
@@ -288,7 +294,7 @@ create index if not exists albums_owner_idx on albums(owner_user_id);
 -- Profile and event photos with multi-resolution support.
 -- =============================================================
 create table if not exists photos (
-  id                uuid primary key default uuid_generate_v4(),
+  id                uuid primary key default gen_random_uuid(),
   user_id           uuid not null references users(id) on delete cascade,
   sailing_id        uuid not null references sailings(id) on delete cascade,
   event_id          uuid references events(id) on delete set null,
@@ -339,7 +345,7 @@ create trigger photos_sync_album_count
 -- PHOTO COMMENTS
 -- =============================================================
 create table if not exists photo_comments (
-  id                uuid primary key default uuid_generate_v4(),
+  id                uuid primary key default gen_random_uuid(),
   photo_id          uuid not null references photos(id) on delete cascade,
   author_user_id    uuid not null references users(id) on delete cascade,
   body              text not null check (length(body) between 1 and 500),
@@ -355,7 +361,7 @@ create index if not exists photo_comments_photo_idx on photo_comments(photo_id, 
 -- In-app notification center. No realtime dependency.
 -- =============================================================
 create table if not exists notifications (
-  id          uuid primary key default uuid_generate_v4(),
+  id          uuid primary key default gen_random_uuid(),
   user_id     uuid not null references users(id) on delete cascade,
   type        text not null,                          -- friend_request | wall_post | guestbook | event_comment | photo_comment | rsvp | admin_notice | friend_accepted
   object_type text,                                   -- user | wall_post | event | photo | guestbook_entry
@@ -374,7 +380,7 @@ create index if not exists notifications_unread_idx   on notifications(user_id, 
 -- Content moderation reports.
 -- =============================================================
 create table if not exists reports (
-  id                uuid primary key default uuid_generate_v4(),
+  id                uuid primary key default gen_random_uuid(),
   reporter_user_id  uuid not null references users(id) on delete cascade,
   target_type       text not null
                       check (target_type in ('user','wall_post','guestbook_entry','event','event_comment','photo','photo_comment')),
@@ -393,7 +399,7 @@ create index if not exists reports_reporter_idx on reports(reporter_user_id);
 -- Log of every moderator action.
 -- =============================================================
 create table if not exists moderation_actions (
-  id            uuid primary key default uuid_generate_v4(),
+  id            uuid primary key default gen_random_uuid(),
   admin_user_id uuid not null references users(id) on delete cascade,
   action_type   text not null,                        -- remove | hide | restore | suspend | unsuspend | ban | dismiss_report
   target_type   text not null,
@@ -411,7 +417,7 @@ create index if not exists mod_actions_target_idx on moderation_actions(target_t
 -- Immutable event log for security-sensitive actions.
 -- =============================================================
 create table if not exists audit_logs (
-  id              uuid primary key default uuid_generate_v4(),
+  id              uuid primary key default gen_random_uuid(),
   actor_user_id   uuid references users(id) on delete set null,
   action_type     text not null,
   object_type     text,

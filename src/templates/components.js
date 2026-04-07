@@ -172,7 +172,7 @@ export function friendSpaceModule({ topFriends, friendCount, cdnBase }) {
       ? `<img src="${esc(thumbUrl)}" alt="${esc(friend.display_name)}" width="60" height="60" loading="lazy">`
       : `<div class="no-photo-thumb">${esc((friend?.display_name || '?').charAt(0))}</div>`;
     return `<div class="friend-grid-item">
-  <a href="/profile/${esc(friend?.username || '')">${imgHtml}</a>
+  <a href="/profile/${esc(friend?.username || '')}">${imgHtml}</a>
   <a href="/profile/${esc(friend?.username || '')}" class="friend-name">${esc(friend?.display_name || '?')}</a>
 </div>`;
   }).join('');
