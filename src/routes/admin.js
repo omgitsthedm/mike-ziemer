@@ -187,10 +187,12 @@ admin.get('/admin/users', async (c) => {
 
   let users = [];
   if (search) {
+    // Sanitize: strip PostgREST filter metacharacters before string interpolation
+    const safeSearch = search.replace(/[(),]/g, '');
     const { data } = await db.from('users')
       .select('id, username, display_name, account_status, activation_status, role, created_at, last_active_at, email')
       .eq('sailing_id', c.env.SAILING_ID)
-      .or(`username.ilike.%${search}%,display_name.ilike.%${search}%,email.ilike.%${search}%`)
+      .or(`username.ilike.%${safeSearch}%,display_name.ilike.%${safeSearch}%,email.ilike.%${safeSearch}%`)
       .order('created_at', { ascending: false })
       .limit(50);
     users = data || [];

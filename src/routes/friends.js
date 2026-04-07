@@ -13,7 +13,7 @@
 import { Hono } from 'hono';
 import { getDb, getFriendRequests, getFriends, getSailing, createNotification, q } from '../lib/db.js';
 import { requireAuth } from '../lib/auth.js';
-import { layout, flash, esc, relTime } from '../templates/layout.js';
+import { layout, esc, relTime } from '../templates/layout.js';
 import { module, avatar } from '../templates/components.js';
 
 const friends = new Hono();

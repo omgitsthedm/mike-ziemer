@@ -182,18 +182,3 @@ export function fmtDate(dateStr, { time = false } = {}) {
   return d.toLocaleDateString('en-US', opts);
 }
 
-/**
- * Paginator HTML
- */
-export function paginator(currentPage, hasMore, baseUrl) {
-  const parts = [];
-  if (currentPage > 1) {
-    parts.push(`<a href="${baseUrl}?page=${currentPage - 1}">&laquo; Prev</a>`);
-  }
-  parts.push(`<span class="current">Page ${currentPage}</span>`);
-  if (hasMore) {
-    parts.push(`<a href="${baseUrl}?page=${currentPage + 1}">Next &raquo;</a>`);
-  }
-  if (parts.length <= 1) return '';
-  return `<div class="ds-pager">${parts.join('')}</div>`;
-}

@@ -15,7 +15,7 @@
 import { Hono } from 'hono';
 import { getDb, getEvents, getEventById, getEventComments, getUserRsvp, getSailing, createNotification, q } from '../lib/db.js';
 import { requireAuth, resolveSession, isSailingReadOnly } from '../lib/auth.js';
-import { layout, flash, esc, fmtDate, relTime } from '../templates/layout.js';
+import { layout, esc, fmtDate, relTime } from '../templates/layout.js';
 import { module, eventCard, commentEntry, paginator } from '../templates/components.js';
 
 const events = new Hono();
@@ -144,7 +144,7 @@ events.post('/events/create', requireAuth, async (c) => {
     }), 400);
   }
 
-  const { data: newEvent } = await db.from('events').insert({
+  const { data: newEvent, error: insertErr } = await db.from('events').insert({
     sailing_id: c.env.SAILING_ID,
     creator_user_id: user.id,
     event_type: 'user',
@@ -157,6 +157,13 @@ events.post('/events/create', requireAuth, async (c) => {
     visibility: 'public',
     moderation_status: 'visible'
   }).select('id').single();
+
+  if (insertErr || !newEvent) {
+    return c.html(layout({
+      title: 'Create Event', user, sailing,
+      body: createEventForm({ error: 'Could not create event. Please try again.', values: { title, desc, location, startAt, endAt, category } })
+    }), 500);
+  }
 
   return c.redirect('/events/' + newEvent.id);
 });
@@ -225,6 +232,13 @@ events.post('/events/:id/rsvp', requireAuth, async (c) => {
     user_id: user.id,
     status
   }, { onConflict: 'event_id,user_id' });
+
+  // Keep rsvp_count in sync (belt-and-suspenders alongside DB trigger)
+  const { count } = await db.from('event_rsvps')
+    .select('id', { count: 'exact', head: true })
+    .eq('event_id', eventId)
+    .eq('status', 'going');
+  await db.from('events').update({ rsvp_count: count || 0 }).eq('id', eventId);
 
   // Notify event creator
   const { data: ev } = await db.from('events').select('creator_user_id, title').eq('id', eventId).single();

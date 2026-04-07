@@ -15,7 +15,7 @@ import {
   destroySession, verifyTurnstile, verifyPassword, hashPassword,
   isSailingAccessible, resolveSession
 } from '../lib/auth.js';
-import { layout, flash, esc } from '../templates/layout.js';
+import { layout, esc } from '../templates/layout.js';
 
 const auth = new Hono();
 

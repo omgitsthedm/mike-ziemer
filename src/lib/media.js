@@ -79,20 +79,6 @@ export async function deleteFromR2(bucket, key) {
 }
 
 /**
- * Parse a multipart/form-data body and return file + fields.
- * CF Workers support request.formData() natively.
- */
-export async function parseUpload(request) {
-  const form = await request.formData();
-  return {
-    file: form.get('photo') || form.get('file') || form.get('avatar'),
-    caption: (form.get('caption') || '').toString().trim().slice(0, 300),
-    albumId: (form.get('album_id') || '').toString() || null,
-    eventId: (form.get('event_id') || '').toString() || null
-  };
-}
-
-/**
  * Process an image upload end-to-end:
  *  1. validate
  *  2. upload original, thumb placeholder, medium placeholder to R2

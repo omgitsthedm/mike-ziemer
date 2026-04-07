@@ -16,7 +16,7 @@ import { Hono } from 'hono';
 import { getDb, getUserByUsername, getProfileByUserId, getProfilePage, getWallPosts, getGuestbookEntries, getSailing, createNotification, logAudit, q } from '../lib/db.js';
 import { requireAuth, resolveSession, isSailingReadOnly } from '../lib/auth.js';
 import { processPhotoUpload, cdnUrl } from '../lib/media.js';
-import { layout, flash, esc, relTime, fmtDate } from '../templates/layout.js';
+import { layout, esc, relTime, fmtDate } from '../templates/layout.js';
 import {
   module, profilePhotoBlock, contactBox, detailsTable, songModule,
   vibeTagsModule, friendSpaceModule, wallModule, guestbookModule, paginator
@@ -181,16 +181,16 @@ profile.post('/wall/:profileUserId', requireAuth, async (c) => {
   const form = await c.req.formData();
   const body = (form.get('body') || '').toString().trim().slice(0, 2000);
 
-  if (!body) {
-    return c.redirect('/profile/' + c.req.param('profileUserId') + '?error=empty_post');
-  }
-
-  // Verify profile exists and get username for redirect
+  // Fetch target first so we can redirect to /profile/username on errors
   const { data: targetUser } = await db.from('users')
     .select('id, username')
     .eq('id', profileUserId)
     .single();
   if (!targetUser) return c.text('Not found', 404);
+
+  if (!body) {
+    return c.redirect('/profile/' + targetUser.username + '?error=empty_post');
+  }
 
   await q(db.from('wall_posts').insert({
     profile_user_id: profileUserId,
@@ -317,8 +317,6 @@ profile.post('/profile/top-friends', requireAuth, async (c) => {
    PROFILE PAGE TEMPLATE
    ============================================================ */
 function profilePage({ target, profile, viewer, topFriends, friendCount, friendStatus, wallPosts, guestbook, isOwn, isOnline, readOnly, page, hasMoreWall, cdnBase, sailing }) {
-  const savedFlash = (typeof viewer !== 'undefined') ? '' : '';
-
   // Build left column
   const leftCol = [
     profilePhotoBlock({ user: target, profile, isOwn, isOnline, cdnBase }),

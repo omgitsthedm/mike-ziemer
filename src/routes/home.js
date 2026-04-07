@@ -34,7 +34,7 @@ home.get('/', async (c) => {
   const [tonightEvents, upcomingEvents, recentPeople, recentPhotos, recentActivity] =
     await Promise.all([
       // Tonight's events (today only)
-      getDb(c.env).from('events')
+      db.from('events')
         .select('id, title, location, start_at, event_type, category, rsvp_count, cover_image_url')
         .eq('sailing_id', c.env.SAILING_ID)
         .eq('moderation_status', 'visible')
@@ -46,7 +46,7 @@ home.get('/', async (c) => {
         .then(({ data }) => data || []),
 
       // Upcoming events (next 3 days beyond today)
-      getDb(c.env).from('events')
+      db.from('events')
         .select('id, title, location, start_at, event_type, category, rsvp_count, cover_image_url')
         .eq('sailing_id', c.env.SAILING_ID)
         .eq('moderation_status', 'visible')
@@ -63,8 +63,9 @@ home.get('/', async (c) => {
       getRecentPhotos(db, c.env.SAILING_ID, 8),
 
       // Recent wall posts (social pulse)
-      getDb(c.env).from('wall_posts')
-        .select('id, body, created_at, profile_user_id, author_user_id, users!wall_posts_author_user_id_fkey(username, display_name), profiles_user!wall_posts_profile_user_id_fkey(username, display_name)')
+      // Two joins to users table: author (who posted) and target (whose wall)
+      db.from('wall_posts')
+        .select('id, body, created_at, author:users!wall_posts_author_user_id_fkey(username, display_name), target:users!wall_posts_profile_user_id_fkey(username, display_name)')
         .eq('moderation_status', 'visible')
         .order('created_at', { ascending: false })
         .limit(5)
@@ -114,8 +115,8 @@ function homePage({ user, sailing, cdnBase, tonightEvents, upcomingEvents, recen
   // Social pulse module
   const activityHtml = recentActivity.length
     ? recentActivity.map(post => {
-        const actor = post.users;
-        const target = post.profiles_user;
+        const actor = post.author;
+        const target = post.target;
         return `<div class="activity-item">
   <div class="activity-body">
     <a href="/profile/${esc(actor?.username || '')}">${esc(actor?.display_name || 'Someone')}</a>
