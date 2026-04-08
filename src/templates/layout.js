@@ -115,9 +115,11 @@ function renderNav(user, activeNav, notifCount, unreadMessages) {
    SAILING BAR
    ============================================================ */
 function renderSailingBar(sailing, readOnly) {
-  const status = readOnly ? ' &mdash; <em>The ship has docked.</em>' : '';
+  const status = readOnly
+    ? ` &mdash; ${ic.anchor(11)} <em>The ship has docked.</em>`
+    : ` ${ic.waves(11)}`;
   return `<div id="ds-sailing-bar">
-  <strong>${esc(sailing.ship_name)}</strong> &mdash; ${esc(sailing.name)}${status}
+  ${ic.ship(12)} <strong>${esc(sailing.ship_name)}</strong> &mdash; ${esc(sailing.name)}${status}
 </div>`;
 }
 
@@ -152,9 +154,17 @@ function renderArchiveBanner(sailing) {
 
 /* ============================================================
    FLASH MESSAGE FACTORY
+   Icons give non-English speakers and screen readers an immediate
+   visual/semantic cue before reading the message text.
    ============================================================ */
 export function flash(type, message) {
-  return `<div class="ds-flash ${esc(type)}" data-dismiss="6000">${message}</div>`;
+  const icons = {
+    error:   ic.alertTri(13),
+    success: ic.check(13),
+    info:    ic.info(13),
+  };
+  const iconHtml = icons[type] ? `<span class="flash-icon" aria-hidden="true">${icons[type]}</span>` : '';
+  return `<div class="ds-flash ${esc(type)}" role="alert" data-dismiss="6000">${iconHtml}${message}</div>`;
 }
 
 /* ============================================================

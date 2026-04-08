@@ -11,6 +11,7 @@ import { getDb, getSailing, getThread, getUnreadMessageCount, createNotification
 import { requireAuth, isRateLimited } from '../lib/auth.js';
 import { layout, layoutCtx, esc, relTime, csrfField } from '../templates/layout.js';
 import { module } from '../templates/components.js';
+import { ic } from '../templates/icons.js';
 
 const messages = new Hono();
 
@@ -60,7 +61,7 @@ messages.get('/messages', async (c) => {
     : `<div class="ds-empty-state">No messages yet. Visit someone&rsquo;s profile to send the first one.</div>`;
 
   const body = module({
-    header: 'Messages',
+    header: `${ic.mail(12)} Messages`,
     body: `<div class="msg-thread-list">${threadHtml}</div>`
   });
 
@@ -118,14 +119,14 @@ messages.get('/messages/:username', async (c) => {
   const form = `<form method="POST" action="/messages/${esc(other.username)}" class="msg-compose-form" data-retry="true">
   ${csrfField(csrf)}
   <textarea name="body" class="ds-textarea msg-textarea" placeholder="Write a message..." required maxlength="2000" rows="3"></textarea>
-  <button type="submit" class="ds-btn ds-btn-primary" data-loading-text="Sending...">Send</button>
+  <button type="submit" class="ds-btn ds-btn-primary" data-loading-text="Sending...">${ic.send(13)} Send</button>
 </form>`;
 
   const body = `<div class="msg-thread-header">
   <a href="/messages" class="ds-btn ds-btn-sm">&laquo; Inbox</a>
   <strong style="margin-left:8px">Conversation with <a href="/profile/${esc(other.username)}">${esc(other.display_name)}</a></strong>
 </div>
-${module({ header: `Messages`, body: `<div class="msg-bubble-list">${msgHtml}</div>${form}` })}`;
+${module({ header: `${ic.mail(12)} Conversation`, body: `<div class="msg-bubble-list">${msgHtml}</div>${form}` })}`;
 
   return c.html(layoutCtx(c, {
     title: `Messages — ${other.display_name}`,

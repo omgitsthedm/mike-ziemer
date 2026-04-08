@@ -2489,6 +2489,84 @@ ul {
 .htmx-request .htmx-indicator { display: inline; }
 
 /* ============================================================
+   FLASH MESSAGE ICON
+   ============================================================ */
+.ds-flash {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+.flash-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ============================================================
+   BUTTON ICON SPACING
+   Icons inside buttons get a small right gap from the label.
+   ============================================================ */
+.ds-btn .ds-ic {
+  margin-right: 3px;
+}
+
+/* ============================================================
+   WEATHER WIDGET
+   ============================================================ */
+.weather-widget {
+  padding: 4px 2px;
+}
+.weather-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.weather-icon-big {
+  color: var(--ds-blue-mid);
+  flex-shrink: 0;
+}
+.weather-temps {
+  line-height: 1.2;
+}
+.weather-temp-f {
+  font-size: 22px;
+  font-weight: bold;
+  color: var(--ds-navy);
+}
+.weather-temp-c {
+  font-size: 12px;
+  color: var(--ds-text-light);
+  margin-left: 5px;
+}
+.weather-conditions {
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--ds-text);
+  margin-bottom: 4px;
+}
+.weather-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 10px;
+  color: var(--ds-text-light);
+  align-items: center;
+}
+.weather-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.weather-demo-note {
+  font-size: 9px;
+  color: #aaa;
+  font-style: italic;
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid #eee;
+}
+
+/* ============================================================
    ANIMATIONS & TRANSITIONS
    Lightweight, fast — responsive without feeling "modern."
    ============================================================ */
@@ -2572,12 +2650,10 @@ ul {
 }
 .landing-howto-num {
   flex-shrink: 0;
-  width: 20px;
-  height: 20px;
+  width: 26px;
+  height: 26px;
   background: var(--ds-navy);
   color: #fff;
-  font-size: 11px;
-  font-weight: bold;
   display: flex;
   align-items: center;
   justify-content: center;

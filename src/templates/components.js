@@ -232,7 +232,7 @@ function wallPostForm(profileUserId) {
       <textarea id="wall-body" name="body" class="ds-textarea" placeholder="Write something on their wall..." required maxlength="2000"></textarea>
     </div>
     <div class="form-row">
-      <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm" data-loading-text="Posting...">Post</button>
+      <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm" data-loading-text="Posting...">${ic.send(11)} Post</button>
     </div>
   </form>
 </div>`;
@@ -272,7 +272,7 @@ function guestbookForm(profileUserId) {
       <textarea id="gb-body" name="body" class="ds-textarea" placeholder="Leave a message in their guestbook..." required maxlength="500"></textarea>
     </div>
     <div class="form-row">
-      <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm" data-loading-text="Signing...">Sign Guestbook</button>
+      <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm" data-loading-text="Signing...">${ic.pencil(11)} Sign Guestbook</button>
     </div>
   </form>
 </div>`;
@@ -315,6 +315,17 @@ export function commentEntry({ authorUser, body, time, id, viewerUser, deleteAct
 /* ============================================================
    EVENT CARD (for list view)
    ============================================================ */
+
+/** Returns a sky icon based on the event's local hour (0-23). */
+function timeOfDayIcon(dateStr) {
+  if (!dateStr) return '';
+  const h = new Date(dateStr).getHours();
+  if (h >= 5  && h < 12) return ic.sunrise(11);   // morning
+  if (h >= 12 && h < 18) return ic.sun(11);         // afternoon
+  if (h >= 18 && h < 21) return ic.sunset(11);      // evening
+  return ic.moon(11);                                // night
+}
+
 export function eventCard({ event, cdnBase }) {
   const thumbHtml = event.cover_image_url
     ? `<img src="${esc(`${cdnBase || ''}/${event.cover_image_url}`)}" alt="" width="50" height="50" loading="lazy">`
@@ -327,12 +338,15 @@ export function eventCard({ event, cdnBase }) {
     ? `<span class="event-category-badge">${esc(event.category)}</span>`
     : '';
 
+  const todIcon = timeOfDayIcon(event.start_at);
+  const locHtml = event.location ? ` ${ic.mapPin(10)} ${esc(event.location)}` : '';
+
   return `<div class="event-card">
   <a href="/events/${esc(event.id)}" class="event-thumb">${thumbHtml}</a>
   <div class="event-info">
     <a href="/events/${esc(event.id)}" class="event-title">${esc(event.title)}${typeBadge}${catBadge}</a>
-    <div class="event-meta">${fmtDate(event.start_at, { time: true })}${event.location ? ` &mdash; ${esc(event.location)}` : ''}</div>
-    <div class="event-card-rsvp-count">${event.rsvp_count} going</div>
+    <div class="event-meta">${todIcon} ${ic.clock(10)} ${fmtDate(event.start_at, { time: true })}${locHtml}</div>
+    <div class="event-card-rsvp-count">${ic.users(10)} ${event.rsvp_count} going</div>
   </div>
 </div>`;
 }

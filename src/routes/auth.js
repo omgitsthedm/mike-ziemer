@@ -16,6 +16,7 @@ import {
   isSailingAccessible, resolveSession, isRateLimited
 } from '../lib/auth.js';
 import { layout, layoutCtx, esc } from '../templates/layout.js';
+import { ic } from '../templates/icons.js';
 
 const auth = new Hono();
 
@@ -275,7 +276,7 @@ function loginForm({ next, siteKey, error }) {
         ${siteKey ? `<div class="cf-turnstile" data-sitekey="${esc(siteKey)}" data-theme="light"></div>
         <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>` : ''}
         <div class="ds-form-row mt-8">
-          <button type="submit" class="ds-btn ds-btn-primary w-full" data-loading-text="Signing in...">Sign In</button>
+          <button type="submit" class="ds-btn ds-btn-primary w-full" data-loading-text="Signing in...">${ic.logIn(13)} Sign In</button>
         </div>
       </form>
       <p class="text-small text-muted mt-8 text-center">
@@ -323,7 +324,7 @@ function registerForm({ siteKey, error, values = {} }) {
           ${siteKey ? `<div class="cf-turnstile" data-sitekey="${esc(siteKey)}" data-theme="light" style="margin:10px 0"></div>
           <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>` : ''}
           <div class="ds-form-row mt-8">
-            <button type="submit" class="ds-btn ds-btn-orange w-full" data-loading-text="Creating your account...">Create My Deckspace &raquo;</button>
+            <button type="submit" class="ds-btn ds-btn-orange w-full" data-loading-text="Creating your account...">${ic.userPlus(13)} Create My Deckspace</button>
           </div>
         </form>
         <p class="text-small text-muted mt-8 text-center">
@@ -342,11 +343,11 @@ function registerForm({ siteKey, error, values = {} }) {
           <strong>Deckspace fixes that.</strong>
         </p>
         <ul class="reg-why-list">
-          <li><strong>Find your people</strong> &mdash; Browse fellow passengers and add friends before your first port.</li>
-          <li><strong>Plan your nights</strong> &mdash; See what&rsquo;s on, RSVP to events, get people together.</li>
-          <li><strong>Share photos</strong> &mdash; Upload trip photos and browse what everyone else is doing.</li>
-          <li><strong>Walls &amp; messages</strong> &mdash; Classic MySpace-style. Post on anyone&rsquo;s page, message directly.</li>
-          <li><strong>Yours forever</strong> &mdash; After the sailing ends, your Deckspace becomes a permanent scrapbook.</li>
+          <li>${ic.users(11)} <strong>Find your people</strong> &mdash; Browse fellow passengers and add friends before your first port.</li>
+          <li>${ic.calendar(11)} <strong>Plan your nights</strong> &mdash; See what&rsquo;s on, RSVP to events, get people together.</li>
+          <li>${ic.camera(11)} <strong>Share photos</strong> &mdash; Upload trip photos and browse what everyone else is doing.</li>
+          <li>${ic.mail(11)} <strong>Walls &amp; messages</strong> &mdash; Classic MySpace-style. Post on anyone&rsquo;s page, message directly.</li>
+          <li>${ic.bookOpen(11)} <strong>Yours forever</strong> &mdash; After the sailing ends, your Deckspace becomes a permanent scrapbook.</li>
         </ul>
         <div class="reg-why-footer">
           Free. Private. Just for this ship. No ads. No algorithms. No strangers.
@@ -395,7 +396,7 @@ function onboardingForm() {
           <input id="ob-intent" name="social_intent" type="text" class="ds-input" maxlength="200" placeholder="Nightlife, relaxation, adventure, all of the above...">
         </div>
         <div class="ds-form-row mt-8">
-          <button type="submit" class="ds-btn ds-btn-orange w-full">Save &amp; View My Profile &raquo;</button>
+          <button type="submit" class="ds-btn ds-btn-orange w-full">${ic.user(13)} Save &amp; View My Profile</button>
         </div>
         <div class="text-center mt-4">
           <a href="/" class="text-small text-muted">Skip for now</a>

@@ -23,12 +23,16 @@ home.get('/', async (c) => {
   const sailing = await getSailing(db, c.env.SAILING_ID).catch(() => null);
   const cdnBase = c.env.R2_PUBLIC_URL || '';
 
+  // Fetch weather from KV (admin-updated) or use demo data
+  const weatherJson = await c.env.KV?.get(`sailing:${c.env.SAILING_ID}:weather`).catch(() => null);
+  const weather = weatherJson ? JSON.parse(weatherJson) : null;
+
   // Unauthenticated: show OG MySpace-style landing page
   if (!user) {
     const newPeople = await browsePeople(db, c.env.SAILING_ID, { limit: 8 }).catch(() => []);
     return c.html(layoutCtx(c, {
       title: 'Deckspace — A Place for Friends on the High Seas',
-      body: landingPage({ sailing, cdnBase, newPeople }),
+      body: landingPage({ sailing, cdnBase, newPeople, weather }),
     }));
   }
 
@@ -90,7 +94,7 @@ home.get('/', async (c) => {
     ]);
 
   const body = homePage({
-    user, sailing, cdnBase,
+    user, sailing, cdnBase, weather,
     tonightEvents, upcomingEvents, recentPeople, recentPhotos, recentActivity, onlineUsers, bulletin
   });
 
@@ -104,16 +108,66 @@ home.get('/', async (c) => {
 });
 
 /* ============================================================
+   WEATHER WIDGET
+   Rendered as a compact module. Data comes from KV or falls back
+   to Caribbean demo values so the widget is never empty.
+   ============================================================ */
+const DEMO_WEATHER = {
+  temp_f: 82, temp_c: 28,
+  conditions: 'Partly Cloudy',
+  wind_knots: 14, wind_dir: 'ESE',
+  wave_ft: '2–3',
+  icon: 'cloud',
+  location: 'Caribbean Sea',
+};
+
+const WEATHER_ICON_MAP = {
+  sun:       ic.sun,
+  sunrise:   ic.sunrise,
+  sunset:    ic.sunset,
+  cloud:     ic.cloud,
+  rain:      ic.cloudRain,
+  wind:      ic.wind,
+  moon:      ic.moon,
+  storm:     ic.cloudRain,
+};
+
+function weatherWidget(weather) {
+  const w = weather || DEMO_WEATHER;
+  const iconFn = WEATHER_ICON_MAP[w.icon] || ic.cloud;
+
+  return module({
+    header: `${ic.waves(12)} At Sea`,
+    body: `<div class="weather-widget">
+  <div class="weather-main">
+    <div class="weather-icon-big" aria-hidden="true">${iconFn(28)}</div>
+    <div class="weather-temps">
+      <span class="weather-temp-f">${w.temp_f}&deg;F</span>
+      <span class="weather-temp-c">${w.temp_c}&deg;C</span>
+    </div>
+  </div>
+  <div class="weather-conditions">${esc(w.conditions)}</div>
+  <div class="weather-meta">
+    <span>${ic.wind(10)} ${w.wind_knots} kts ${esc(w.wind_dir || '')}</span>
+    <span>${ic.waves(10)} ${esc(w.wave_ft)} ft</span>
+    ${w.location ? `<span>${ic.mapPin(10)} ${esc(w.location)}</span>` : ''}
+  </div>
+  ${!weather ? `<div class="weather-demo-note">Demo data &mdash; admin can update via Ship Bulletin</div>` : ''}
+</div>`
+  });
+}
+
+/* ============================================================
    HOME PAGE TEMPLATE
    ============================================================ */
-function homePage({ user, sailing, cdnBase, tonightEvents, upcomingEvents, recentPeople, recentPhotos, recentActivity, onlineUsers, bulletin }) {
+function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEvents, recentPeople, recentPhotos, recentActivity, onlineUsers, bulletin }) {
   // Tonight's events module
   const tonightHtml = tonightEvents.length
     ? tonightEvents.map(e => eventCard({ event: e, cdnBase })).join('')
     : `<div class="ds-empty-state">No events scheduled for tonight. <a href="/events/create">Create one!</a></div>`;
 
   const tonightModule = module({
-    header: "Tonight's Events",
+    header: `${ic.calendar(12)} Tonight's Events`,
     headerRight: `<a href="/events">All Events</a>`,
     body: `<div class="event-list">${tonightHtml}</div>`
   });
@@ -124,7 +178,7 @@ function homePage({ user, sailing, cdnBase, tonightEvents, upcomingEvents, recen
     : `<div class="ds-empty-state">No upcoming events yet.</div>`;
 
   const upcomingModule = module({
-    header: 'Upcoming',
+    header: `${ic.clock(12)} Upcoming`,
     headerRight: `<a href="/events">Browse All</a>`,
     body: `<div class="event-list">${upcomingHtml}</div>`
   });
@@ -146,7 +200,7 @@ function homePage({ user, sailing, cdnBase, tonightEvents, upcomingEvents, recen
     : `<div class="ds-empty-state">No activity yet. <a href="/people">Find some friends!</a></div>`;
 
   const activityModule = module({
-    header: 'Social Activity',
+    header: `${ic.msgSquare(12)} Social Activity`,
     body: activityHtml
   });
 
@@ -165,7 +219,7 @@ function homePage({ user, sailing, cdnBase, tonightEvents, upcomingEvents, recen
     : `<div class="ds-empty-state">No members yet.</div>`;
 
   const peopleModule = module({
-    header: 'New Members',
+    header: `${ic.users(12)} New Members`,
     headerRight: `<a href="/people">Browse All</a>`,
     body: `<div class="home-member-grid">${peopleHtml}</div>`
   });
@@ -176,7 +230,7 @@ function homePage({ user, sailing, cdnBase, tonightEvents, upcomingEvents, recen
     : `<div class="ds-empty-state">No photos yet. <a href="/photos">Upload some!</a></div>`;
 
   const photosModule = module({
-    header: 'Recent Photos',
+    header: `${ic.camera(12)} Recent Photos`,
     headerRight: `<a href="/photos">All Photos</a>`,
     body: photosHtml
   });
@@ -202,7 +256,7 @@ function homePage({ user, sailing, cdnBase, tonightEvents, upcomingEvents, recen
     : `<div class="ds-empty-state">No one active right now.</div>`;
 
   const onlineModule = module({
-    header: 'Online Now',
+    header: `${ic.user(12)} Online Now`,
     headerRight: `<a href="/people">Browse All</a>`,
     body: onlineHtml
   });
@@ -213,6 +267,8 @@ function homePage({ user, sailing, cdnBase, tonightEvents, upcomingEvents, recen
     Set up your profile and start meeting your fellow passengers.
   </div>` : '';
 
+  const wx = weatherWidget(weather);
+
   return `${bulletinHtml}${sailingNotice}
 <div class="home-grid">
   <div>
@@ -221,6 +277,7 @@ function homePage({ user, sailing, cdnBase, tonightEvents, upcomingEvents, recen
     ${photosModule}
   </div>
   <div>
+    ${wx}
     ${upcomingModule}
     ${onlineModule}
     ${peopleModule}
@@ -232,7 +289,7 @@ function homePage({ user, sailing, cdnBase, tonightEvents, upcomingEvents, recen
    LANDING PAGE (unauthenticated visitors)
    OG MySpace layout: 60% left (hero + How It Works + Cool New People), 40% right (login + signup)
    ============================================================ */
-function landingPage({ sailing, cdnBase, newPeople }) {
+function landingPage({ sailing, cdnBase, newPeople, weather }) {
   const shipName = sailing?.ship_name || 'Your Ship';
   const sailName = sailing?.name      || 'This Sailing';
 
@@ -266,21 +323,21 @@ function landingPage({ sailing, cdnBase, newPeople }) {
 
   <div class="landing-howto">
     <div class="landing-howto-step">
-      <span class="landing-howto-num">1</span>
+      <span class="landing-howto-num" aria-hidden="true">${ic.user(14)}</span>
       <div>
         <strong>Create your profile</strong>
         <span>Pick a username, upload a photo, add your vibe. Takes 60 seconds.</span>
       </div>
     </div>
     <div class="landing-howto-step">
-      <span class="landing-howto-num">2</span>
+      <span class="landing-howto-num" aria-hidden="true">${ic.users(14)}</span>
       <div>
         <strong>Find your people</strong>
         <span>Browse passengers, add friends, post on walls, RSVP to events.</span>
       </div>
     </div>
     <div class="landing-howto-step">
-      <span class="landing-howto-num">3</span>
+      <span class="landing-howto-num" aria-hidden="true">${ic.bookOpen(14)}</span>
       <div>
         <strong>Keep the memories</strong>
         <span>Photos, posts, and moments &mdash; saved as a scrapbook after you dock.</span>
@@ -289,7 +346,7 @@ function landingPage({ sailing, cdnBase, newPeople }) {
   </div>
 
   <div class="ds-module landing-people-module">
-    <div class="ds-module-header">Cool New People</div>
+    <div class="ds-module-header">${ic.users(12)} Cool New People</div>
     <div class="ds-module-body">
       <div class="landing-people-grid">${peopleHtml}</div>
       <div style="margin-top:8px;font-size:11px"><a href="/register">Join to see everyone &raquo;</a></div>
@@ -321,7 +378,7 @@ function landingPage({ sailing, cdnBase, newPeople }) {
           </tr>
           <tr>
             <td></td>
-            <td style="padding-top:6px"><button type="submit" class="ds-btn ds-btn-primary landing-login-btn" data-loading-text="Signing in...">Sign In</button></td>
+            <td style="padding-top:6px"><button type="submit" class="ds-btn ds-btn-primary landing-login-btn" data-loading-text="Signing in...">${ic.logIn(13)} Sign In</button></td>
           </tr>
         </table>
       </form>
@@ -342,6 +399,8 @@ function landingPage({ sailing, cdnBase, newPeople }) {
     <div class="landing-voyage-ship">${esc(sailing.ship_name)}</div>
     <div class="landing-voyage-name">${esc(sailing.name)}</div>
   </div>` : ''}
+
+  ${weatherWidget(weather)}
 
 </div>`;
 
