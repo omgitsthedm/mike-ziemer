@@ -76,7 +76,9 @@ admin.get('/admin', async (c) => {
     <a href="/admin/reports" class="ds-btn ds-btn-primary ds-btn-sm">Reports Queue (${pendingReports})</a>
     <a href="/admin/users" class="ds-btn ds-btn-sm">User Lookup</a>
     <a href="/admin/bulletin" class="ds-btn ds-btn-sm">Bulletin Board</a>
+    <a href="/admin/weather" class="ds-btn ds-btn-sm">Weather</a>
     <a href="/admin/voyage" class="ds-btn ds-btn-sm">Voyage Schedule</a>
+    <a href="/admin/demo" class="ds-btn ds-btn-sm" style="border-color:#cc9900;color:#886600">Demo Setup</a>
   </div>`;
 
   const body = `${navLinks}
@@ -470,6 +472,170 @@ admin.post('/admin/voyage/:id/delete', async (c) => {
   await db.from('voyage_days').delete()
     .eq('id', id).eq('sailing_id', c.env.SAILING_ID).catch(() => {});
   return c.redirect('/admin/voyage');
+});
+
+/* ============================================================
+   WEATHER — KV-backed "At Sea" widget
+   ============================================================ */
+const WEATHER_ICON_OPTS = ['sun','sunrise','sunset','moon','cloud','rain','wind','storm'];
+
+admin.get('/admin/weather', async (c) => {
+  const user    = c.get('user');
+  const db      = getDb(c.env);
+  const sailing = await getSailing(db, c.env.SAILING_ID).catch(() => null);
+
+  const weatherJson = await c.env.KV?.get(`sailing:${c.env.SAILING_ID}:weather`).catch(() => null);
+  const w = weatherJson ? JSON.parse(weatherJson) : null;
+
+  const currentHtml = w
+    ? `<div style="padding:8px;background:#f0f5ff;border:1px solid #aabbdd;margin-bottom:10px;font-size:12px">
+        <strong>Live:</strong> ${esc(w.conditions)}, ${w.temp_f}&deg;F / ${w.temp_c}&deg;C &mdash;
+        ${w.wind_knots} kts ${esc(w.wind_dir || '')} &mdash;
+        ${esc(w.wave_ft)} ft waves &mdash; ${esc(w.location || '')}
+        <span class="text-muted" style="margin-left:6px">icon: ${esc(w.icon)}</span>
+        <form method="POST" action="/admin/weather/clear" style="margin-top:6px;display:inline">
+          <button type="submit" class="ds-btn ds-btn-sm" data-confirm="Clear weather? Demo fallback will show.">Clear</button>
+        </form>
+      </div>`
+    : `<div class="ds-empty-state text-small" style="margin-bottom:10px">No weather set &mdash; demo fallback (84&deg;F, Partly Cloudy) is showing.</div>`;
+
+  const formHtml = `<form method="POST" action="/admin/weather" class="ds-form">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 10px">
+      <div class="ds-form-row">
+        <label>Temperature &deg;F</label>
+        <input name="temp_f" type="number" class="ds-input" value="${w?.temp_f ?? 84}" min="40" max="115">
+      </div>
+      <div class="ds-form-row">
+        <label>Temperature &deg;C</label>
+        <input name="temp_c" type="number" class="ds-input" value="${w?.temp_c ?? 29}" min="5" max="45">
+      </div>
+    </div>
+    <div class="ds-form-row">
+      <label>Conditions <span style="font-weight:normal;color:#999">(shown as text)</span></label>
+      <input name="conditions" type="text" class="ds-input" value="${esc(w?.conditions ?? 'Partly Cloudy')}" maxlength="60" placeholder="Partly Cloudy, Clear, Breezy...">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 10px">
+      <div class="ds-form-row">
+        <label>Wind (knots)</label>
+        <input name="wind_knots" type="number" class="ds-input" value="${w?.wind_knots ?? 12}" min="0" max="120">
+      </div>
+      <div class="ds-form-row">
+        <label>Wind Direction</label>
+        <input name="wind_dir" type="text" class="ds-input" value="${esc(w?.wind_dir ?? 'ENE')}" maxlength="10" placeholder="ENE, SE...">
+      </div>
+      <div class="ds-form-row">
+        <label>Wave Height</label>
+        <input name="wave_ft" type="text" class="ds-input" value="${esc(w?.wave_ft ?? '2\u20133')}" maxlength="20" placeholder="2\u20133 ft">
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:0 10px">
+      <div class="ds-form-row">
+        <label>Location <span style="font-weight:normal;color:#999">(shown under widget)</span></label>
+        <input name="location" type="text" class="ds-input" value="${esc(w?.location ?? 'Caribbean Sea')}" maxlength="60">
+      </div>
+      <div class="ds-form-row">
+        <label>Icon</label>
+        <select name="icon" class="ds-select">
+          ${WEATHER_ICON_OPTS.map(i => `<option value="${i}"${(w?.icon ?? 'cloud') === i ? ' selected' : ''}>${i}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="ds-form-row mt-8">
+      <button type="submit" class="ds-btn ds-btn-primary">Update Weather</button>
+    </div>
+  </form>`;
+
+  const body = module({ header: 'At Sea — Weather Widget', body: currentHtml + formHtml });
+  return c.html(layoutCtx(c, { title: 'Weather — Admin', user, sailing, body }));
+});
+
+admin.post('/admin/weather', async (c) => {
+  const form = await c.req.formData();
+  const weather = {
+    temp_f:     parseInt((form.get('temp_f') || '84').toString(), 10),
+    temp_c:     parseInt((form.get('temp_c') || '29').toString(), 10),
+    conditions: (form.get('conditions') || 'Partly Cloudy').toString().trim().slice(0, 60),
+    wind_knots: parseInt((form.get('wind_knots') || '12').toString(), 10),
+    wind_dir:   (form.get('wind_dir') || 'ENE').toString().trim().slice(0, 10),
+    wave_ft:    (form.get('wave_ft') || '2\u20133').toString().trim().slice(0, 20),
+    location:   (form.get('location') || 'Caribbean Sea').toString().trim().slice(0, 60),
+    icon:       WEATHER_ICON_OPTS.includes((form.get('icon') || '').toString()) ? form.get('icon').toString() : 'cloud',
+    updated_at: new Date().toISOString(),
+  };
+  await c.env.KV?.put(`sailing:${c.env.SAILING_ID}:weather`, JSON.stringify(weather), { expirationTtl: 86400 * 3 }).catch(() => {});
+  return c.redirect('/admin/weather');
+});
+
+admin.post('/admin/weather/clear', async (c) => {
+  await c.env.KV?.delete(`sailing:${c.env.SAILING_ID}:weather`).catch(() => {});
+  return c.redirect('/admin/weather');
+});
+
+/* ============================================================
+   DEMO SETUP — one-click KV seed for presentations
+   Seeds weather + ship bulletin with Shattered Shores defaults.
+   Safe to re-run; does not touch the database.
+   ============================================================ */
+admin.get('/admin/demo', async (c) => {
+  const user    = c.get('user');
+  const db      = getDb(c.env);
+  const sailing = await getSailing(db, c.env.SAILING_ID).catch(() => null);
+
+  const [wxJson, bulletinJson] = await Promise.all([
+    c.env.KV?.get(`sailing:${c.env.SAILING_ID}:weather`).catch(() => null),
+    c.env.KV?.get(`sailing:${c.env.SAILING_ID}:bulletin`).catch(() => null),
+  ]);
+
+  const statusHtml = `<div style="font-size:11px;margin-bottom:12px;padding:8px;background:#fafafa;border:1px solid #ddd">
+    <div style="margin-bottom:4px">${wxJson ? '&#x2713; Weather: set' : '&#x25CB; Weather: using demo fallback'}</div>
+    <div>${bulletinJson ? '&#x2713; Bulletin: active' : '&#x25CB; Bulletin: none'}</div>
+  </div>`;
+
+  const body = module({
+    header: 'Demo Setup',
+    body: `${statusHtml}
+    <p style="font-size:12px;margin-bottom:10px;line-height:1.5">
+      Seeds KV with Shattered Shores demo defaults: Caribbean weather, and a ship bulletin
+      announcing tonight&rsquo;s main events. Safe to re-run. Expires after 7 days.
+    </p>
+    <form method="POST" action="/admin/demo/seed">
+      <button type="submit" class="ds-btn ds-btn-orange">Seed Demo Data &raquo;</button>
+    </form>
+    <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
+      <a href="/admin/weather" class="ds-btn ds-btn-sm">Edit Weather</a>
+      <a href="/admin/bulletin" class="ds-btn ds-btn-sm">Edit Bulletin</a>
+    </div>`
+  });
+
+  return c.html(layoutCtx(c, { title: 'Demo Setup', user, sailing, body }));
+});
+
+admin.post('/admin/demo/seed', async (c) => {
+  const sailingId = c.env.SAILING_ID;
+  const now = new Date().toISOString();
+
+  const weather = {
+    temp_f: 84, temp_c: 29,
+    conditions: 'Partly Cloudy',
+    wind_knots: 12, wind_dir: 'ENE',
+    wave_ft: '2\u20133',
+    icon: 'cloud',
+    location: 'Caribbean Sea',
+    updated_at: now,
+  };
+
+  const bulletin = {
+    text: 'Tonight: Main Stage at 11PM. Missed Call Confessional opens at 2:30AM. The outer deck is open all night \u2014 see you out there.',
+    author: 'Shattered Shores Crew',
+    created_at: now,
+  };
+
+  await Promise.all([
+    c.env.KV?.put(`sailing:${sailingId}:weather`, JSON.stringify(weather), { expirationTtl: 86400 * 7 }).catch(() => {}),
+    c.env.KV?.put(`sailing:${sailingId}:bulletin`, JSON.stringify(bulletin), { expirationTtl: 86400 * 7 }).catch(() => {}),
+  ]);
+
+  return c.redirect('/admin');
 });
 
 export default admin;

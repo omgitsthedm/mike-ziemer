@@ -113,9 +113,9 @@ home.get('/', async (c) => {
    to Caribbean demo values so the widget is never empty.
    ============================================================ */
 const DEMO_WEATHER = {
-  temp_f: 82, temp_c: 28,
+  temp_f: 84, temp_c: 29,
   conditions: 'Partly Cloudy',
-  wind_knots: 14, wind_dir: 'ESE',
+  wind_knots: 12, wind_dir: 'ENE',
   wave_ft: '2–3',
   icon: 'cloud',
   location: 'Caribbean Sea',
