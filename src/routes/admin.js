@@ -77,6 +77,7 @@ admin.get('/admin', async (c) => {
     <a href="/admin/users" class="ds-btn ds-btn-sm">User Lookup</a>
     <a href="/admin/bulletin" class="ds-btn ds-btn-sm">Bulletin Board</a>
     <a href="/admin/weather" class="ds-btn ds-btn-sm">Weather</a>
+    <a href="/admin/dining" class="ds-btn ds-btn-sm">Dining Hours</a>
     <a href="/admin/voyage" class="ds-btn ds-btn-sm">Voyage Schedule</a>
     <a href="/admin/demo" class="ds-btn ds-btn-sm" style="border-color:#cc9900;color:#886600">Demo Setup</a>
   </div>`;
@@ -572,6 +573,127 @@ admin.post('/admin/weather/clear', async (c) => {
 });
 
 /* ============================================================
+   DINING HOURS — admin editor for ship schedule widget
+   Stored in KV as sailing:ID:dining JSON.
+   Displayed publicly on the landing page — no login needed.
+   ============================================================ */
+admin.get('/admin/dining', async (c) => {
+  const user    = c.get('user');
+  const db      = getDb(c.env);
+  const sailing = await getSailing(db, c.env.SAILING_ID).catch(() => null);
+
+  const diningJson = await c.env.KV?.get(`sailing:${c.env.SAILING_ID}:dining`).catch(() => null);
+  const dining = diningJson ? JSON.parse(diningJson) : null;
+
+  // Build display of current sections for admin reference
+  const currentHtml = dining
+    ? dining.sections.map(s => `<div style="margin-bottom:8px">
+        <strong>${esc(s.title)}</strong><br>
+        ${s.items.map(i => `<div style="font-size:11px;color:#555">${esc(i.name)} — ${esc(i.hours)}${i.lastcall ? ` (last call ${esc(i.lastcall)})` : ''}${i.note ? ` <em>${esc(i.note)}</em>` : ''}</div>`).join('')}
+      </div>`).join('')
+    : `<div class="ds-empty-state text-small">Using demo defaults (Icon-class ship schedule).</div>`;
+
+  // Textarea format: one item per line, pipe-separated
+  // Name | Hours | last_call (optional) | note (optional)
+  const diningText = dining
+    ? dining.sections.find(s => s.title === 'Dining')?.items.map(i =>
+        [i.name, i.hours, i.lastcall || '', i.note || ''].join(' | ')
+      ).join('\n') || ''
+    : `Main Buffet (Deck 15) | 6:30am – Midnight
+Breakfast – Main Dining Room | 7:30am – 9:30am
+Lunch – Main Dining Room | 12:00pm – 1:30pm | | Sea days only
+Dinner Early Seating | 5:30pm – 7:00pm
+Dinner Late Seating | 8:00pm – 9:30pm
+Café Promenade | 24 hours
+Room Service | 24 hours`;
+
+  const barsText = dining
+    ? dining.sections.find(s => s.title === 'Bars & Lounges')?.items.map(i =>
+        [i.name, i.hours, i.lastcall || '', i.note || ''].join(' | ')
+      ).join('\n') || ''
+    : `Pool Bar (Lido Deck 15) | 10:00am – 11:00pm
+Sky Lounge (Deck 17) | 11:00am – 2:00am | 1:30am
+Schooner Bar (Deck 5) | 4:00pm – 2:00am | 1:30am
+Casino Royale Bar (Deck 4) | 7:00pm – 3:00am | 2:30am
+Boleros Latin Bar (Deck 4) | 6:00pm – 2:00am | 1:30am`;
+
+  const note = dining?.note || 'Times may vary at sea. Check the Daily Program placed in your cabin each evening.';
+
+  const body = module({
+    header: 'Dining & Bar Hours',
+    body: `<div style="margin-bottom:12px">${currentHtml}</div>
+    <form method="POST" action="/admin/dining" class="ds-form">
+      <p style="font-size:11px;color:#555;margin-bottom:10px;line-height:1.5">
+        Format: <code>Venue Name | Hours | Last Call (optional) | Note (optional)</code><br>
+        One entry per line. These appear on the landing page for all guests — no login needed.
+      </p>
+      <div class="ds-form-row">
+        <label>Dining Venues</label>
+        <textarea name="dining_lines" class="ds-textarea" rows="8" style="font-family:monospace;font-size:11px">${esc(diningText)}</textarea>
+      </div>
+      <div class="ds-form-row">
+        <label>Bars &amp; Lounges</label>
+        <textarea name="bars_lines" class="ds-textarea" rows="6" style="font-family:monospace;font-size:11px">${esc(barsText)}</textarea>
+      </div>
+      <div class="ds-form-row">
+        <label>Footer Note</label>
+        <input name="note" type="text" class="ds-input" value="${esc(note)}" maxlength="200">
+      </div>
+      <div class="ds-form-row mt-8" style="display:flex;gap:8px">
+        <button type="submit" class="ds-btn ds-btn-orange">Save Schedule</button>
+        <form method="POST" action="/admin/dining/clear" style="display:inline">
+          <button type="submit" class="ds-btn ds-btn-sm" data-confirm="Reset to demo defaults?">Reset to Defaults</button>
+        </form>
+      </div>
+    </form>`
+  });
+
+  return c.html(layoutCtx(c, { title: 'Dining Hours', user, sailing, body }));
+});
+
+admin.post('/admin/dining', async (c) => {
+  const form = c.get('parsedForm') || await c.req.formData();
+
+  function parseLines(text, title) {
+    return {
+      title,
+      icon: title === 'Dining' ? 'utensils' : 'glass',
+      items: (text || '').split('\n')
+        .map(l => l.trim()).filter(Boolean)
+        .map(l => {
+          const [name, hours, lastcall, note] = l.split('|').map(p => p.trim());
+          const item = { name: name || '', hours: hours || '' };
+          if (lastcall) item.lastcall = lastcall;
+          if (note)     item.note = note;
+          return item;
+        })
+        .filter(i => i.name && i.hours)
+    };
+  }
+
+  const dining = {
+    sections: [
+      parseLines((form.get('dining_lines') || '').toString(), 'Dining'),
+      parseLines((form.get('bars_lines')   || '').toString(), 'Bars & Lounges'),
+    ],
+    note: (form.get('note') || '').toString().trim().slice(0, 200),
+  };
+
+  await c.env.KV?.put(
+    `sailing:${c.env.SAILING_ID}:dining`,
+    JSON.stringify(dining),
+    { expirationTtl: 86400 * 30 }
+  ).catch(() => {});
+
+  return c.redirect('/admin/dining');
+});
+
+admin.post('/admin/dining/clear', async (c) => {
+  await c.env.KV?.delete(`sailing:${c.env.SAILING_ID}:dining`).catch(() => {});
+  return c.redirect('/admin/dining');
+});
+
+/* ============================================================
    DEMO SETUP — one-click KV seed for presentations
    Seeds weather + ship bulletin with Shattered Shores defaults.
    Safe to re-run; does not touch the database.
@@ -630,9 +752,32 @@ admin.post('/admin/demo/seed', async (c) => {
     created_at: now,
   };
 
+  const dining = {
+    sections: [
+      { title: 'Dining', icon: 'utensils', items: [
+        { name: 'Main Buffet (Deck 15)',        hours: '6:30am \u2013 Midnight' },
+        { name: 'Breakfast \u2013 Main Dining', hours: '7:30am \u2013 9:30am' },
+        { name: 'Lunch \u2013 Main Dining',     hours: '12:00pm \u2013 1:30pm', note: 'Sea days only' },
+        { name: 'Dinner Early Seating',         hours: '5:30pm \u2013 7:00pm' },
+        { name: 'Dinner Late Seating',          hours: '8:00pm \u2013 9:30pm' },
+        { name: 'Caf\u00e9 Promenade',         hours: '24 hours' },
+        { name: 'Room Service',                 hours: '24 hours' },
+      ]},
+      { title: 'Bars & Lounges', icon: 'glass', items: [
+        { name: 'Pool Bar (Lido Deck 15)',      hours: '10:00am \u2013 11:00pm' },
+        { name: 'Sky Lounge (Deck 17)',         hours: '11:00am \u2013 2:00am',  lastcall: '1:30am' },
+        { name: 'Schooner Bar (Deck 5)',        hours: '4:00pm \u2013 2:00am',   lastcall: '1:30am' },
+        { name: 'Casino Royale Bar (Deck 4)',   hours: '7:00pm \u2013 3:00am',   lastcall: '2:30am' },
+        { name: 'Boleros Latin Bar (Deck 4)',   hours: '6:00pm \u2013 2:00am',   lastcall: '1:30am' },
+      ]},
+    ],
+    note: 'Times may vary at sea. Check the Daily Program placed in your cabin each evening.',
+  };
+
   await Promise.all([
     c.env.KV?.put(`sailing:${sailingId}:weather`, JSON.stringify(weather), { expirationTtl: 86400 * 7 }).catch(() => {}),
     c.env.KV?.put(`sailing:${sailingId}:bulletin`, JSON.stringify(bulletin), { expirationTtl: 86400 * 7 }).catch(() => {}),
+    c.env.KV?.put(`sailing:${sailingId}:dining`,   JSON.stringify(dining),  { expirationTtl: 86400 * 7 }).catch(() => {}),
   ]);
 
   return c.redirect('/admin');

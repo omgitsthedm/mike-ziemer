@@ -106,7 +106,23 @@ BEGIN
   ON CONFLICT (user_id) DO NOTHING;
 
   -- -------------------------------------------------------
-  -- 4. Official events — clear & re-seed
+  -- 4. Voyage itinerary — Shattered Shores 4-Night Caribbean
+  --    Modeled on a 5,600-cabin mega ship (Icon/Harmony class)
+  --    20 decks · 40+ dining venues · 3 pool decks
+  -- -------------------------------------------------------
+  DELETE FROM voyage_days WHERE sailing_id = sail_id;
+  INSERT INTO voyage_days (sailing_id, day_date, port_name, day_type, arrive_time, depart_time, notes, sort_order) VALUES
+    (sail_id, '2026-04-07', 'Miami, FL',        'embarkation',    NULL,    '16:00',
+     'Welcome aboard! Sail Away Party on Pool Deck 15 at 5pm. Muster drill at 4pm — check your cabin card for station.', 1),
+    (sail_id, '2026-04-08', 'At Sea',            'sea',           NULL,    NULL,
+     'Full day at sea. Karaoke, trivia, and the Missed Call Confessional tonight. Check the Daily Program in your cabin.', 2),
+    (sail_id, '2026-04-09', 'Nassau, Bahamas',  'port',           '08:00', '17:00',
+     'Straw Market, Atlantis waterpark, or the beach at Cable Beach. All aboard by 16:30.', 3),
+    (sail_id, '2026-04-10', 'Miami, FL',        'disembarkation', '07:00', NULL,
+     'Farewell breakfast 6am–9am in the Windjammer. Luggage must be outside cabin by midnight. Fond memories: forever.', 4);
+
+  -- -------------------------------------------------------
+  -- 5. Official events — clear & re-seed
   -- -------------------------------------------------------
   DELETE FROM events WHERE sailing_id = sail_id AND event_type = 'official';
 
@@ -278,7 +294,7 @@ BEGIN
     'Cabin Decks', '2026-04-10 22:00:00+00', 'public', 'visible', 178, NULL);
 
   -- -------------------------------------------------------
-  -- 5. Friendships
+  -- 6. Friendships
   -- -------------------------------------------------------
   INSERT INTO friendships (requester_id, addressee_id, status) VALUES
     (uid_1, uid_2, 'accepted'),

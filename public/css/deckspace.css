@@ -2923,3 +2923,139 @@ ul {
   margin: 6px 0;
   opacity: 0.7;
 }
+
+/* ============================================================
+   LANDING INFO BAND
+   Full-width section below the hero columns.
+   Shows port countdown, upcoming events, and dining hours —
+   no login required.
+   ============================================================ */
+.landing-info-band {
+  margin-top: 12px;
+  border-top: 3px solid var(--ds-orange);
+  padding-top: 10px;
+}
+
+.landing-bulletin {
+  background: #fff8e1;
+  border: 1px solid #e6c200;
+  border-left: 4px solid var(--ds-orange);
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  line-height: 1.5;
+}
+.landing-bulletin-label {
+  color: var(--ds-orange);
+  white-space: nowrap;
+  font-weight: bold;
+}
+
+.landing-info-grid {
+  display: grid;
+  grid-template-columns: 200px 1fr 280px;
+  gap: 10px;
+  align-items: start;
+}
+.landing-info-col-port {}
+.landing-info-col-events {}
+.landing-info-col-dining {}
+
+/* ── Events list on landing ─────────────────────────────── */
+.landing-events-list {
+  max-height: 320px;
+  overflow-y: auto;
+}
+.landing-event-row {
+  display: grid;
+  grid-template-columns: 14px 56px 1fr auto;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 6px;
+  border-bottom: 1px solid #eeeeee;
+  font-size: 11px;
+}
+.landing-event-row:last-child { border-bottom: none; }
+.landing-event-tod  { color: var(--ds-orange); line-height: 1; }
+.landing-event-time { color: var(--ds-text-light); white-space: nowrap; }
+.landing-event-name { font-weight: bold; color: var(--ds-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.landing-event-loc  { font-size: 10px; color: var(--ds-text-light); white-space: nowrap; display: flex; align-items: center; gap: 2px; }
+
+/* ── Dining schedule ────────────────────────────────────── */
+.dining-widget { padding: 2px 0; }
+.dining-section { margin-bottom: 8px; }
+.dining-section:last-child { margin-bottom: 0; }
+.dining-section-title {
+  font-weight: bold;
+  font-size: 11px;
+  color: var(--ds-navy);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 0 4px;
+  border-bottom: 1px solid var(--ds-border);
+  margin-bottom: 4px;
+}
+.dining-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+.dining-table tr:hover td { background: #f9f9f9; }
+.dining-name {
+  padding: 2px 6px 2px 0;
+  color: var(--ds-text);
+  vertical-align: top;
+  width: 55%;
+}
+.dining-hours {
+  padding: 2px 0;
+  color: var(--ds-navy);
+  font-weight: bold;
+  vertical-align: top;
+}
+.dining-lastcall {
+  display: block;
+  font-size: 9px;
+  font-weight: normal;
+  color: var(--ds-error);
+}
+.dining-note {
+  display: block;
+  font-size: 9px;
+  font-weight: normal;
+  color: var(--ds-text-light);
+  font-style: italic;
+}
+.dining-note-footer {
+  font-size: 9px;
+  color: var(--ds-text-light);
+  border-top: 1px solid var(--ds-border);
+  padding-top: 5px;
+  margin-top: 6px;
+  font-style: italic;
+  line-height: 1.4;
+}
+
+/* ── Responsive ─────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .landing-info-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .landing-info-col-port {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 640px) {
+  .landing-info-grid {
+    grid-template-columns: 1fr;
+  }
+  .landing-event-row {
+    grid-template-columns: 14px 52px 1fr;
+  }
+  .landing-event-loc { display: none; }
+}

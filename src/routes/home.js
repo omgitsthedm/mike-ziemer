@@ -29,10 +29,30 @@ home.get('/', async (c) => {
 
   // Unauthenticated: show OG MySpace-style landing page
   if (!user) {
-    const newPeople = await browsePeople(db, c.env.SAILING_ID, { limit: 8 }).catch(() => []);
+    const [newPeople, publicEvents, voyageDays, bulletinJson, diningJson] = await Promise.all([
+      browsePeople(db, c.env.SAILING_ID, { limit: 8 }).catch(() => []),
+      db.from('events')
+        .select('id, title, location, start_at, event_type, category, rsvp_count')
+        .eq('sailing_id', c.env.SAILING_ID)
+        .eq('moderation_status', 'visible')
+        .eq('visibility', 'public')
+        .gte('start_at', new Date().toISOString())
+        .order('start_at', { ascending: true })
+        .limit(10)
+        .then(({ data }) => data || [])
+        .catch(() => []),
+      getVoyageDays(db, c.env.SAILING_ID).catch(() => []),
+      c.env.KV?.get(`sailing:${c.env.SAILING_ID}:bulletin`).catch(() => null),
+      c.env.KV?.get(`sailing:${c.env.SAILING_ID}:dining`).catch(() => null),
+    ]);
+
+    const bulletin  = bulletinJson  ? JSON.parse(bulletinJson)  : null;
+    const dining    = diningJson    ? JSON.parse(diningJson)    : null;
+
     return c.html(layoutCtx(c, {
       title: 'Deckspace — A Place for Friends on the High Seas',
-      body: landingPage({ sailing, cdnBase, newPeople, weather, siteKey: c.env.TURNSTILE_SITE_KEY }),
+      body: landingPage({ sailing, cdnBase, newPeople, weather, siteKey: c.env.TURNSTILE_SITE_KEY,
+                          publicEvents, voyageDays, bulletin, dining }),
     }));
   }
 
@@ -158,6 +178,72 @@ function weatherWidget(weather) {
   ${!weather ? `<div class="weather-demo-note">Demo data &mdash; admin can update via Ship Bulletin</div>` : ''}
 </div>`
   });
+}
+
+/* ============================================================
+   DINING & BARS SCHEDULE
+   Admin-editable via KV (sailing:ID:dining). Falls back to
+   DEMO_DINING modeled on an Icon/Harmony-class mega ship.
+   ============================================================ */
+
+// Based on Royal Caribbean Icon-class (5,610 cabins, 20 decks, 40+ dining venues)
+const DEMO_DINING = {
+  sections: [
+    {
+      title: 'Dining',
+      icon: 'utensils',
+      items: [
+        { name: 'Main Buffet (Deck 15)',           hours: '6:30am – Midnight' },
+        { name: 'Breakfast – Main Dining Room',    hours: '7:30am – 9:30am' },
+        { name: 'Lunch – Main Dining Room',        hours: '12:00pm – 1:30pm', note: 'Sea days only' },
+        { name: 'Dinner Early Seating',            hours: '5:30pm – 7:00pm' },
+        { name: 'Dinner Late Seating',             hours: '8:00pm – 9:30pm' },
+        { name: 'Café Promenade',                  hours: '24 hours' },
+        { name: 'Room Service',                    hours: '24 hours' },
+      ]
+    },
+    {
+      title: 'Bars & Lounges',
+      icon: 'glass',
+      items: [
+        { name: 'Pool Bar (Lido Deck 15)',         hours: '10:00am – 11:00pm' },
+        { name: 'Sky Lounge (Deck 17)',            hours: '11:00am – 2:00am',  lastcall: '1:30am' },
+        { name: 'Schooner Bar (Deck 5)',           hours: '4:00pm – 2:00am',   lastcall: '1:30am' },
+        { name: 'Casino Royale Bar (Deck 4)',      hours: '7:00pm – 3:00am',   lastcall: '2:30am' },
+        { name: 'Boleros Latin Bar (Deck 4)',      hours: '6:00pm – 2:00am',   lastcall: '1:30am' },
+      ]
+    }
+  ],
+  note: 'Times may vary at sea. Check the Daily Program placed in your cabin each evening.',
+};
+
+function diningWidget(dining) {
+  const d = dining || DEMO_DINING;
+
+  const sectionsHtml = d.sections.map(section => {
+    const rows = section.items.map(item => {
+      const lastCallHtml = item.lastcall
+        ? `<span class="dining-lastcall">last call ${esc(item.lastcall)}</span>`
+        : '';
+      const noteHtml = item.note
+        ? `<span class="dining-note">${esc(item.note)}</span>`
+        : '';
+      return `<tr>
+  <td class="dining-name">${esc(item.name)}</td>
+  <td class="dining-hours">${esc(item.hours)}${lastCallHtml}${noteHtml}</td>
+</tr>`;
+    }).join('');
+    return `<div class="dining-section">
+  <div class="dining-section-title">${esc(section.title)}</div>
+  <table class="dining-table">${rows}</table>
+</div>`;
+  }).join('');
+
+  const noteHtml = d.note
+    ? `<div class="dining-note-footer">${esc(d.note)}</div>`
+    : '';
+
+  return `<div class="dining-widget">${sectionsHtml}${noteHtml}</div>`;
 }
 
 /* ============================================================
@@ -344,7 +430,7 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
    LANDING PAGE (unauthenticated visitors)
    OG MySpace layout: 60% left (hero + How It Works + Cool New People), 40% right (login + signup)
    ============================================================ */
-function landingPage({ sailing, cdnBase, newPeople, weather, siteKey }) {
+function landingPage({ sailing, cdnBase, newPeople, weather, siteKey, publicEvents, voyageDays, bulletin, dining }) {
   const shipName = sailing?.ship_name || 'Your Ship';
   const sailName = sailing?.name      || 'This Sailing';
 
@@ -463,7 +549,52 @@ function landingPage({ sailing, cdnBase, newPeople, weather, siteKey }) {
 
 </div>`;
 
-  return `<div class="landing-wrap">${leftCol}${rightCol}</div>`;
+  // ── Ship bulletin (above info band if set) ──────────────────
+  const bulletinBand = bulletin ? `<div class="landing-bulletin">
+  <span class="landing-bulletin-label">${ic.flag(12)} Ship Bulletin</span>
+  ${esc(bulletin.text)}
+</div>` : '';
+
+  // ── Port countdown (compact inline) ─────────────────────────
+  const portBox = portCountdownWidget(voyageDays);
+
+  // ── Next 10 upcoming events ──────────────────────────────────
+  const eventsHtml = publicEvents && publicEvents.length
+    ? publicEvents.map(e => {
+        const h = new Date(e.start_at).getHours();
+        const todIcon = h < 12 ? ic.sunrise(11) : h < 18 ? ic.sun(11) : h < 21 ? ic.sunset(11) : ic.moon(11);
+        const timeStr = new Date(e.start_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        return `<div class="landing-event-row">
+  <span class="landing-event-tod">${todIcon}</span>
+  <span class="landing-event-time">${timeStr}</span>
+  <span class="landing-event-name">${esc(e.title)}</span>
+  ${e.location ? `<span class="landing-event-loc">${ic.mapPin(9)} ${esc(e.location)}</span>` : ''}
+</div>`;
+      }).join('')
+    : `<div class="ds-empty-state">No upcoming events scheduled.</div>`;
+
+  const eventsBox = module({
+    header: `${ic.calendar(12)} Upcoming Events`,
+    headerRight: `<a href="/login">RSVP &raquo;</a>`,
+    body: `<div class="landing-events-list">${eventsHtml}</div>`
+  });
+
+  // ── Dining & bar hours ───────────────────────────────────────
+  const diningBox = module({
+    header: `${ic.utensils(12)} Dining &amp; Bars`,
+    body: diningWidget(dining)
+  });
+
+  const infoBand = `<div class="landing-info-band">
+  ${bulletinBand}
+  <div class="landing-info-grid">
+    <div class="landing-info-col-port">${portBox || `<div class="ds-empty-state">${ic.anchor(13)} At sea &mdash; enjoy the voyage!</div>`}</div>
+    <div class="landing-info-col-events">${eventsBox}</div>
+    <div class="landing-info-col-dining">${diningBox}</div>
+  </div>
+</div>`;
+
+  return `<div class="landing-wrap">${leftCol}${rightCol}</div>${infoBand}`;
 }
 
 export default home;
