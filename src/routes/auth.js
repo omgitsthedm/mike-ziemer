@@ -253,21 +253,20 @@ function loginForm({ next, siteKey, error }) {
   </div>
   <div class="access-tagline">Your private cruise social network</div>
 
-  <div class="access-explainer">
-    Enter the <strong>username and password</strong> you chose when you created your Deckspace account for this sailing.
-    If you haven&rsquo;t joined yet, <a href="/register">sign up here &mdash; it&rsquo;s free</a>.
-  </div>
-
   ${error ? `<div class="ds-flash error">${esc(error)}</div>` : ''}
 
   <div class="ds-module">
     <div class="ds-module-header">Sign In to Deckspace</div>
     <div class="ds-module-body">
+      <div class="login-instructions">
+        Enter the <strong>username</strong> and <strong>password</strong> you created when you joined Deckspace on this sailing.
+        First time here? <a href="/register">Create a free account &raquo;</a>
+      </div>
       <form method="POST" action="/login" class="ds-form" data-retry="true">
         <input type="hidden" name="next" value="${esc(next)}">
         <div class="ds-form-row">
           <label for="username">Username</label>
-          <input id="username" name="username" type="text" class="ds-input" autocomplete="username" autofocus required placeholder="Your Deckspace username">
+          <input id="username" name="username" type="text" class="ds-input" autocomplete="username" autofocus required placeholder="your username">
         </div>
         <div class="ds-form-row">
           <label for="password">Password</label>
@@ -276,55 +275,58 @@ function loginForm({ next, siteKey, error }) {
         ${siteKey ? `<div class="cf-turnstile" data-sitekey="${esc(siteKey)}" data-theme="light"></div>
         <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>` : ''}
         <div class="ds-form-row mt-8">
-          <button type="submit" class="ds-btn ds-btn-primary w-full" data-loading-text="Signing in...">${ic.logIn(13)} Sign In</button>
+          <button type="submit" class="ds-btn ds-btn-primary w-full" data-loading-text="Signing in...">Come Aboard &rarr;</button>
         </div>
       </form>
-      <p class="text-small text-muted mt-8 text-center">
-        New passenger? <a href="/register">Create your Deckspace account &raquo;</a>
-      </p>
+      <div class="login-help-text">
+        <strong>Can't remember your login?</strong> Visit the Guest Services desk or ask the cruise coordinator &mdash; they can look up your account.
+      </div>
     </div>
   </div>
 </div>`;
 }
 
 function registerForm({ siteKey, error, values = {} }) {
+  const usernameHint = values.username
+    ? `Your profile will be <strong>/profile/${esc(values.username)}</strong>`
+    : 'Letters, numbers, underscores only &mdash; this becomes your profile URL';
+
   return `<div class="reg-wrap">
   <div class="reg-left">
+    <div class="reg-privacy-badge">
+      Your profile is only visible to fellow passengers on this sailing. Free forever. No ads, no spam.
+    </div>
     <div class="ds-module">
       <div class="ds-module-header">Join Deckspace &mdash; It&rsquo;s Free!</div>
       <div class="ds-module-body">
-        <p class="reg-intro-copy">
-          Create your account for this sailing. Your profile is visible to fellow passengers only.
-          Fills in under a minute &mdash; fill in only what you want.
-        </p>
-        ${error ? `<div class="ds-flash error" style="margin-bottom:10px">${esc(error)}</div>` : ''}
+        <div class="reg-time-note">Takes about 2 minutes &bull; Free forever &bull; No email required</div>
+        ${error ? `<div class="ds-flash error" style="margin-bottom:8px">${esc(error)}</div>` : ''}
         <form method="POST" action="/register" class="ds-form" data-retry="true">
           <div class="ds-form-row">
-            <label for="display_name">Your Name <span class="reg-hint">(shown on your profile)</span></label>
-            <input id="display_name" name="display_name" type="text" class="ds-input" value="${esc(values.displayName || '')}" required maxlength="50" placeholder="E.g. Sarah M. or Captain Dave" autofocus>
+            <label for="display_name">Your Name <span class="reg-required">*</span></label>
+            <input id="display_name" name="display_name" type="text" class="ds-input" value="${esc(values.displayName || '')}" required maxlength="50" placeholder="How others will see you &mdash; e.g. Jessica M." autofocus>
           </div>
           <div class="ds-form-row">
-            <label for="reg-username">Username <span class="reg-hint">(your profile URL)</span></label>
-            <input id="reg-username" name="username" type="text" class="ds-input" value="${esc(values.username || '')}" required maxlength="30" pattern="[a-zA-Z0-9_]+" placeholder="letters, numbers, underscores only" autocomplete="username" data-validate-username>
-            <div class="hint">Your profile will be /profile/<em>username</em></div>
+            <label for="reg-username">Username <span class="reg-required">*</span></label>
+            <input id="reg-username" name="username" type="text" class="ds-input" value="${esc(values.username || '')}" required maxlength="30" pattern="[a-zA-Z0-9_]+" placeholder="letters, numbers, underscores" autocomplete="username">
+            <div class="hint">${usernameHint}</div>
           </div>
           <div class="ds-form-row">
-            <label for="email">Email <span class="reg-hint">(optional &mdash; only for account recovery)</span></label>
-            <input id="email" name="email" type="email" class="ds-input" value="${esc(values.email || '')}" maxlength="200" placeholder="you@email.com">
+            <label for="email">Email <span class="reg-optional">(optional)</span></label>
+            <input id="email" name="email" type="email" class="ds-input" value="${esc(values.email || '')}" maxlength="200" placeholder="only needed if you want a password reset option">
           </div>
           <div class="ds-form-row">
-            <label for="reg-password">Password <span class="reg-hint">(min. 8 characters)</span></label>
-            <input id="reg-password" name="password" type="password" class="ds-input" required minlength="8" autocomplete="new-password" data-pw-source>
+            <label for="reg-password">Password <span class="reg-required">*</span></label>
+            <input id="reg-password" name="password" type="password" class="ds-input" required minlength="8" autocomplete="new-password" placeholder="at least 8 characters">
           </div>
           <div class="ds-form-row">
-            <label for="password2">Confirm Password</label>
-            <input id="password2" name="password2" type="password" class="ds-input" required minlength="8" autocomplete="new-password" data-pw-confirm>
-            <div class="pw-match-hint" style="display:none"></div>
+            <label for="password2">Confirm Password <span class="reg-required">*</span></label>
+            <input id="password2" name="password2" type="password" class="ds-input" required minlength="8" autocomplete="new-password">
           </div>
           ${siteKey ? `<div class="cf-turnstile" data-sitekey="${esc(siteKey)}" data-theme="light" style="margin:10px 0"></div>
           <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>` : ''}
           <div class="ds-form-row mt-8">
-            <button type="submit" class="ds-btn ds-btn-orange w-full" data-loading-text="Creating your account...">${ic.userPlus(13)} Create My Deckspace</button>
+            <button type="submit" class="ds-btn ds-btn-orange w-full" data-loading-text="Creating account...">Join the Crew &rarr;</button>
           </div>
         </form>
         <p class="text-small text-muted mt-8 text-center">
@@ -368,38 +370,45 @@ function onboardingForm() {
   <div class="ds-module">
     <div class="ds-module-header">Set Up Your Deckspace Profile</div>
     <div class="ds-module-body">
-      <p class="text-small text-muted mb-8">You can always edit these later. Fill in what you like now.</p>
+      <div class="onboarding-intro">
+        <strong>You're in! Now let's build your profile.</strong><br>
+        Everything below is optional &mdash; fill in what feels right. You can change or add to any of this later from your profile page.
+      </div>
       <form method="POST" action="/onboarding" class="ds-form">
         <div class="ds-form-row">
-          <label for="ob-about">About Me</label>
-          <textarea id="ob-about" name="about_me" class="ds-textarea" rows="4" maxlength="3000" placeholder="Tell people about yourself..."></textarea>
+          <label for="ob-about">About Me <span class="reg-optional">(optional)</span></label>
+          <textarea id="ob-about" name="about_me" class="ds-textarea" rows="4" maxlength="3000"
+            placeholder="Where are you from? What do you love? What are you hoping for on this cruise? Anything goes."></textarea>
         </div>
         <div class="ds-form-row">
-          <label for="ob-hometown">Hometown / Where you're from</label>
-          <input id="ob-hometown" name="hometown" type="text" class="ds-input" maxlength="100" placeholder="City, State or Country">
+          <label for="ob-hometown">Hometown <span class="reg-optional">(optional)</span></label>
+          <input id="ob-hometown" name="hometown" type="text" class="ds-input" maxlength="100" placeholder="City, State / Country">
+          <div class="hint">Helps people you meet know where you&rsquo;re from</div>
         </div>
         <div class="ds-form-row">
-          <label>Vibes &amp; Interests</label>
+          <label>Your Vibes <span class="reg-optional">(optional)</span></label>
           <div data-tag-input>
             <input type="hidden" name="vibe_tags" value="">
             <div class="vibe-tags tag-chips" style="min-height:28px;border:1px solid #ccc;padding:3px;background:#fff;margin-bottom:4px"></div>
-            <input type="text" class="ds-input" placeholder="Type a vibe and press Enter (karaoke, trivia, chill...)" style="margin-top:2px">
+            <input type="text" class="ds-input" placeholder="Type a vibe and press Enter &mdash; karaoke, trivia, chill, nightlife...">
           </div>
-          <div class="hint">What are you here for on this cruise?</div>
+          <div class="hint">Shows on your profile so people can find you by shared interests</div>
         </div>
         <div class="ds-form-row">
-          <label for="ob-who">Who I'd Like to Meet</label>
-          <textarea id="ob-who" name="who_id_like_to_meet" class="ds-textarea" rows="2" maxlength="500" placeholder="Trivia partners, karaoke people, fellow foodies..."></textarea>
+          <label for="ob-who">Who I&rsquo;d Like to Meet <span class="reg-optional">(optional)</span></label>
+          <textarea id="ob-who" name="who_id_like_to_meet" class="ds-textarea" rows="2" maxlength="500"
+            placeholder="Trivia night partners, late-night bar crowd, fellow foodies..."></textarea>
         </div>
         <div class="ds-form-row">
-          <label for="ob-intent">Cruise Vibe</label>
-          <input id="ob-intent" name="social_intent" type="text" class="ds-input" maxlength="200" placeholder="Nightlife, relaxation, adventure, all of the above...">
+          <label for="ob-intent">Cruise Vibe <span class="reg-optional">(optional)</span></label>
+          <input id="ob-intent" name="social_intent" type="text" class="ds-input" maxlength="200"
+            placeholder="Relaxation, nightlife, adventure, all of the above...">
         </div>
         <div class="ds-form-row mt-8">
-          <button type="submit" class="ds-btn ds-btn-orange w-full">${ic.user(13)} Save &amp; View My Profile</button>
+          <button type="submit" class="ds-btn ds-btn-orange w-full">Go to My Profile &raquo;</button>
         </div>
-        <div class="text-center mt-4">
-          <a href="/" class="text-small text-muted">Skip for now</a>
+        <div class="text-center" style="margin-top:8px">
+          <a href="/" class="text-small text-muted">Skip for now &mdash; I&rsquo;ll fill this in later</a>
         </div>
       </form>
     </div>

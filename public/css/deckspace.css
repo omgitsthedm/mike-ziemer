@@ -2784,3 +2784,105 @@ ul {
 .pw-match-hint          { font-size: 10px; margin-top: 2px; }
 .pw-match-hint.match    { color: var(--ds-success); }
 .pw-match-hint.no-match { color: var(--ds-error); }
+
+/* ============================================================
+   LANDING PAGE — EVENTS PREVIEW + HOW IT WORKS
+   ============================================================ */
+.landing-events-module { margin-bottom: 8px; }
+.landing-events-more {
+  float: right;
+  font-weight: normal;
+  font-size: 10px;
+}
+.landing-events-more a { color: #ffd; }
+.landing-events-list { padding: 0; }
+.landing-event-item {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 4px 0;
+  border-bottom: 1px dotted #ddd;
+  font-size: 11px;
+  flex-wrap: wrap;
+}
+.landing-event-item:last-child { border-bottom: none; }
+.landing-event-time {
+  font-size: 10px;
+  color: #666;
+  white-space: nowrap;
+  min-width: 60px;
+}
+.landing-event-title {
+  font-weight: bold;
+  color: #003399;
+  flex: 1;
+}
+.landing-event-title:hover { color: #cc5200; }
+.landing-event-loc {
+  font-size: 10px;
+  color: #888;
+  white-space: nowrap;
+}
+.landing-events-cta {
+  margin-top: 6px;
+  font-size: 11px;
+}
+
+
+/* ============================================================
+   LOGIN PAGE — INSTRUCTIONS + HELP TEXT
+   ============================================================ */
+.login-instructions {
+  font-size: 11px;
+  color: #333;
+  line-height: 1.5;
+  padding: 6px 8px;
+  background: var(--ds-blue-bg);
+  border: 1px solid #aabbdd;
+  margin-bottom: 10px;
+}
+.login-help-text {
+  font-size: 11px;
+  color: #666;
+  line-height: 1.5;
+  margin-top: 10px;
+  padding-top: 6px;
+  border-top: 1px dotted #ccc;
+}
+
+/* ============================================================
+   REGISTER PAGE — PRIVACY BADGE + TIME NOTE + REQUIRED STAR
+   ============================================================ */
+.reg-privacy-badge {
+  font-size: 11px;
+  color: #333;
+  line-height: 1.5;
+  padding: 6px 8px;
+  background: var(--ds-blue-bg);
+  border: 1px solid #aabbdd;
+  margin-bottom: 8px;
+}
+.reg-time-note {
+  font-size: 11px;
+  color: #555;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px dotted #ddd;
+}
+.reg-required {
+  color: #cc0000;
+  font-weight: bold;
+}
+
+/* ============================================================
+   ONBOARDING PAGE — INTRO BOX
+   ============================================================ */
+.onboarding-intro {
+  font-size: 12px;
+  color: #333;
+  line-height: 1.5;
+  padding: 6px 8px;
+  background: #f0f8ff;
+  border: 1px solid #aabbdd;
+  margin-bottom: 10px;
+}

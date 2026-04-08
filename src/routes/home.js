@@ -29,10 +29,30 @@ home.get('/', async (c) => {
 
   // Unauthenticated: show OG MySpace-style landing page
   if (!user) {
-    const newPeople = await browsePeople(db, c.env.SAILING_ID, { limit: 8 }).catch(() => []);
+    const now = new Date();
+    const todayStart = new Date(now);
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date(now);
+    todayEnd.setHours(23, 59, 59, 999);
+
+    const [newPeople, tonightEvents] = await Promise.all([
+      browsePeople(db, c.env.SAILING_ID, { limit: 8 }).catch(() => []),
+      db.from('events')
+        .select('id, title, location, start_at, event_type, category')
+        .eq('sailing_id', c.env.SAILING_ID)
+        .eq('moderation_status', 'visible')
+        .eq('visibility', 'public')
+        .gte('start_at', todayStart.toISOString())
+        .lte('start_at', todayEnd.toISOString())
+        .order('start_at', { ascending: true })
+        .limit(4)
+        .then(({ data }) => data || [])
+        .catch(() => [])
+    ]);
+
     return c.html(layoutCtx(c, {
       title: 'Deckspace — A Place for Friends on the High Seas',
-      body: landingPage({ sailing, cdnBase, newPeople, weather }),
+      body: landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents }),
     }));
   }
 
@@ -287,11 +307,33 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
 
 /* ============================================================
    LANDING PAGE (unauthenticated visitors)
-   OG MySpace layout: 60% left (hero + How It Works + Cool New People), 40% right (login + signup)
+   OG MySpace layout: 60% left (hero + events + howto + people), 40% right (login + weather)
    ============================================================ */
-function landingPage({ sailing, cdnBase, newPeople, weather }) {
+function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [] }) {
   const shipName = sailing?.ship_name || 'Your Ship';
   const sailName = sailing?.name      || 'This Sailing';
+
+  // Tonight's Events preview — only show if there are events
+  const eventsPreviewHtml = tonightEvents.length
+    ? `<div class="ds-module landing-events-module">
+        <div class="ds-module-header">Tonight on ${esc(shipName)} <span class="landing-events-more"><a href="/register">all events &raquo;</a></span></div>
+        <div class="ds-module-body">
+          <div class="landing-events-list">
+            ${tonightEvents.map(e => {
+              const time = e.start_at
+                ? new Date(e.start_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+                : '';
+              return `<div class="landing-event-item">
+                <span class="landing-event-time">${esc(time)}</span>
+                <a href="/register" class="landing-event-title">${esc(e.title)}</a>
+                ${e.location ? `<span class="landing-event-loc">${esc(e.location)}</span>` : ''}
+              </div>`;
+            }).join('')}
+          </div>
+          <div class="landing-events-cta"><a href="/register">Sign up to RSVP to events &raquo;</a></div>
+        </div>
+      </div>`
+    : '';
 
   // Cool New People grid: up to 8, 60×60 square photos
   const peopleHtml = newPeople.length
@@ -320,6 +362,8 @@ function landingPage({ sailing, cdnBase, newPeople, weather }) {
       <strong>Your people are already here.</strong>
     </p>
   </div>
+
+  ${eventsPreviewHtml}
 
   <div class="landing-howto">
     <div class="landing-howto-step">
@@ -365,7 +409,9 @@ function landingPage({ sailing, cdnBase, newPeople, weather }) {
   <div class="ds-module landing-login-module">
     <div class="ds-module-header">Already a Member? Sign In</div>
     <div class="ds-module-body">
-      <p class="landing-login-context">Enter the username and password you chose when you joined.</p>
+      <div class="login-instructions">
+        <strong>Returning passenger?</strong> Enter the username and password you created when you joined Deckspace.
+      </div>
       <form method="POST" action="/login" class="landing-login-form" data-retry="true">
         <table class="landing-login-table">
           <tr>
@@ -378,10 +424,13 @@ function landingPage({ sailing, cdnBase, newPeople, weather }) {
           </tr>
           <tr>
             <td></td>
-            <td style="padding-top:6px"><button type="submit" class="ds-btn ds-btn-primary landing-login-btn" data-loading-text="Signing in...">${ic.logIn(13)} Sign In</button></td>
+            <td style="padding-top:6px"><button type="submit" class="ds-btn ds-btn-primary landing-login-btn" data-loading-text="Signing in...">Come Aboard &rarr;</button></td>
           </tr>
         </table>
       </form>
+      <div class="login-help-text">
+        <strong>Forgot your info?</strong> Ask Guest Services or the cruise coordinator's desk.
+      </div>
     </div>
   </div>
 
@@ -389,9 +438,9 @@ function landingPage({ sailing, cdnBase, newPeople, weather }) {
     <div class="landing-signup-header">New Passenger?</div>
     <p class="landing-signup-copy">
       Create your free Deckspace profile and connect with everyone on <strong>${esc(shipName)}</strong>.
-      It takes about 60 seconds.
+      Takes about 2 minutes &mdash; no email required.
     </p>
-    <a href="/register" class="ds-btn ds-btn-orange landing-signup-btn">Sign Up &mdash; It&rsquo;s Free!</a>
+    <a href="/register" class="ds-btn ds-btn-orange landing-signup-btn">Join the Crew &rarr;</a>
   </div>
 
   ${sailing ? `<div class="landing-voyage-box">
