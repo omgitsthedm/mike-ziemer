@@ -25,59 +25,8 @@ import {
 const profile = new Hono();
 
 /* ============================================================
-   VIEW PROFILE
-   ============================================================ */
-profile.get('/profile/:username', async (c) => {
-  const db       = getDb(c.env);
-  const viewer   = await resolveSession(c.env, c.req.raw);
-  const sailing  = await getSailing(db, c.env.SAILING_ID).catch(() => null);
-  const cdnBase  = c.env.R2_PUBLIC_URL || '';
-  const page     = parseInt(c.req.query('page') || '1', 10);
-
-  // Resolve username → user
-  let target;
-  try {
-    target = await getUserByUsername(db, c.env.SAILING_ID, c.req.param('username'));
-  } catch (_) {
-    return c.html(layout({ title: 'Not Found', user: viewer, sailing, body: '<div class="ds-empty-state">Profile not found.</div>' }), 404);
-  }
-
-  const { topFriends, friendCount, friendStatus } = await getProfilePage(db, target.id, viewer?.id);
-  const profile = target.profiles;
-
-  const [wallPosts, guestbook] = await Promise.all([
-    getWallPosts(db, target.id, page),
-    getGuestbookEntries(db, target.id, 1, 5)
-  ]);
-
-  // Profile views increment (fire-and-forget, skip own views)
-  if (viewer && viewer.id !== target.id) {
-    db.from('profiles').update({ profile_views: (profile?.profile_views || 0) + 1 }).eq('user_id', target.id)
-      .then(() => {}).catch(() => {});
-  }
-
-  const isOwn      = viewer?.id === target.id;
-  const readOnly   = sailing ? isSailingReadOnly(sailing) : false;
-  const isOnline   = target.last_active_at && (Date.now() - new Date(target.last_active_at).getTime()) < 5 * 60 * 1000;
-
-  const body = profilePage({
-    target, profile, viewer, topFriends, friendCount, friendStatus,
-    wallPosts, guestbook, isOwn, isOnline, readOnly,
-    page, hasMoreWall: wallPosts.length === 20,
-    cdnBase, sailing
-  });
-
-  return c.html(layout({
-    title: target.display_name + "'s Profile",
-    user: viewer,
-    sailing,
-    activeNav: isOwn ? 'profile' : '',
-    body,
-  }));
-});
-
-/* ============================================================
-   EDIT PROFILE
+   EDIT PROFILE  (must be registered BEFORE /profile/:username
+   so "edit" isn't treated as a username)
    ============================================================ */
 profile.get('/profile/edit', requireAuth, async (c) => {
   const user    = c.get('user');
@@ -135,9 +84,6 @@ profile.post('/profile/edit', requireAuth, async (c) => {
   return c.redirect('/profile/' + user.username + '?saved=1');
 });
 
-/* ============================================================
-   AVATAR UPLOAD
-   ============================================================ */
 profile.post('/profile/avatar', requireAuth, async (c) => {
   const user    = c.get('user');
   const db      = getDb(c.env);
@@ -163,6 +109,79 @@ profile.post('/profile/avatar', requireAuth, async (c) => {
   } catch (err) {
     return c.redirect('/profile/edit?error=' + encodeURIComponent(err.message));
   }
+});
+
+profile.post('/profile/top-friends', requireAuth, async (c) => {
+  const user = c.get('user');
+  const db   = getDb(c.env);
+  const form = await c.req.formData();
+
+  const ids = form.getAll('friend_ids[]').slice(0, 8).map(id => id.toString());
+
+  await db.from('top_friends').delete().eq('user_id', user.id);
+
+  if (ids.length) {
+    const rows = ids.map((friendId, i) => ({
+      user_id: user.id,
+      friend_user_id: friendId,
+      position: i + 1
+    }));
+    await q(db.from('top_friends').insert(rows));
+  }
+
+  return c.redirect('/profile/' + user.username);
+});
+
+/* ============================================================
+   VIEW PROFILE
+   ============================================================ */
+profile.get('/profile/:username', async (c) => {
+  const db       = getDb(c.env);
+  const viewer   = await resolveSession(c.env, c.req.raw);
+  const sailing  = await getSailing(db, c.env.SAILING_ID).catch(() => null);
+  const cdnBase  = c.env.R2_PUBLIC_URL || '';
+  const page     = parseInt(c.req.query('page') || '1', 10);
+
+  // Resolve username → user
+  let target;
+  try {
+    target = await getUserByUsername(db, c.env.SAILING_ID, c.req.param('username'));
+  } catch (_) {
+    return c.html(layout({ title: 'Not Found', user: viewer, sailing, body: '<div class="ds-empty-state">Profile not found.</div>' }), 404);
+  }
+
+  const { topFriends, friendCount, friendStatus } = await getProfilePage(db, target.id, viewer?.id);
+  const profile = target.profiles;
+
+  const [wallPosts, guestbook] = await Promise.all([
+    getWallPosts(db, target.id, page),
+    getGuestbookEntries(db, target.id, 1, 5)
+  ]);
+
+  // Profile views increment (fire-and-forget, skip own views)
+  if (viewer && viewer.id !== target.id) {
+    db.from('profiles').update({ profile_views: (profile?.profile_views || 0) + 1 }).eq('user_id', target.id)
+      .then(() => {}).catch(() => {});
+  }
+
+  const isOwn      = viewer?.id === target.id;
+  const readOnly   = sailing ? isSailingReadOnly(sailing) : false;
+  const isOnline   = target.last_active_at && (Date.now() - new Date(target.last_active_at).getTime()) < 5 * 60 * 1000;
+
+  const body = profilePage({
+    target, profile, viewer, topFriends, friendCount, friendStatus,
+    wallPosts, guestbook, isOwn, isOnline, readOnly,
+    page, hasMoreWall: wallPosts.length === 20,
+    cdnBase, sailing
+  });
+
+  return c.html(layout({
+    title: target.display_name + "'s Profile",
+    user: viewer,
+    sailing,
+    activeNav: isOwn ? 'profile' : '',
+    body,
+  }));
 });
 
 /* ============================================================
@@ -285,32 +304,6 @@ profile.post('/guestbook/:entryId/delete', requireAuth, async (c) => {
 
   const { data: profileUser } = await db.from('users').select('username').eq('id', entry.profile_user_id).single();
   return c.redirect('/profile/' + (profileUser?.username || ''));
-});
-
-/* ============================================================
-   TOP FRIENDS
-   ============================================================ */
-profile.post('/profile/top-friends', requireAuth, async (c) => {
-  const user = c.get('user');
-  const db   = getDb(c.env);
-  const form = await c.req.formData();
-
-  // Expect friend_ids[] in order (1–8)
-  const ids = form.getAll('friend_ids[]').slice(0, 8).map(id => id.toString());
-
-  // Delete existing and replace
-  await db.from('top_friends').delete().eq('user_id', user.id);
-
-  if (ids.length) {
-    const rows = ids.map((friendId, i) => ({
-      user_id: user.id,
-      friend_user_id: friendId,
-      position: i + 1
-    }));
-    await q(db.from('top_friends').insert(rows));
-  }
-
-  return c.redirect('/profile/' + user.username);
 });
 
 /* ============================================================
