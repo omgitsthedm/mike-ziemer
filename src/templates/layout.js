@@ -102,6 +102,7 @@ function renderNav(user, activeNav, notifCount) {
     ${rightSide}
   </div>
 </nav>`;
+}
 
 /* ============================================================
    SAILING BAR
