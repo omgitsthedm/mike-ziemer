@@ -1794,10 +1794,38 @@ ul {
 @media (max-width: 640px) {
   #ds-nav-inner {
     padding: 0 4px;
+    flex-wrap: nowrap;
+    position: relative;
+  }
+  #nav-toggle {
+    display: block;
+  }
+  #ds-nav-links {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #002277;
+    border-top: 1px solid #001166;
+    border-bottom: 2px solid #001166;
+    z-index: 99;
+    flex-direction: column;
+    gap: 0;
+  }
+  #ds-nav-links.open {
+    display: flex;
   }
   #ds-nav-links a {
-    padding: 5px 5px;
-    font-size: 10px;
+    padding: 9px 12px;
+    font-size: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  #ds-nav-right {
+    display: none;
   }
   #ds-logo {
     font-size: 14px;
@@ -1869,6 +1897,198 @@ ul {
   #ds-nav-links a {
     font-size: 9px;
     padding: 5px 4px;
+  }
+}
+
+/* ============================================================
+   ICON SYSTEM — .ds-ic inline SVG alignment
+   ============================================================ */
+.ds-ic {
+  display: inline-block;
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   NAV — supplemental link classes (inside #ds-nav-right)
+   ============================================================ */
+.nav-link-subtle {
+  color: #aabbee;
+  font-size: 11px;
+  text-decoration: none;
+  padding: 2px 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+}
+.nav-link-subtle:hover {
+  color: #ffffff;
+  text-decoration: none;
+}
+.nav-link-admin {
+  color: #ffcc44;
+  font-size: 11px;
+  text-decoration: none;
+  padding: 2px 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-weight: bold;
+}
+.nav-link-admin:hover {
+  color: #ffee88;
+  text-decoration: none;
+}
+.nav-link-signin {
+  background: var(--ds-orange);
+  color: #fff;
+  font-size: 11px;
+  font-weight: bold;
+  padding: 3px 8px;
+  border-radius: 2px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.nav-link-signin:hover {
+  background: var(--ds-orange-dk);
+  color: #fff;
+  text-decoration: none;
+}
+
+/* Hamburger button — hidden by default, shown below 640px */
+#nav-toggle {
+  display: none;
+  background: none;
+  border: 1px solid rgba(255,255,255,0.25);
+  color: #ccddff;
+  padding: 4px 6px;
+  cursor: pointer;
+  margin-left: auto;
+  border-radius: 2px;
+  line-height: 1;
+}
+#nav-toggle:hover {
+  background: rgba(255,255,255,0.12);
+  color: #ffffff;
+}
+
+/* ============================================================
+   CONTACT BOX — additional variant classes
+   ============================================================ */
+.contact-btn.muted {
+  color: var(--ds-text-light);
+  border-color: #cccccc;
+}
+.contact-btn.muted:hover {
+  color: #333;
+}
+.contact-btn.success {
+  background: linear-gradient(to bottom, #448833 0%, #336622 100%);
+  color: #ffffff;
+  border-color: #336622;
+}
+.contact-btn.success:hover {
+  background: linear-gradient(to bottom, #559944 0%, #448833 100%);
+  color: #ffffff;
+}
+.contact-btn.subtle {
+  background: none;
+  border-color: #bbbbbb;
+  color: #555;
+  font-style: italic;
+}
+.contact-btn.subtle:hover {
+  background: #f5f5f5;
+  color: #333;
+}
+
+/* Friend status badges (appear inside contact actions) */
+.friends-badge,
+.pending-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  padding: 2px 6px;
+  border: 1px solid;
+  border-radius: 2px;
+}
+.friends-badge {
+  color: #336622;
+  border-color: #aaccaa;
+  background: #eef6ee;
+}
+.pending-badge {
+  color: #885500;
+  border-color: #ddbb88;
+  background: #fff8ee;
+}
+
+/* ============================================================
+   COMMENT — delete button and inline forms
+   ============================================================ */
+.comment-delete-btn {
+  background: none;
+  border: none;
+  padding: 0 2px;
+  cursor: pointer;
+  color: var(--ds-text-light);
+  line-height: 1;
+  vertical-align: middle;
+}
+.comment-delete-btn:hover {
+  color: var(--ds-error);
+}
+.inline-form {
+  display: inline;
+  margin: 0;
+  padding: 0;
+}
+
+/* ============================================================
+   EVENTS — category icon block
+   ============================================================ */
+.event-cat-icon-block {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--ds-navy);
+}
+
+/* ============================================================
+   RESPONSIVE — Tablet (768px) breakpoint
+   Profile and home grid adapt at 768px before collapsing at 640px
+   ============================================================ */
+@media (max-width: 768px) {
+  /* Narrow profile left col */
+  .profile-wrap {
+    grid-template-columns: 160px 1fr;
+    gap: 8px;
+  }
+
+  /* Home grid: narrow sidebar */
+  .home-grid {
+    grid-template-columns: 200px 1fr;
+    gap: 8px;
+  }
+
+  /* Events schedule: hide location col to save space */
+  .ss-th-loc, .ss-loc {
+    display: none;
+  }
+
+  /* People grid: 4 cols */
+  .people-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  /* Photo grid: 4 cols */
+  .photo-grid {
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 

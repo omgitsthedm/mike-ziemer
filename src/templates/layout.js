@@ -1,3 +1,5 @@
+import { ic } from './icons.js';
+
 /**
  * Deckspace — Base HTML Layout
  *
@@ -63,41 +65,43 @@ ${sailing ? renderSailingBar(sailing, readOnly) : ''}
    TOP NAVIGATION
    ============================================================ */
 function renderNav(user, activeNav, notifCount) {
+  const NAV_ICONS = { home: ic.home, people: ic.users, events: ic.calendar, photos: ic.camera };
   const navLinks = user
     ? [
-        { href: '/',              label: 'Home',    key: 'home' },
-        { href: '/people',        label: 'People',  key: 'people' },
-        { href: '/events',        label: 'Events',  key: 'events' },
-        { href: '/photos',        label: 'Photos',  key: 'photos' },
+        { href: '/',       label: 'Home',   key: 'home' },
+        { href: '/people', label: 'People', key: 'people' },
+        { href: '/events', label: 'Events', key: 'events' },
+        { href: '/photos', label: 'Photos', key: 'photos' },
       ]
     : [];
 
-  const links = navLinks.map(n =>
-    `<a href="${n.href}" class="${activeNav === n.key ? 'active' : ''}">${n.label}</a>`
-  ).join('');
+  const links = navLinks.map(n => {
+    const iconFn = NAV_ICONS[n.key];
+    return `<a href="${n.href}" class="${activeNav === n.key ? 'active' : ''}">${iconFn ? iconFn(13) : ''}${n.label}</a>`;
+  }).join('');
 
   const rightSide = user
     ? `<div id="ds-nav-right">
         <span class="nav-user-name">Hi, <strong>${esc(user.display_name)}</strong></span>
         ${notifCount > 0
-          ? `<a href="/notifications" class="nav-notif-badge">${notifCount} new</a>`
-          : `<a href="/notifications" style="color:#99bbff;font-size:11px">Alerts</a>`}
-        <a href="/profile/${esc(user.username)}" style="color:#99bbff;font-size:11px">My Profile</a>
-        ${['admin','moderator'].includes(user.role) ? `<a href="/admin" style="color:#ffcc66;font-size:11px">Admin</a>` : ''}
-        <a href="/logout" style="color:#99bbff;font-size:11px">Sign Out</a>
+          ? `<a href="/notifications" class="nav-notif-badge">${ic.bell(12)} ${notifCount}</a>`
+          : `<a href="/notifications" class="nav-link-subtle">${ic.bell(12)} Alerts</a>`}
+        <a href="/profile/${esc(user.username)}" class="nav-link-subtle">${ic.user(12)} Profile</a>
+        ${user.role === 'admin' || user.role === 'moderator' ? `<a href="/admin" class="nav-link-admin">${ic.shield(12)} Admin</a>` : ''}
+        <a href="/logout" class="nav-link-subtle">${ic.logOut(12)} Out</a>
       </div>`
     : `<div id="ds-nav-right">
-        <a href="/login" style="color:#ccddff;font-size:11px">Sign In</a>
+        <a href="/login" class="nav-link-signin">Sign In</a>
       </div>`;
 
   return `<nav id="ds-nav" role="navigation" aria-label="Main navigation">
   <div id="ds-nav-inner">
     <a href="/" id="ds-logo"><span class="logo-deck">Deck</span><span class="logo-space">space</span></a>
+    <button id="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">${ic.menu(18)}</button>
     <div id="ds-nav-links">${links}</div>
     ${rightSide}
   </div>
 </nav>`;
-}
 
 /* ============================================================
    SAILING BAR

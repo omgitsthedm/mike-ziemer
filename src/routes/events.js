@@ -17,6 +17,7 @@ import { getDb, getEvents, getEventById, getEventComments, getUserRsvp, getSaili
 import { requireAuth, resolveSession, isSailingReadOnly } from '../lib/auth.js';
 import { layout, esc, fmtDate, relTime } from '../templates/layout.js';
 import { module, eventCard, commentEntry, paginator } from '../templates/components.js';
+import { ic } from '../templates/icons.js';
 
 const events = new Hono();
 
@@ -323,16 +324,17 @@ const DAY_HEADERS = [
 ];
 
 const CAT_ICONS = {
-  karaoke:   '&#127928;',  // 🎸
-  trivia:    '&#128220;',  // 📼
-  dinner:    '&#127860;',  // 🍽
-  deck:      '&#127754;',  // 🌊
-  social:    '&#128148;',  // 💔
-  excursion: '&#9875;',    // ⚓
-  drinks:    '&#127865;',  // 🍹
-  poker:     '&#9824;',    // ♠
-  theme:     '&#127917;',  // 🎭
-  other:     '&#128420;',  // 🖤
+  karaoke:   () => ic.mic(14),
+  trivia:    () => ic.lightbulb(14),
+  dinner:    () => ic.utensils(14),
+  deck:      () => ic.ship(14),
+  social:    () => ic.users(14),
+  excursion: () => ic.compass(14),
+  drinks:    () => ic.glass(14),
+  poker:     () => ic.diamond(14),
+  theme:     () => ic.star(14),
+  music:     () => ic.music(14),
+  other:     () => ic.calendar(14),
 };
 
 function fmtTime(dateStr) {
@@ -409,12 +411,12 @@ function eventsSchedulePage({ viewer, sailing, days }) {
     <div class="ds-module-header">Event Legend</div>
     <div class="ds-module-body">
       <table class="ss-legend-table">
-        <tr><td>&#127928;</td><td>Live Set</td></tr>
-        <tr><td>&#128148;</td><td>Social Damage</td></tr>
-        <tr><td>&#128220;</td><td>Late Night</td></tr>
-        <tr><td>&#128222;</td><td>Interactive</td></tr>
-        <tr><td>&#128420;</td><td>Emotional Hazard</td></tr>
-        <tr><td>&#127754;</td><td>Deck / Unscheduled</td></tr>
+        <tr><td>${ic.music(13)}</td><td>Live Set</td></tr>
+        <tr><td>${ic.heart(13)}</td><td>Social Damage</td></tr>
+        <tr><td>${ic.msgSquare(13)}</td><td>Late Night</td></tr>
+        <tr><td>${ic.mic(13)}</td><td>Interactive</td></tr>
+        <tr><td>${ic.alertTri(13)}</td><td>Emotional Hazard</td></tr>
+        <tr><td>${ic.anchor(13)}</td><td>Deck / Unscheduled</td></tr>
       </table>
     </div>
   </div>
@@ -552,12 +554,12 @@ function eventDetailPage({ event, comments, userRsvp, attendees, viewer, sailing
     rsvpHtml = `<form method="POST" action="/events/${esc(event.id)}/rsvp" style="display:inline-flex;gap:4px;align-items:center">
       <input type="hidden" name="status" value="${going ? 'not_going' : 'going'}">
       <button type="submit" class="rsvp-btn${going ? ' going' : ''}">
-        ${going ? '&#10003; Going' : '+ RSVP Going'}
+        ${going ? `${ic.check(12)} Going` : '+ RSVP Going'}
       </button>
     </form>
     ${!going ? `<form method="POST" action="/events/${esc(event.id)}/rsvp" style="display:inline;margin-left:4px">
       <input type="hidden" name="status" value="${interested ? 'not_going' : 'interested'}">
-      <button type="submit" class="ds-btn ds-btn-sm">${interested ? 'Interested &#10003;' : 'Interested'}</button>
+      <button type="submit" class="ds-btn ds-btn-sm">${interested ? `${ic.check(12)} Interested` : 'Interested'}</button>
     </form>` : ''}`;
   }
 

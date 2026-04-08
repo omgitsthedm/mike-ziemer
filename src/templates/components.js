@@ -7,6 +7,7 @@
  */
 
 import { esc, relTime, fmtDate } from './layout.js';
+import { ic } from './icons.js';
 
 /* ============================================================
    MODULE WRAPPER
@@ -70,29 +71,29 @@ export function contactBox({ targetUser, viewerUser, friendStatus }) {
   let friendAction = '';
   if (!friendStatus) {
     friendAction = `<form method="POST" action="/friends/${esc(targetUser.id)}/request" data-retry="true">
-      <button type="submit" class="contact-btn primary">+ Add Friend</button>
+      <button type="submit" class="contact-btn primary">${ic.userPlus(13)} Add Friend</button>
     </form>`;
   } else if (friendStatus.status === 'pending') {
     if (friendStatus.requester_id === viewerUser.id) {
-      friendAction = `<span class="contact-btn" style="color:#666;cursor:default">Request Sent</span>`;
+      friendAction = `<span class="contact-btn muted">${ic.userCheck(13)} Request Sent</span>`;
     } else {
       friendAction = `<form method="POST" action="/friends/${esc(friendStatus.id)}/accept" data-retry="true">
-        <button type="submit" class="contact-btn primary">Accept Friend</button>
+        <button type="submit" class="contact-btn primary">${ic.userCheck(13)} Accept Friend</button>
       </form>`;
     }
   } else if (friendStatus.status === 'accepted') {
-    friendAction = `<span class="contact-btn" style="color:#006600;cursor:default">&#10003; Friends</span>`;
+    friendAction = `<span class="contact-btn success">${ic.userCheck(13)} Friends</span>`;
   }
 
   return `<div class="contact-box">
   <div class="ds-module-header">Contacting ${esc(targetUser.display_name)}</div>
   <div class="contact-actions">
     ${friendAction}
-    <a href="#wall-post-form" class="contact-btn">&#128394; Write on Wall</a>
-    <a href="#guestbook-form" class="contact-btn">&#128221; Sign Guestbook</a>
-    <a href="/report?type=user&id=${esc(targetUser.id)}" class="contact-btn text-small" style="color:#999">Report</a>
+    <a href="#wall-post-form" class="contact-btn">${ic.pencil(13)} Write on Wall</a>
+    <a href="#guestbook-form" class="contact-btn">${ic.book(13)} Sign Guestbook</a>
+    <a href="/report?type=user&id=${esc(targetUser.id)}" class="contact-btn subtle">${ic.flag(12)} Report</a>
     <form method="POST" action="/friends/${esc(targetUser.id)}/block" data-confirm="Block this user?" data-retry="true">
-      <button type="submit" class="contact-btn danger text-small">Block</button>
+      <button type="submit" class="contact-btn danger">${ic.xmark(12)} Block</button>
     </form>
   </div>
 </div>`;
@@ -130,7 +131,7 @@ export function songModule(profile) {
   <span class="song-title">${esc(profile.song_title)}</span>
   <span class="song-artist">${esc(profile.song_artist || '')}</span>
   ${profile.song_url
-    ? `<button class="song-play-btn" data-song-url="${esc(profile.song_url)}" type="button">&#9658; Play</button>
+    ? `<button class="song-play-btn" data-song-url="${esc(profile.song_url)}" type="button">${ic.play(12)} Play</button>
        <p class="text-small text-muted mt-4">(tap to play &mdash; no autoplay)</p>`
     : ''}
 </div>`
@@ -278,8 +279,8 @@ export function commentEntry({ authorUser, body, time, id, viewerUser, deleteAct
     : `<div class="no-photo-xs">${esc((authorUser?.display_name || '?').charAt(0))}</div>`;
 
   const deleteHtml = canDelete
-    ? `<form method="POST" action="${esc(deleteAction)}" style="display:inline">
-        <button type="submit" class="ds-btn ds-btn-sm" data-confirm="Delete this?" style="font-size:9px;padding:1px 5px;color:#cc0000;background:none;border:none;cursor:pointer">delete</button>
+    ? `<form method="POST" action="${esc(deleteAction)}" class="inline-form">
+        <button type="submit" class="comment-delete-btn" data-confirm="Delete this?" title="Delete">${ic.trash(11)}</button>
        </form>`
     : '';
 
@@ -301,7 +302,7 @@ export function commentEntry({ authorUser, body, time, id, viewerUser, deleteAct
 export function eventCard({ event, cdnBase }) {
   const thumbHtml = event.cover_image_url
     ? `<img src="${esc(`${cdnBase || ''}/${event.cover_image_url}`)}" alt="" width="50" height="50" loading="lazy">`
-    : `<div style="font-size:18px;line-height:50px;text-align:center;">${categoryEmoji(event.category)}</div>`;
+    : `<div class="event-cat-icon-block">${categoryIcon(event.category)}</div>`;
 
   const typeBadge = event.event_type === 'official'
     ? `<span class="event-official-badge">Official</span>`
@@ -320,12 +321,21 @@ export function eventCard({ event, cdnBase }) {
 </div>`;
 }
 
-function categoryEmoji(cat) {
+function categoryIcon(cat) {
   const map = {
-    karaoke: '🎤', trivia: '🧠', dinner: '🍽', deck: '⛵',
-    excursion: '🗺', drinks: '🍹', poker: '🃏', theme: '🎭', other: '📅'
+    karaoke:   ic.mic,
+    trivia:    ic.lightbulb,
+    dinner:    ic.utensils,
+    deck:      ic.ship,
+    social:    ic.users,
+    excursion: ic.compass,
+    drinks:    ic.glass,
+    poker:     ic.diamond,
+    theme:     ic.star,
+    music:     ic.music,
+    other:     ic.calendar,
   };
-  return map[cat] || '📅';
+  return (map[cat] || ic.calendar)(22);
 }
 
 /* ============================================================
@@ -367,9 +377,9 @@ export function personRow({ user, profile, viewerUser, friendStatus, cdnBase }) 
         <button type="submit" class="ds-btn ds-btn-sm ds-btn-primary">+ Add</button>
       </form>`;
     } else if (friendStatus.status === 'accepted') {
-      actionHtml = `<span style="color:#006600;font-size:11px">&#10003; Friends</span>`;
+      actionHtml = `<span class="friends-badge">${ic.userCheck(12)} Friends</span>`;
     } else if (friendStatus.status === 'pending') {
-      actionHtml = `<span style="color:#666;font-size:10px">Pending</span>`;
+      actionHtml = `<span class="pending-badge">${ic.userPlus(12)} Pending</span>`;
     }
   }
 
@@ -388,22 +398,22 @@ export function personRow({ user, profile, viewerUser, friendStatus, cdnBase }) 
    NOTIFICATION ITEM
    ============================================================ */
 export function notifItem(n) {
-  const icons = {
-    friend_request: '👋',
-    friend_accepted: '🤝',
-    wall_post: '📝',
-    guestbook: '📖',
-    event_comment: '💬',
-    photo_comment: '📷',
-    rsvp: '📅',
-    admin_notice: '⚠️'
+  const iconMap = {
+    friend_request:  ic.userPlus,
+    friend_accepted: ic.userCheck,
+    wall_post:       ic.pencil,
+    guestbook:       ic.book,
+    event_comment:   ic.msgSquare,
+    photo_comment:   ic.camera,
+    rsvp:            ic.calendar,
+    admin_notice:    ic.alertTri,
   };
-  const icon = icons[n.type] || '🔔';
+  const iconFn = iconMap[n.type] || ic.bell;
   const msg = n.message || defaultNotifMessage(n);
   const actor = n.users;
 
   return `<div class="notif-item${n.read_at ? '' : ' unread'}">
-  <div class="notif-icon">${icon}</div>
+  <div class="notif-icon">${iconFn(15)}</div>
   <div class="notif-body">
     ${actor ? `<a href="/profile/${esc(actor.username)}">${esc(actor.display_name)}</a> ` : ''}${esc(msg)}
   </div>

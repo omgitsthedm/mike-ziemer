@@ -216,6 +216,37 @@
   }
 
   /* ============================================================
+     MOBILE NAV HAMBURGER
+     Toggle #ds-nav-links open/closed on mobile.
+     ============================================================ */
+  function initNavToggle() {
+    var btn = document.getElementById('nav-toggle');
+    var links = document.getElementById('ds-nav-links');
+    if (!btn || !links) return;
+
+    btn.addEventListener('click', function () {
+      var isOpen = links.classList.toggle('open');
+      btn.setAttribute('aria-expanded', String(isOpen));
+    });
+
+    // Close when a link is tapped
+    links.addEventListener('click', function (e) {
+      if (e.target.closest('a')) {
+        links.classList.remove('open');
+        btn.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    // Close on outside click
+    document.addEventListener('click', function (e) {
+      if (!e.target.closest('#ds-nav-inner')) {
+        links.classList.remove('open');
+        btn.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
+
+  /* ============================================================
      MARK NOTIFICATIONS READ
      On notifications page load, ping the read-all endpoint.
      ============================================================ */
@@ -314,6 +345,7 @@
     initSongPlayer();
     initFlashDismiss();
     initConfirmActions();
+    initNavToggle();
     initNotifRead();
     initLazyImages();
     initTagInput();
