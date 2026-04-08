@@ -41,61 +41,51 @@ auth.post('/login', async (c) => {
   const turnstileToken = (form.get('cf-turnstile-response') || '').toString();
   const next = (form.get('next') || '/').toString();
   const sailingId = c.env.SAILING_ID;
-
   const ip = c.req.header('cf-connecting-ip') || '';
 
-  // Turnstile check
-  const turnstileOk = await verifyTurnstile(c.env, turnstileToken, ip);
-  if (!turnstileOk) {
-    return c.html(layout({
-      title: 'Sign In',
-      body: loginForm({ next, siteKey: c.env.TURNSTILE_SITE_KEY, error: 'Please complete the verification challenge.' }),
-    }), 400);
-  }
-
-  // Fetch user
-  const { data: user } = await db.from('users')
-    .select('id, username, display_name, password_hash, account_status, activation_status, sailing_id')
-    .eq('sailing_id', sailingId)
-    .ilike('username', username)
-    .single();
-
-  const invalid = () => c.html(layout({
+  const showLogin = (error, status = 400) => c.html(layout({
     title: 'Sign In',
-    body: loginForm({ next, siteKey: c.env.TURNSTILE_SITE_KEY, error: 'Invalid username or password.' }),
-  }), 401);
+    body: loginForm({ next, siteKey: c.env.TURNSTILE_SITE_KEY, error }),
+  }), status);
 
-  if (!user) return invalid();
-  if (user.account_status === 'banned') {
-    return c.html(layout({
-      title: 'Sign In',
-      body: loginForm({ next, siteKey: c.env.TURNSTILE_SITE_KEY, error: 'This account has been suspended.' }),
-    }), 403);
+  try {
+    // Turnstile check
+    const turnstileOk = await verifyTurnstile(c.env, turnstileToken, ip);
+    if (!turnstileOk) return showLogin('Please complete the verification challenge.');
+
+    // Fetch user — maybeSingle so missing user returns null instead of throwing
+    const { data: user } = await db.from('users')
+      .select('id, username, display_name, password_hash, account_status, activation_status, sailing_id')
+      .eq('sailing_id', sailingId)
+      .ilike('username', username)
+      .maybeSingle();
+
+    if (!user) return showLogin('Invalid username or password.', 401);
+    if (user.account_status === 'banned') return showLogin('This account has been suspended.', 403);
+
+    const passwordOk = await verifyPassword(password, user.password_hash);
+    if (!passwordOk) return showLogin('Invalid username or password.', 401);
+
+    // Check sailing access window
+    const sailing = await getSailing(db, sailingId).catch(() => null);
+    if (sailing && !isSailingAccessible(sailing)) {
+      return showLogin('Deckspace is not currently active for this sailing.', 403);
+    }
+
+    // Activate account if pending (first login)
+    if (user.activation_status === 'pending') {
+      await db.from('users').update({ activation_status: 'active' }).eq('id', user.id).catch(() => {});
+    }
+
+    const { token, expiresAt } = await createSession(c.env, user.id, c.req.raw);
+    const redirectUrl = next.startsWith('/') && !next.startsWith('//') ? next : '/';
+    const res = c.redirect(redirectUrl);
+    setSessionCookie(res, token, expiresAt);
+    return res;
+  } catch (err) {
+    console.error('[Login Error]', err);
+    return showLogin('Something went wrong. Please try again.', 500);
   }
-
-  const passwordOk = await verifyPassword(password, user.password_hash);
-  if (!passwordOk) return invalid();
-
-  // Check sailing access window
-  const sailing = await getSailing(db, sailingId).catch(() => null);
-  if (sailing && !isSailingAccessible(sailing)) {
-    return c.html(layout({
-      title: 'Sign In',
-      body: loginForm({ next, siteKey: c.env.TURNSTILE_SITE_KEY, error: 'Deckspace is not currently active for this sailing.' }),
-    }), 403);
-  }
-
-  // Activate account if pending (first login)
-  if (user.activation_status === 'pending') {
-    await db.from('users').update({ activation_status: 'active' }).eq('id', user.id);
-  }
-
-  const { token, expiresAt } = await createSession(c.env, user.id, c.req.raw);
-
-  const redirectUrl = next.startsWith('/') ? next : '/';
-  const res = c.redirect(redirectUrl);
-  setSessionCookie(res, token, expiresAt);
-  return res;
 });
 
 /* ============================================================
@@ -117,94 +107,73 @@ auth.post('/register', async (c) => {
   const sailingId = c.env.SAILING_ID;
   const ip = c.req.header('cf-connecting-ip') || '';
 
-  const turnstileToken = (form.get('cf-turnstile-response') || '').toString();
-  const turnstileOk = await verifyTurnstile(c.env, turnstileToken, ip);
-  if (!turnstileOk) {
-    return c.html(layout({
-      title: 'Create Account',
-      body: registerForm({ siteKey: c.env.TURNSTILE_SITE_KEY, error: 'Please complete the verification challenge.' }),
-    }), 400);
-  }
-
   const displayName = (form.get('display_name') || '').toString().trim().slice(0, 50);
   const username    = (form.get('username') || '').toString().trim().toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 30);
   const email       = (form.get('email') || '').toString().trim().toLowerCase().slice(0, 200);
   const password    = (form.get('password') || '').toString();
   const password2   = (form.get('password2') || '').toString();
 
-  const errs = [];
-  if (!displayName || displayName.length < 2)    errs.push('Display name must be at least 2 characters.');
-  if (!username || username.length < 3)           errs.push('Username must be at least 3 characters.');
-  if (!/^[a-z0-9_]+$/.test(username))            errs.push('Username can only contain letters, numbers, and underscores.');
-  if (!password || password.length < 8)           errs.push('Password must be at least 8 characters.');
-  if (password !== password2)                     errs.push('Passwords do not match.');
+  const showRegister = (error, status = 400) => c.html(layout({
+    title: 'Create Account',
+    body: registerForm({ siteKey: c.env.TURNSTILE_SITE_KEY, error, values: { displayName, username, email } }),
+  }), status);
 
-  if (errs.length) {
-    return c.html(layout({
-      title: 'Create Account',
-      body: registerForm({
-        siteKey: c.env.TURNSTILE_SITE_KEY,
-        error: errs.join(' '),
-        values: { displayName, username, email }
-      }),
-    }), 400);
+  try {
+    const turnstileToken = (form.get('cf-turnstile-response') || '').toString();
+    const turnstileOk = await verifyTurnstile(c.env, turnstileToken, ip);
+    if (!turnstileOk) return showRegister('Please complete the verification challenge.');
+
+    const errs = [];
+    if (!displayName || displayName.length < 2) errs.push('Display name must be at least 2 characters.');
+    if (!username || username.length < 3)        errs.push('Username must be at least 3 characters.');
+    if (!/^[a-z0-9_]+$/.test(username))         errs.push('Username can only contain letters, numbers, and underscores.');
+    if (!password || password.length < 8)        errs.push('Password must be at least 8 characters.');
+    if (password !== password2)                  errs.push('Passwords do not match.');
+    if (errs.length) return showRegister(errs.join(' '));
+
+    // Check sailing access — only block if sailing explicitly restricts (not if missing)
+    const sailing = await getSailing(db, sailingId).catch(() => null);
+    if (sailing && !isSailingAccessible(sailing)) {
+      return showRegister('Deckspace is not currently accepting new registrations.', 403);
+    }
+
+    // Username uniqueness
+    const { data: existing } = await db.from('users')
+      .select('id')
+      .eq('sailing_id', sailingId)
+      .ilike('username', username)
+      .maybeSingle();
+    if (existing) return showRegister('That username is already taken.');
+
+    const passwordHash = await hashPassword(password);
+
+    const { data: newUser, error: insertErr } = await db.from('users').insert({
+      sailing_id: sailingId,
+      username,
+      display_name: displayName,
+      email: email || null,
+      password_hash: passwordHash,
+      account_status: 'active',
+      activation_status: 'active',
+      role: 'passenger'
+    }).select('id').single();
+
+    if (insertErr || !newUser) {
+      console.error('[Register insert error]', insertErr);
+      return showRegister('Could not create account. Please try again.', 500);
+    }
+
+    // Create empty profile (upsert so duplicate is safe)
+    await db.from('profiles').upsert({ user_id: newUser.id }, { onConflict: 'user_id' }).catch(() => {});
+
+    const { token, expiresAt } = await createSession(c.env, newUser.id, c.req.raw);
+    const res = c.redirect('/onboarding');
+    setSessionCookie(res, token, expiresAt);
+    return res;
+  } catch (err) {
+    console.error('[Register Error]', err);
+    return showRegister('Something went wrong. Please try again.', 500);
   }
-
-  // Check sailing exists and is accessible
-  const sailing = await getSailing(db, sailingId).catch(() => null);
-  if (!sailing || !isSailingAccessible(sailing)) {
-    return c.html(layout({
-      title: 'Create Account',
-      body: registerForm({ siteKey: c.env.TURNSTILE_SITE_KEY, error: 'Deckspace is not currently accepting new registrations.' }),
-    }), 403);
-  }
-
-  // Username uniqueness check
-  const { data: existing } = await db.from('users')
-    .select('id')
-    .eq('sailing_id', sailingId)
-    .ilike('username', username)
-    .maybeSingle();
-
-  if (existing) {
-    return c.html(layout({
-      title: 'Create Account',
-      body: registerForm({
-        siteKey: c.env.TURNSTILE_SITE_KEY,
-        error: 'That username is already taken.',
-        values: { displayName, username, email }
-      }),
-    }), 400);
-  }
-
-  const passwordHash = await hashPassword(password);
-
-  const { data: newUser, error: insertErr } = await db.from('users').insert({
-    sailing_id: sailingId,
-    username,
-    display_name: displayName,
-    email: email || null,
-    password_hash: passwordHash,
-    account_status: 'active',
-    activation_status: 'active',
-    role: 'passenger'
-  }).select('id').single();
-
-  if (insertErr || !newUser) {
-    return c.html(layout({
-      title: 'Create Account',
-      body: registerForm({ siteKey: c.env.TURNSTILE_SITE_KEY, error: 'Could not create account. Please try again.' }),
-    }), 500);
-  }
-
-  // Create empty profile
-  await db.from('profiles').insert({ user_id: newUser.id });
-
-  const { token, expiresAt } = await createSession(c.env, newUser.id, c.req.raw);
-
-  const res = c.redirect('/onboarding');
-  setSessionCookie(res, token, expiresAt);
-  return res;
 });
 
 /* ============================================================
@@ -235,15 +204,20 @@ auth.post('/onboarding', async (c) => {
   const whoMeet  = (form.get('who_id_like_to_meet') || '').toString().trim().slice(0, 500);
   const intent   = (form.get('social_intent') || '').toString().trim().slice(0, 200);
 
-  await db.from('profiles').upsert({
-    user_id: user.id,
-    about_me: aboutMe || null,
-    hometown: hometown || null,
-    vibe_tags: vibeTags.length ? vibeTags : null,
-    who_id_like_to_meet: whoMeet || null,
-    social_intent: intent || null,
-    updated_at: new Date().toISOString()
-  }, { onConflict: 'user_id' });
+  try {
+    await db.from('profiles').upsert({
+      user_id: user.id,
+      about_me: aboutMe || null,
+      hometown: hometown || null,
+      vibe_tags: vibeTags.length ? vibeTags : null,
+      who_id_like_to_meet: whoMeet || null,
+      social_intent: intent || null,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'user_id' });
+  } catch (err) {
+    console.error('[Onboarding upsert error]', err);
+    // Non-fatal: profile save failed but continue to profile
+  }
 
   return c.redirect('/profile/' + user.username);
 });

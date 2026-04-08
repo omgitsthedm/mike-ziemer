@@ -50,7 +50,8 @@ home.get('/', async (c) => {
         .lte('start_at', todayEnd.toISOString())
         .order('start_at', { ascending: true })
         .limit(6)
-        .then(({ data }) => data || []),
+        .then(({ data }) => data || [])
+        .catch(() => []),
 
       // Upcoming events (next 3 days beyond today)
       db.from('events')
@@ -61,22 +62,23 @@ home.get('/', async (c) => {
         .gt('start_at', todayEnd.toISOString())
         .order('start_at', { ascending: true })
         .limit(4)
-        .then(({ data }) => data || []),
+        .then(({ data }) => data || [])
+        .catch(() => []),
 
       // Recently active people
-      browsePeople(db, c.env.SAILING_ID, { limit: 8 }),
+      browsePeople(db, c.env.SAILING_ID, { limit: 8 }).catch(() => []),
 
       // Recent photos
-      getRecentPhotos(db, c.env.SAILING_ID, 8),
+      getRecentPhotos(db, c.env.SAILING_ID, 8).catch(() => []),
 
       // Recent wall posts (social pulse)
-      // Two joins to users table: author (who posted) and target (whose wall)
       db.from('wall_posts')
         .select('id, body, created_at, author:users!wall_posts_author_user_id_fkey(username, display_name), target:users!wall_posts_profile_user_id_fkey(username, display_name)')
         .eq('moderation_status', 'visible')
         .order('created_at', { ascending: false })
         .limit(5)
         .then(({ data }) => data || [])
+        .catch(() => [])
     ]);
 
   const body = homePage({

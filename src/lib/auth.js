@@ -45,16 +45,23 @@ export async function hashPassword(password) {
 }
 
 export async function verifyPassword(password, stored) {
-  const [algo, saltHex, hashHex] = stored.split(':');
-  if (algo !== 'pbkdf2') return false;
-  const enc = new TextEncoder();
-  const salt = new Uint8Array(saltHex.match(/.{2}/g).map(b => parseInt(b, 16)));
-  const key = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
-  const bits = await crypto.subtle.deriveBits(
-    { name: 'PBKDF2', hash: 'SHA-256', salt, iterations: 100000 },
-    key, 256
-  );
-  return hex(bits) === hashHex;
+  if (!stored || typeof stored !== 'string') return false;
+  const parts = stored.split(':');
+  if (parts.length !== 3) return false;
+  const [algo, saltHex, hashHex] = parts;
+  if (algo !== 'pbkdf2' || !saltHex || !hashHex) return false;
+  try {
+    const enc = new TextEncoder();
+    const salt = new Uint8Array(saltHex.match(/.{2}/g).map(b => parseInt(b, 16)));
+    const key = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
+    const bits = await crypto.subtle.deriveBits(
+      { name: 'PBKDF2', hash: 'SHA-256', salt, iterations: 100000 },
+      key, 256
+    );
+    return hex(bits) === hashHex;
+  } catch {
+    return false;
+  }
 }
 
 /* ============================================================
@@ -148,32 +155,35 @@ export async function destroySession(env, request) {
    TURNSTILE VERIFICATION
    ============================================================ */
 export async function verifyTurnstile(env, token, ip) {
-  if (!env.TURNSTILE_SECRET_KEY) return true; // Skip in dev
+  if (!env.TURNSTILE_SECRET_KEY) return true; // Skip when unconfigured
   if (!token) return false;
-
-  const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      secret: env.TURNSTILE_SECRET_KEY,
-      response: token,
-      remoteip: ip || ''
-    })
-  });
-  const data = await res.json();
-  return data.success === true;
+  try {
+    const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        secret: env.TURNSTILE_SECRET_KEY,
+        response: token,
+        remoteip: ip || ''
+      })
+    });
+    const data = await res.json();
+    return data.success === true;
+  } catch {
+    return true; // Fail open if Turnstile API is unreachable
+  }
 }
 
 /* ============================================================
    ACCESS WINDOW VALIDATION
    ============================================================ */
 export function isSailingAccessible(sailing) {
+  if (sailing.status === 'closed') return false;
   const now = new Date();
-  return (
-    sailing.status !== 'closed' &&
-    new Date(sailing.access_opens_at) <= now &&
-    new Date(sailing.archive_ends_at) >= now
-  );
+  // Treat null dates as no restriction (demo/unconfigured sailings are always accessible)
+  if (sailing.access_opens_at && new Date(sailing.access_opens_at) > now) return false;
+  if (sailing.archive_ends_at && new Date(sailing.archive_ends_at) < now) return false;
+  return true;
 }
 
 export function isSailingReadOnly(sailing) {
