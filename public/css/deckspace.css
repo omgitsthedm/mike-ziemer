@@ -3059,3 +3059,10 @@ ul {
   }
   .landing-event-loc { display: none; }
 }
+
+/* Authenticated home page bottom band — same grid, no extra top border */
+.home-info-band {
+  border-top-color: var(--ds-border);
+  border-top-width: 1px;
+  margin-top: 10px;
+}

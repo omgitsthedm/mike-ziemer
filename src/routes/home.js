@@ -63,8 +63,12 @@ home.get('/', async (c) => {
   todayEnd.setHours(23, 59, 59, 999);
 
   // Fetch bulletin from KV (admin-posted, short-lived)
-  const bulletinJson = await c.env.KV?.get(`sailing:${c.env.SAILING_ID}:bulletin`).catch(() => null);
+  const [bulletinJson, diningJson] = await Promise.all([
+    c.env.KV?.get(`sailing:${c.env.SAILING_ID}:bulletin`).catch(() => null),
+    c.env.KV?.get(`sailing:${c.env.SAILING_ID}:dining`).catch(() => null),
+  ]);
   const bulletin = bulletinJson ? JSON.parse(bulletinJson) : null;
+  const dining   = diningJson   ? JSON.parse(diningJson)   : null;
 
   // Parallel fetch of all home page data
   const [tonightEvents, upcomingEvents, recentPeople, recentPhotos, recentActivity, onlineUsers, voyageDays] =
@@ -118,7 +122,7 @@ home.get('/', async (c) => {
 
   const body = homePage({
     user, sailing, cdnBase, weather,
-    tonightEvents, upcomingEvents, recentPeople, recentPhotos, recentActivity, onlineUsers, bulletin, voyageDays
+    tonightEvents, upcomingEvents, recentPeople, recentPhotos, recentActivity, onlineUsers, bulletin, voyageDays, dining
   });
 
   return c.html(layoutCtx(c, {
@@ -299,7 +303,7 @@ function portCountdownWidget(voyageDays) {
 /* ============================================================
    HOME PAGE TEMPLATE
    ============================================================ */
-function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEvents, recentPeople, recentPhotos, recentActivity, onlineUsers, bulletin, voyageDays }) {
+function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEvents, recentPeople, recentPhotos, recentActivity, onlineUsers, bulletin, voyageDays, dining }) {
   // Tonight's events module
   const tonightHtml = tonightEvents.length
     ? tonightEvents.map(e => eventCard({ event: e, cdnBase })).join('')
@@ -409,6 +413,38 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
   const wx = weatherWidget(weather);
   const portCountdown = portCountdownWidget(voyageDays);
 
+  // Bottom info band: combined events (tonight + upcoming) + dining + port
+  const bottomEvents = [...tonightEvents, ...upcomingEvents].slice(0, 10);
+  const bottomEventsHtml = bottomEvents.length
+    ? bottomEvents.map(e => {
+        const h = new Date(e.start_at).getHours();
+        const todIcon = h < 12 ? ic.sunrise(11) : h < 18 ? ic.sun(11) : h < 21 ? ic.sunset(11) : ic.moon(11);
+        const timeStr = new Date(e.start_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        return `<div class="landing-event-row">
+  <span class="landing-event-tod">${todIcon}</span>
+  <span class="landing-event-time">${timeStr}</span>
+  <span class="landing-event-name"><a href="/events/${esc(e.id)}">${esc(e.title)}</a></span>
+  ${e.location ? `<span class="landing-event-loc">${ic.mapPin(9)} ${esc(e.location)}</span>` : ''}
+</div>`;
+      }).join('')
+    : `<div class="ds-empty-state">No upcoming events.</div>`;
+
+  const bottomEventsModule = module({
+    header: `${ic.calendar(12)} Events Schedule`,
+    headerRight: `<a href="/events">All Events</a>`,
+    body: `<div class="landing-events-list">${bottomEventsHtml}</div>`
+  });
+
+  const bottomDiningModule = module({
+    header: `${ic.utensils(12)} Dining &amp; Bars`,
+    headerRight: `<a href="/voyage">Itinerary</a>`,
+    body: diningWidget(dining)
+  });
+
+  const bottomPortModule = portCountdownWidget(voyageDays) ||
+    `<div class="ds-module"><div class="ds-module-header">${ic.anchor(12)} At Sea</div>
+     <div class="ds-module-body"><div class="port-countdown"><div class="port-name">Enjoying the voyage</div></div></div></div>`;
+
   return `${bulletinHtml}${sailingNotice}
 <div class="home-grid">
   <div>
@@ -422,6 +458,13 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
     ${upcomingModule}
     ${onlineModule}
     ${peopleModule}
+  </div>
+</div>
+<div class="landing-info-band home-info-band">
+  <div class="landing-info-grid">
+    <div class="landing-info-col-port">${bottomPortModule}</div>
+    <div class="landing-info-col-events">${bottomEventsModule}</div>
+    <div class="landing-info-col-dining">${bottomDiningModule}</div>
   </div>
 </div>`;
 }
