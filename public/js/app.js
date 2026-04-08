@@ -376,6 +376,78 @@
   }
 
   /* ============================================================
+     USERNAME VALIDATION
+     Live pattern check on [data-validate-username] fields.
+     Shows ✓ or a specific error as the user types.
+     ============================================================ */
+  function initUsernameValidation() {
+    var field = document.querySelector('[data-validate-username]');
+    if (!field) return;
+
+    var hint = document.createElement('div');
+    hint.className = 'username-hint';
+    hint.style.display = 'none';
+    // Insert after the field (but before any existing .hint div)
+    var existingHint = field.parentNode.querySelector('.hint');
+    if (existingHint) {
+      field.parentNode.insertBefore(hint, existingHint);
+    } else {
+      field.parentNode.appendChild(hint);
+    }
+
+    field.addEventListener('input', function () {
+      var val = field.value.trim();
+      if (!val) { hint.style.display = 'none'; return; }
+
+      hint.style.display = 'block';
+      if (val.length < 3) {
+        hint.className = 'username-hint bad';
+        hint.textContent = 'At least 3 characters required';
+      } else if (/[^a-zA-Z0-9_]/.test(val)) {
+        hint.className = 'username-hint bad';
+        hint.textContent = 'Letters, numbers, and underscores only (no spaces)';
+      } else if (val.length > 30) {
+        hint.className = 'username-hint bad';
+        hint.textContent = '30 character maximum';
+      } else {
+        hint.className = 'username-hint ok';
+        hint.textContent = '\u2713 Looks good';
+      }
+    });
+  }
+
+  /* ============================================================
+     PASSWORD MATCH INDICATOR
+     Real-time check: does confirm field match the password field?
+     ============================================================ */
+  function initPasswordMatch() {
+    var src     = document.querySelector('[data-pw-source]');
+    var confirm = document.querySelector('[data-pw-confirm]');
+    if (!src || !confirm) return;
+
+    var hint = confirm.parentNode.querySelector('.pw-match-hint');
+    if (!hint) return;
+
+    function checkMatch() {
+      var a = src.value;
+      var b = confirm.value;
+      if (!b) { hint.style.display = 'none'; return; }
+
+      hint.style.display = 'block';
+      if (a === b) {
+        hint.className = 'pw-match-hint match';
+        hint.textContent = '\u2713 Passwords match';
+      } else {
+        hint.className = 'pw-match-hint no-match';
+        hint.textContent = '\u2717 Passwords do not match';
+      }
+    }
+
+    confirm.addEventListener('input', checkMatch);
+    src.addEventListener('input', checkMatch);
+  }
+
+  /* ============================================================
      INIT
      ============================================================ */
   function init() {
@@ -389,6 +461,8 @@
     initNotifRead();
     initLazyImages();
     initTagInput();
+    initUsernameValidation();
+    initPasswordMatch();
   }
 
   if (document.readyState === 'loading') {

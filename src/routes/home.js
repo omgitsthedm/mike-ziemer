@@ -230,13 +230,13 @@ function homePage({ user, sailing, cdnBase, tonightEvents, upcomingEvents, recen
 
 /* ============================================================
    LANDING PAGE (unauthenticated visitors)
-   OG MySpace layout: 60% left (hero + Cool New People), 40% right (login box)
+   OG MySpace layout: 60% left (hero + How It Works + Cool New People), 40% right (login + signup)
    ============================================================ */
 function landingPage({ sailing, cdnBase, newPeople }) {
-  const shipName  = sailing?.ship_name || 'Your Ship';
-  const sailName  = sailing?.name      || 'This Sailing';
+  const shipName = sailing?.ship_name || 'Your Ship';
+  const sailName = sailing?.name      || 'This Sailing';
 
-  // Cool New People grid: up to 8, 60x60 square photos
+  // Cool New People grid: up to 8, 60×60 square photos
   const peopleHtml = newPeople.length
     ? newPeople.map(p => {
         const thumbUrl = p.profiles?.avatar_thumb_url ? `${cdnBase}/${p.profiles.avatar_thumb_url}` : null;
@@ -248,17 +248,44 @@ function landingPage({ sailing, cdnBase, newPeople }) {
   <a href="/profile/${esc(p.username)}" class="landing-person-name">${esc(p.display_name)}</a>
 </div>`;
       }).join('')
-    : `<div style="font-size:11px;color:#666">No members yet — be the first!</div>`;
+    : `<div style="font-size:11px;color:#666;padding:8px 0">No members yet &mdash; be the first!</div>`;
 
   const leftCol = `<div class="landing-left">
+
   <div class="landing-hero">
+    <div class="landing-hero-eyebrow">Welcome aboard <strong>${esc(shipName)}</strong></div>
     <h1 class="landing-hero-title">A Place for Friends<br>on the High Seas</h1>
-    <p class="landing-hero-sub">Welcome aboard <strong>${esc(shipName)}</strong> &mdash; ${esc(sailName)}.</p>
+    <p class="landing-hero-sub">${esc(sailName)} &mdash; Your private cruise social network</p>
     <p class="landing-hero-copy">
-      Deckspace is your private cruise social network. Find your fellow passengers,
-      plan your nights, share photos, and keep the memories forever.
+      Think of it like MySpace, but just for this ship. Browse fellow passengers,
+      plan your nights, share photos from every port, and post on each other&rsquo;s walls.
+      When the sailing ends, your Deckspace becomes a permanent scrapbook of the trip.
       <strong>Your people are already here.</strong>
     </p>
+  </div>
+
+  <div class="landing-howto">
+    <div class="landing-howto-step">
+      <span class="landing-howto-num">1</span>
+      <div>
+        <strong>Create your profile</strong>
+        <span>Pick a username, upload a photo, add your vibe. Takes 60 seconds.</span>
+      </div>
+    </div>
+    <div class="landing-howto-step">
+      <span class="landing-howto-num">2</span>
+      <div>
+        <strong>Find your people</strong>
+        <span>Browse passengers, add friends, post on walls, RSVP to events.</span>
+      </div>
+    </div>
+    <div class="landing-howto-step">
+      <span class="landing-howto-num">3</span>
+      <div>
+        <strong>Keep the memories</strong>
+        <span>Photos, posts, and moments &mdash; saved as a scrapbook after you dock.</span>
+      </div>
+    </div>
   </div>
 
   <div class="ds-module landing-people-module">
@@ -268,17 +295,20 @@ function landingPage({ sailing, cdnBase, newPeople }) {
       <div style="margin-top:8px;font-size:11px"><a href="/register">Join to see everyone &raquo;</a></div>
     </div>
   </div>
+
 </div>`;
 
   const rightCol = `<div class="landing-right">
+
   <div class="landing-logo-wrap">
     <div class="landing-logo">Deck<span class="landing-logo-accent">space</span></div>
     <div class="landing-logo-sub">a space for friends at sea</div>
   </div>
 
   <div class="ds-module landing-login-module">
-    <div class="ds-module-header">Member Login</div>
+    <div class="ds-module-header">Already a Member? Sign In</div>
     <div class="ds-module-body">
+      <p class="landing-login-context">Enter the username and password you chose when you joined.</p>
       <form method="POST" action="/login" class="landing-login-form" data-retry="true">
         <table class="landing-login-table">
           <tr>
@@ -300,9 +330,19 @@ function landingPage({ sailing, cdnBase, newPeople }) {
 
   <div class="landing-signup-box">
     <div class="landing-signup-header">New Passenger?</div>
-    <p class="landing-signup-copy">Create your free Deckspace profile and connect with everyone on board.</p>
-    <a href="/register" class="ds-btn ds-btn-orange landing-signup-btn">Sign Up!</a>
+    <p class="landing-signup-copy">
+      Create your free Deckspace profile and connect with everyone on <strong>${esc(shipName)}</strong>.
+      It takes about 60 seconds.
+    </p>
+    <a href="/register" class="ds-btn ds-btn-orange landing-signup-btn">Sign Up &mdash; It&rsquo;s Free!</a>
   </div>
+
+  ${sailing ? `<div class="landing-voyage-box">
+    <div class="landing-voyage-label">Current Sailing</div>
+    <div class="landing-voyage-ship">${esc(sailing.ship_name)}</div>
+    <div class="landing-voyage-name">${esc(sailing.name)}</div>
+  </div>` : ''}
+
 </div>`;
 
   return `<div class="landing-wrap">${leftCol}${rightCol}</div>`;

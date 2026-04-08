@@ -250,8 +250,15 @@ function loginForm({ next, siteKey, error }) {
   <div class="access-logo">
     <div class="big-logo">Deck<span class="logo-space">space</span></div>
   </div>
-  <div class="access-tagline">The cruise social network &mdash; OG MySpace style</div>
+  <div class="access-tagline">Your private cruise social network</div>
+
+  <div class="access-explainer">
+    Enter the <strong>username and password</strong> you chose when you created your Deckspace account for this sailing.
+    If you haven&rsquo;t joined yet, <a href="/register">sign up here &mdash; it&rsquo;s free</a>.
+  </div>
+
   ${error ? `<div class="ds-flash error">${esc(error)}</div>` : ''}
+
   <div class="ds-module">
     <div class="ds-module-header">Sign In to Deckspace</div>
     <div class="ds-module-body">
@@ -259,11 +266,11 @@ function loginForm({ next, siteKey, error }) {
         <input type="hidden" name="next" value="${esc(next)}">
         <div class="ds-form-row">
           <label for="username">Username</label>
-          <input id="username" name="username" type="text" class="ds-input" autocomplete="username" autofocus required>
+          <input id="username" name="username" type="text" class="ds-input" autocomplete="username" autofocus required placeholder="Your Deckspace username">
         </div>
         <div class="ds-form-row">
           <label for="password">Password</label>
-          <input id="password" name="password" type="password" class="ds-input" autocomplete="current-password" required>
+          <input id="password" name="password" type="password" class="ds-input" autocomplete="current-password" required placeholder="Your password">
         </div>
         ${siteKey ? `<div class="cf-turnstile" data-sitekey="${esc(siteKey)}" data-theme="light"></div>
         <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>` : ''}
@@ -272,7 +279,7 @@ function loginForm({ next, siteKey, error }) {
         </div>
       </form>
       <p class="text-small text-muted mt-8 text-center">
-        New passenger? <a href="/register">Create an account</a>
+        New passenger? <a href="/register">Create your Deckspace account &raquo;</a>
       </p>
     </div>
   </div>
@@ -285,37 +292,42 @@ function registerForm({ siteKey, error, values = {} }) {
     <div class="ds-module">
       <div class="ds-module-header">Join Deckspace &mdash; It&rsquo;s Free!</div>
       <div class="ds-module-body">
-        ${error ? `<div class="ds-flash error" style="margin-bottom:8px">${esc(error)}</div>` : ''}
+        <p class="reg-intro-copy">
+          Create your account for this sailing. Your profile is visible to fellow passengers only.
+          Fills in under a minute &mdash; fill in only what you want.
+        </p>
+        ${error ? `<div class="ds-flash error" style="margin-bottom:10px">${esc(error)}</div>` : ''}
         <form method="POST" action="/register" class="ds-form" data-retry="true">
           <div class="ds-form-row">
-            <label for="display_name">Display Name</label>
-            <input id="display_name" name="display_name" type="text" class="ds-input" value="${esc(values.displayName || '')}" required maxlength="50" placeholder="How others will see you" autofocus>
+            <label for="display_name">Your Name <span class="reg-hint">(shown on your profile)</span></label>
+            <input id="display_name" name="display_name" type="text" class="ds-input" value="${esc(values.displayName || '')}" required maxlength="50" placeholder="E.g. Sarah M. or Captain Dave" autofocus>
           </div>
           <div class="ds-form-row">
-            <label for="reg-username">Username</label>
-            <input id="reg-username" name="username" type="text" class="ds-input" value="${esc(values.username || '')}" required maxlength="30" pattern="[a-zA-Z0-9_]+" placeholder="letters, numbers, underscores">
-            <div class="hint">Your profile will be /profile/username</div>
+            <label for="reg-username">Username <span class="reg-hint">(your profile URL)</span></label>
+            <input id="reg-username" name="username" type="text" class="ds-input" value="${esc(values.username || '')}" required maxlength="30" pattern="[a-zA-Z0-9_]+" placeholder="letters, numbers, underscores only" autocomplete="username" data-validate-username>
+            <div class="hint">Your profile will be /profile/<em>username</em></div>
           </div>
           <div class="ds-form-row">
-            <label for="email">Email <span class="reg-optional">(optional)</span></label>
-            <input id="email" name="email" type="email" class="ds-input" value="${esc(values.email || '')}" maxlength="200">
+            <label for="email">Email <span class="reg-hint">(optional &mdash; only for account recovery)</span></label>
+            <input id="email" name="email" type="email" class="ds-input" value="${esc(values.email || '')}" maxlength="200" placeholder="you@email.com">
           </div>
           <div class="ds-form-row">
-            <label for="reg-password">Password</label>
-            <input id="reg-password" name="password" type="password" class="ds-input" required minlength="8" autocomplete="new-password">
+            <label for="reg-password">Password <span class="reg-hint">(min. 8 characters)</span></label>
+            <input id="reg-password" name="password" type="password" class="ds-input" required minlength="8" autocomplete="new-password" data-pw-source>
           </div>
           <div class="ds-form-row">
             <label for="password2">Confirm Password</label>
-            <input id="password2" name="password2" type="password" class="ds-input" required minlength="8" autocomplete="new-password">
+            <input id="password2" name="password2" type="password" class="ds-input" required minlength="8" autocomplete="new-password" data-pw-confirm>
+            <div class="pw-match-hint" style="display:none"></div>
           </div>
-          ${siteKey ? `<div class="cf-turnstile" data-sitekey="${esc(siteKey)}" data-theme="light" style="margin:8px 0"></div>
+          ${siteKey ? `<div class="cf-turnstile" data-sitekey="${esc(siteKey)}" data-theme="light" style="margin:10px 0"></div>
           <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>` : ''}
           <div class="ds-form-row mt-8">
-            <button type="submit" class="ds-btn ds-btn-orange w-full" data-loading-text="Creating account...">Sign Up!</button>
+            <button type="submit" class="ds-btn ds-btn-orange w-full" data-loading-text="Creating your account...">Create My Deckspace &raquo;</button>
           </div>
         </form>
         <p class="text-small text-muted mt-8 text-center">
-          Already aboard? <a href="/login">Sign in here</a>
+          Already have an account? <a href="/login">Sign in here</a>
         </p>
       </div>
     </div>
@@ -323,20 +335,28 @@ function registerForm({ siteKey, error, values = {} }) {
 
   <div class="reg-right">
     <div class="ds-module">
-      <div class="ds-module-header">Why Join Deckspace?</div>
+      <div class="ds-module-header">Why Deckspace?</div>
       <div class="ds-module-body reg-why-body">
-        <p class="reg-why-intro">This is your <strong>private cruise social network</strong> &mdash; for passengers only, for this sailing only.</p>
+        <p class="reg-why-intro">
+          You&rsquo;re on a cruise. You&rsquo;ll meet a hundred people and forget half their names by day three.
+          <strong>Deckspace fixes that.</strong>
+        </p>
         <ul class="reg-why-list">
           <li><strong>Find your people</strong> &mdash; Browse fellow passengers and add friends before your first port.</li>
-          <li><strong>Plan your nights</strong> &mdash; See what&rsquo;s on, RSVP to events, and get people together.</li>
-          <li><strong>Share photos</strong> &mdash; Upload and browse trip photos with your fellow passengers.</li>
-          <li><strong>Wall posts &amp; messages</strong> &mdash; Classic MySpace-style walls. Post on anyone&rsquo;s page.</li>
-          <li><strong>It&rsquo;s yours forever</strong> &mdash; After the sailing ends, your Deckspace stays up as a scrapbook.</li>
+          <li><strong>Plan your nights</strong> &mdash; See what&rsquo;s on, RSVP to events, get people together.</li>
+          <li><strong>Share photos</strong> &mdash; Upload trip photos and browse what everyone else is doing.</li>
+          <li><strong>Walls &amp; messages</strong> &mdash; Classic MySpace-style. Post on anyone&rsquo;s page, message directly.</li>
+          <li><strong>Yours forever</strong> &mdash; After the sailing ends, your Deckspace becomes a permanent scrapbook.</li>
         </ul>
         <div class="reg-why-footer">
-          It&rsquo;s free. It&rsquo;s just for this ship. No ads, no algorithms &mdash; just your people.
+          Free. Private. Just for this ship. No ads. No algorithms. No strangers.
         </div>
       </div>
+    </div>
+
+    <div class="reg-note-box">
+      <strong>On a cruise to relax?</strong>
+      <p>Deckspace takes about 60 seconds to join. Fill in only what you want &mdash; you can always add more to your profile later from the comfort of your deck chair.</p>
     </div>
   </div>
 </div>`;

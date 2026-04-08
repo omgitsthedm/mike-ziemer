@@ -2487,3 +2487,224 @@ ul {
   font-style: italic;
 }
 .htmx-request .htmx-indicator { display: inline; }
+
+/* ============================================================
+   ANIMATIONS & TRANSITIONS
+   Lightweight, fast — responsive without feeling "modern."
+   ============================================================ */
+
+/* Page entrance — barely-there fade, keeps things feeling alive */
+@keyframes dsPageIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+#ds-page {
+  animation: dsPageIn 0.18s ease;
+}
+
+/* Flash / alert entrance — slides down from just above */
+@keyframes dsFlashIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.ds-flash {
+  animation: dsFlashIn 0.2s ease-out;
+}
+
+/* Online indicator dot — gentle pulse, never distracting */
+@keyframes dsPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+.online-indicator::before {
+  display: inline-block;
+  animation: dsPulse 2.4s ease-in-out infinite;
+}
+
+/* Smooth focus transitions on all form controls */
+.ds-input,
+.ds-textarea,
+.ds-select {
+  transition: border-color 0.12s, background-color 0.12s;
+}
+
+/* Module hover: very subtle shadow lift */
+.ds-module {
+  transition: box-shadow 0.15s ease;
+}
+.ds-module:hover {
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.09);
+}
+
+/* Button: smooth gradient on hover, press snap on active */
+.ds-btn {
+  transition: background 0.1s, border-color 0.1s, opacity 0.1s;
+}
+
+/* Disabled/loading state */
+.ds-btn[disabled] {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+/* ============================================================
+   LANDING PAGE — HOW IT WORKS steps
+   ============================================================ */
+.landing-howto {
+  display: flex;
+  gap: 0;
+  margin-bottom: 8px;
+  border: 1px solid #aabbdd;
+  background: #f4f7fc;
+}
+.landing-howto-step {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  padding: 9px 8px;
+  border-right: 1px solid #aabbdd;
+  font-size: 11px;
+  line-height: 1.4;
+}
+.landing-howto-step:last-child {
+  border-right: none;
+}
+.landing-howto-num {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  background: var(--ds-navy);
+  color: #fff;
+  font-size: 11px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}
+.landing-howto-step > div strong {
+  display: block;
+  font-size: 11px;
+  color: var(--ds-navy);
+  margin-bottom: 2px;
+}
+.landing-howto-step > div span {
+  color: #555;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+/* Hero eyebrow line */
+.landing-hero-eyebrow {
+  font-size: 11px;
+  color: var(--ds-blue-mid);
+  margin-bottom: 5px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+/* Login context line inside the right-col login module */
+.landing-login-context {
+  font-size: 11px;
+  color: #666;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+/* Voyage info box at the bottom of the right column */
+.landing-voyage-box {
+  background: var(--ds-blue-bg);
+  border: 1px solid #aabbdd;
+  padding: 8px 10px;
+  margin-top: 6px;
+  text-align: center;
+}
+.landing-voyage-label {
+  font-size: 9px;
+  color: var(--ds-blue-mid);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 3px;
+}
+.landing-voyage-ship {
+  font-size: 13px;
+  font-weight: bold;
+  color: var(--ds-navy);
+}
+.landing-voyage-name {
+  font-size: 11px;
+  color: #555;
+  margin-top: 2px;
+}
+
+@media (max-width: 640px) {
+  .landing-howto {
+    flex-direction: column;
+  }
+  .landing-howto-step {
+    border-right: none;
+    border-bottom: 1px solid #aabbdd;
+  }
+  .landing-howto-step:last-child {
+    border-bottom: none;
+  }
+}
+
+/* ============================================================
+   REGISTER PAGE — additional styles
+   ============================================================ */
+
+/* Intro copy banner above the form */
+.reg-intro-copy {
+  font-size: 11px;
+  color: #555;
+  line-height: 1.5;
+  margin-bottom: 10px;
+  padding: 6px 8px;
+  background: #fafafa;
+  border-left: 3px solid var(--ds-orange);
+}
+
+/* Inline field hint (after label) */
+.reg-hint {
+  font-size: 10px;
+  font-weight: normal;
+  color: #999;
+}
+
+/* "On a cruise to relax?" note in right column */
+.reg-note-box {
+  background: #fffbe6;
+  border: 1px solid #ddc855;
+  padding: 9px 10px;
+  font-size: 11px;
+  color: #555;
+  margin-top: 6px;
+  line-height: 1.5;
+}
+.reg-note-box strong {
+  display: block;
+  color: #333;
+  margin-bottom: 3px;
+  font-size: 12px;
+}
+.reg-note-box p {
+  margin: 0;
+}
+
+/* ============================================================
+   INLINE VALIDATION HINTS
+   Username pattern check + password match indicator
+   ============================================================ */
+.username-hint {
+  font-size: 10px;
+  margin-top: 2px;
+}
+.username-hint.ok  { color: var(--ds-success); }
+.username-hint.bad { color: var(--ds-error); }
+
+.pw-match-hint          { font-size: 10px; margin-top: 2px; }
+.pw-match-hint.match    { color: var(--ds-success); }
+.pw-match-hint.no-match { color: var(--ds-error); }
