@@ -17,7 +17,7 @@
 import { Hono } from 'hono';
 import { getDb, getReports, getSailing, q, logAudit } from '../lib/db.js';
 import { requireAuth, requireAdmin } from '../lib/auth.js';
-import { layout, esc, relTime, fmtDate } from '../templates/layout.js';
+import { layout, layoutCtx, esc, relTime, fmtDate } from '../templates/layout.js';
 import { module, paginator } from '../templates/components.js';
 
 const admin = new Hono();
@@ -68,16 +68,23 @@ admin.get('/admin', async (c) => {
       ).join('')
     : `<div class="ds-empty-state">No recent actions.</div>`;
 
+  // Current bulletin
+  const bulletinJson = await c.env.KV?.get(`sailing:${c.env.SAILING_ID}:bulletin`).catch(() => null);
+  const bulletin = bulletinJson ? JSON.parse(bulletinJson) : null;
+
   const navLinks = `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
     <a href="/admin/reports" class="ds-btn ds-btn-primary ds-btn-sm">Reports Queue (${pendingReports})</a>
     <a href="/admin/users" class="ds-btn ds-btn-sm">User Lookup</a>
+    <a href="/admin/bulletin" class="ds-btn ds-btn-sm">Bulletin Board</a>
+    <a href="/admin/voyage" class="ds-btn ds-btn-sm">Voyage Schedule</a>
   </div>`;
 
   const body = `${navLinks}
 ${module({ header: 'Community Stats', body: statsHtml })}
+${bulletin ? module({ header: 'Current Bulletin', body: `<div class="ds-module-body"><p style="font-size:12px">${esc(bulletin.text)}</p><p class="text-small text-muted">Posted by ${esc(bulletin.author)} &mdash; ${relTime(bulletin.created_at)}</p></div>` }) : ''}
 ${module({ header: 'Recent Moderation Actions', body: actionsHtml })}`;
 
-  return c.html(layout({ title: 'Admin', user, sailing, body }));
+  return c.html(layoutCtx(c, { title: 'Admin', user, sailing, body }));
 });
 
 /* ============================================================
@@ -125,7 +132,7 @@ admin.get('/admin/reports', async (c) => {
   const body = `<div style="margin-bottom:8px">${statusTabs}</div>
 ${module({ header: `Reports — ${esc(status)}`, body: `${reportsHtml}${pager}` })}`;
 
-  return c.html(layout({ title: 'Reports Queue', user, sailing, body }));
+  return c.html(layoutCtx(c, { title: 'Reports Queue', user, sailing, body }));
 });
 
 admin.post('/admin/reports/:id/resolve', async (c) => {
@@ -227,7 +234,7 @@ admin.get('/admin/users', async (c) => {
 
   const body = `${searchForm}${module({ header: 'User Lookup', body: tableHtml })}`;
 
-  return c.html(layout({ title: 'User Lookup', user, sailing, body }));
+  return c.html(layoutCtx(c, { title: 'User Lookup', user, sailing, body }));
 });
 
 admin.post('/admin/users/:id/suspend', async (c) => {
@@ -323,5 +330,146 @@ async function logModerationAction(db, adminUserId, actionType, targetType, targ
     ipAddress: ip
   });
 }
+
+/* ============================================================
+   BULLETIN BOARD
+   ============================================================ */
+admin.get('/admin/bulletin', async (c) => {
+  const user    = c.get('user');
+  const db      = getDb(c.env);
+  const sailing = await getSailing(db, c.env.SAILING_ID).catch(() => null);
+  const csrf    = c.get('csrfToken') || '';
+
+  const bulletinJson = await c.env.KV?.get(`sailing:${c.env.SAILING_ID}:bulletin`).catch(() => null);
+  const bulletin = bulletinJson ? JSON.parse(bulletinJson) : null;
+
+  const currentHtml = bulletin
+    ? `<div style="background:#fffde7;border:1px solid #f0c040;padding:8px;margin-bottom:10px;font-size:12px">
+        <strong>Current bulletin:</strong> ${esc(bulletin.text)}
+        <div class="text-small text-muted">Posted ${relTime(bulletin.created_at)}</div>
+        <form method="POST" action="/admin/bulletin/clear" style="margin-top:6px">
+          <input type="hidden" name="_csrf" value="${esc(csrf)}">
+          <button type="submit" class="ds-btn ds-btn-sm" data-confirm="Clear the bulletin?">Clear Bulletin</button>
+        </form>
+      </div>`
+    : `<div class="ds-empty-state text-small">No active bulletin.</div>`;
+
+  const body = module({
+    header: 'Ship Bulletin Board',
+    body: `<div class="ds-module-body">
+      ${currentHtml}
+      <form method="POST" action="/admin/bulletin" class="ds-form">
+        <input type="hidden" name="_csrf" value="${esc(csrf)}">
+        <div class="ds-form-row">
+          <label>New Bulletin <span class="text-muted text-small">(replaces existing, shown on home page, expires in 7 days)</span></label>
+          <textarea name="text" class="ds-textarea" rows="3" maxlength="500" placeholder="Tonight: Deck 9 Karaoke at 9pm • Tomorrow: Cozumel port day..." required></textarea>
+        </div>
+        <div class="ds-form-row mt-8">
+          <button type="submit" class="ds-btn ds-btn-primary" data-loading-text="Posting...">Post Bulletin</button>
+          <a href="/admin" class="ds-btn" style="margin-left:6px">Cancel</a>
+        </div>
+      </form>
+    </div>`
+  });
+
+  return c.html(layoutCtx(c, { title: 'Bulletin Board', user, sailing, body }));
+});
+
+admin.post('/admin/bulletin', async (c) => {
+  const user = c.get('user');
+  const form = c.get('parsedForm') || await c.req.formData().catch(() => null);
+  const text = (form?.get('text') || '').toString().trim().slice(0, 500);
+  if (!text) return c.redirect('/admin/bulletin');
+
+  const bulletin = { text, author: user.display_name, created_at: new Date().toISOString() };
+  await c.env.KV?.put(`sailing:${c.env.SAILING_ID}:bulletin`, JSON.stringify(bulletin), { expirationTtl: 86400 * 7 }).catch(() => {});
+
+  return c.redirect('/admin/bulletin');
+});
+
+admin.post('/admin/bulletin/clear', async (c) => {
+  await c.env.KV?.delete(`sailing:${c.env.SAILING_ID}:bulletin`).catch(() => {});
+  return c.redirect('/admin/bulletin');
+});
+
+/* ============================================================
+   VOYAGE SCHEDULE MANAGEMENT
+   ============================================================ */
+admin.get('/admin/voyage', async (c) => {
+  const user    = c.get('user');
+  const db      = getDb(c.env);
+  const sailing = await getSailing(db, c.env.SAILING_ID).catch(() => null);
+  const csrf    = c.get('csrfToken') || '';
+
+  const { data: days } = await db.from('voyage_days')
+    .select('*')
+    .eq('sailing_id', c.env.SAILING_ID)
+    .order('day_date', { ascending: true })
+    .catch(() => ({ data: [] }));
+
+  const daysHtml = (days || []).length
+    ? (days || []).map(d => `<div style="padding:4px 6px;border-bottom:1px solid #eee;font-size:11px;display:flex;justify-content:space-between;align-items:center">
+        <span><strong>${esc(d.day_date)}</strong> &mdash; ${esc(d.port_name)} (${esc(d.day_type)})</span>
+        <form method="POST" action="/admin/voyage/${esc(d.id)}/delete" style="display:inline">
+          <input type="hidden" name="_csrf" value="${esc(csrf)}">
+          <button type="submit" class="ds-btn ds-btn-sm" data-confirm="Delete this day?" style="font-size:10px">Del</button>
+        </form>
+      </div>`).join('')
+    : `<div class="ds-empty-state">No voyage days yet.</div>`;
+
+  const body = module({
+    header: 'Voyage Schedule',
+    body: `<div class="ds-module-body">
+      <div style="margin-bottom:10px">${daysHtml}</div>
+      <form method="POST" action="/admin/voyage/add" class="ds-form">
+        <input type="hidden" name="_csrf" value="${esc(csrf)}">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:6px">
+          <div><label style="font-size:10px">Date</label><input name="day_date" type="date" class="ds-input" required></div>
+          <div><label style="font-size:10px">Port / Location</label><input name="port_name" type="text" class="ds-input" required maxlength="100" placeholder="Nassau, Bahamas"></div>
+          <div><label style="font-size:10px">Type</label>
+            <select name="day_type" class="ds-select">
+              <option value="sea">Sea Day</option>
+              <option value="port">Port Day</option>
+              <option value="embarkation">Embarkation</option>
+              <option value="disembarkation">Disembarkation</option>
+            </select>
+          </div>
+          <div><label style="font-size:10px">Arrive</label><input name="arrive_time" type="time" class="ds-input"></div>
+          <div><label style="font-size:10px">Depart</label><input name="depart_time" type="time" class="ds-input"></div>
+          <div><label style="font-size:10px">Notes</label><input name="notes" type="text" class="ds-input" maxlength="500"></div>
+        </div>
+        <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm">Add Day</button>
+        <a href="/admin" class="ds-btn ds-btn-sm" style="margin-left:6px">Back</a>
+      </form>
+    </div>`
+  });
+
+  return c.html(layoutCtx(c, { title: 'Voyage Schedule', user, sailing, body }));
+});
+
+admin.post('/admin/voyage/add', async (c) => {
+  const db   = getDb(c.env);
+  const form = c.get('parsedForm') || await c.req.formData().catch(() => null);
+
+  await db.from('voyage_days').insert({
+    sailing_id:  c.env.SAILING_ID,
+    day_date:    (form?.get('day_date') || '').toString(),
+    port_name:   (form?.get('port_name') || 'At Sea').toString().trim().slice(0, 100),
+    day_type:    (form?.get('day_type') || 'sea').toString(),
+    arrive_time: (form?.get('arrive_time') || null)?.toString() || null,
+    depart_time: (form?.get('depart_time') || null)?.toString() || null,
+    notes:       (form?.get('notes') || null)?.toString().trim().slice(0, 500) || null,
+  }).catch(() => {});
+
+  return c.redirect('/admin/voyage');
+});
+
+admin.post('/admin/voyage/:id/delete', async (c) => {
+  const db  = getDb(c.env);
+  const id  = c.req.param('id');
+  await db.from('voyage_days').delete()
+    .eq('id', id).eq('sailing_id', c.env.SAILING_ID).catch(() => {});
+  return c.redirect('/admin/voyage');
+});
 
 export default admin;

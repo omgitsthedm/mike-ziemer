@@ -9,10 +9,11 @@
  */
 
 import { Hono } from 'hono';
-import { getDb, getEvents, getRecentPhotos, browsePeople, getSailing } from '../lib/db.js';
+import { getDb, getEvents, getRecentPhotos, browsePeople, getSailing, getOnlineUsers } from '../lib/db.js';
 import { resolveSession } from '../lib/auth.js';
-import { layout, esc, fmtDate, relTime } from '../templates/layout.js';
+import { layout, layoutCtx, esc, fmtDate, relTime } from '../templates/layout.js';
 import { module, eventCard, photoThumb, personRow } from '../templates/components.js';
+import { ic } from '../templates/icons.js';
 
 const home = new Hono();
 
@@ -25,7 +26,7 @@ home.get('/', async (c) => {
   // Unauthenticated: show OG MySpace-style landing page
   if (!user) {
     const newPeople = await browsePeople(db, c.env.SAILING_ID, { limit: 8 }).catch(() => []);
-    return c.html(layout({
+    return c.html(layoutCtx(c, {
       title: 'Deckspace — A Place for Friends on the High Seas',
       body: landingPage({ sailing, cdnBase, newPeople }),
     }));
@@ -37,8 +38,12 @@ home.get('/', async (c) => {
   const todayEnd   = new Date(now);
   todayEnd.setHours(23, 59, 59, 999);
 
+  // Fetch bulletin from KV (admin-posted, short-lived)
+  const bulletinJson = await c.env.KV?.get(`sailing:${c.env.SAILING_ID}:bulletin`).catch(() => null);
+  const bulletin = bulletinJson ? JSON.parse(bulletinJson) : null;
+
   // Parallel fetch of all home page data
-  const [tonightEvents, upcomingEvents, recentPeople, recentPhotos, recentActivity] =
+  const [tonightEvents, upcomingEvents, recentPeople, recentPhotos, recentActivity, onlineUsers] =
     await Promise.all([
       // Tonight's events (today only)
       db.from('events')
@@ -78,15 +83,18 @@ home.get('/', async (c) => {
         .order('created_at', { ascending: false })
         .limit(5)
         .then(({ data }) => data || [])
-        .catch(() => [])
+        .catch(() => []),
+
+      // Online now
+      getOnlineUsers(db, c.env.SAILING_ID, 10, 8).catch(() => [])
     ]);
 
   const body = homePage({
     user, sailing, cdnBase,
-    tonightEvents, upcomingEvents, recentPeople, recentPhotos, recentActivity
+    tonightEvents, upcomingEvents, recentPeople, recentPhotos, recentActivity, onlineUsers, bulletin
   });
 
-  return c.html(layout({
+  return c.html(layoutCtx(c, {
     title: 'Home',
     user,
     sailing,
@@ -98,7 +106,7 @@ home.get('/', async (c) => {
 /* ============================================================
    HOME PAGE TEMPLATE
    ============================================================ */
-function homePage({ user, sailing, cdnBase, tonightEvents, upcomingEvents, recentPeople, recentPhotos, recentActivity }) {
+function homePage({ user, sailing, cdnBase, tonightEvents, upcomingEvents, recentPeople, recentPhotos, recentActivity, onlineUsers, bulletin }) {
   // Tonight's events module
   const tonightHtml = tonightEvents.length
     ? tonightEvents.map(e => eventCard({ event: e, cdnBase })).join('')
@@ -173,13 +181,39 @@ function homePage({ user, sailing, cdnBase, tonightEvents, upcomingEvents, recen
     body: photosHtml
   });
 
+  // Admin bulletin board
+  const bulletinHtml = bulletin ? `<div class="ds-bulletin">
+    <div class="ds-bulletin-header">${ic.flag(12)} Ship Bulletin</div>
+    <div class="ds-bulletin-body">${esc(bulletin.text)}</div>
+    <div class="ds-bulletin-meta">Posted by ${esc(bulletin.author)} &mdash; ${relTime(bulletin.created_at)}</div>
+  </div>` : '';
+
+  // Who's online now
+  const onlineHtml = onlineUsers.length
+    ? `<div class="online-faces">${onlineUsers.map(u => {
+        const thumb = u.profiles?.avatar_thumb_url ? `${cdnBase}/${u.profiles.avatar_thumb_url}` : null;
+        return `<a href="/profile/${esc(u.username)}" title="${esc(u.display_name)}">
+          ${thumb
+            ? `<img src="${esc(thumb)}" width="28" height="28" loading="lazy">`
+            : `<span class="online-face-placeholder">${esc((u.display_name||'?').charAt(0))}</span>`}
+        </a>`;
+      }).join('')}</div>
+      <div class="online-count">${onlineUsers.length} active in the last 10 min</div>`
+    : `<div class="ds-empty-state">No one active right now.</div>`;
+
+  const onlineModule = module({
+    header: 'Online Now',
+    headerRight: `<a href="/people">Browse All</a>`,
+    body: onlineHtml
+  });
+
   // Sailing info notice (first-time feel)
   const sailingNotice = sailing ? `<div class="ds-flash info" style="margin-bottom:8px">
     <strong>Welcome to ${esc(sailing.name)} on ${esc(sailing.ship_name)}!</strong>
     Set up your profile and start meeting your fellow passengers.
   </div>` : '';
 
-  return `${sailingNotice}
+  return `${bulletinHtml}${sailingNotice}
 <div class="home-grid">
   <div>
     ${tonightModule}
@@ -188,6 +222,7 @@ function homePage({ user, sailing, cdnBase, tonightEvents, upcomingEvents, recen
   </div>
   <div>
     ${upcomingModule}
+    ${onlineModule}
     ${peopleModule}
   </div>
 </div>`;

@@ -244,3 +244,42 @@ export async function isRateLimited(env, key, maxPerMinute = 20) {
   await env.KV.put(kvKey, String(current + 1), { expirationTtl: 120 });
   return false;
 }
+
+/* ============================================================
+   CSRF — HMAC-based stateless tokens
+   Token = base64(HMAC-SHA256(sessionTokenHash + ":" + roundedMinute))
+   Valid for a 30-minute window.
+   ============================================================ */
+
+/**
+ * Generate a CSRF token tied to the current session.
+ * Valid for 30 minutes; rotates every 30 minutes.
+ */
+export async function generateCsrfToken(sessionTokenHash) {
+  if (!sessionTokenHash) return '';
+  const window = Math.floor(Date.now() / (30 * 60 * 1000));
+  const msg = `${sessionTokenHash}:${window}`;
+  const key = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(msg), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+  );
+  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode('csrf'));
+  return btoa(String.fromCharCode(...new Uint8Array(sig))).replace(/[+/=]/g, c => ({ '+': '-', '/': '_', '=': '' }[c]));
+}
+
+/**
+ * Verify a CSRF token. Checks current and previous 30-min window.
+ */
+export async function verifyCsrfToken(sessionTokenHash, formToken) {
+  if (!sessionTokenHash || !formToken) return false;
+  for (let offset = 0; offset <= 1; offset++) {
+    const window = Math.floor(Date.now() / (30 * 60 * 1000)) - offset;
+    const msg = `${sessionTokenHash}:${window}`;
+    const key = await crypto.subtle.importKey(
+      'raw', new TextEncoder().encode(msg), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+    );
+    const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode('csrf'));
+    const expected = btoa(String.fromCharCode(...new Uint8Array(sig))).replace(/[+/=]/g, c => ({ '+': '-', '/': '_', '=': '' }[c]));
+    if (expected === formToken) return true;
+  }
+  return false;
+}

@@ -6,7 +6,7 @@
  * dense table-era layout, utility-heavy left rail.
  */
 
-import { esc, relTime, fmtDate } from './layout.js';
+import { esc, relTime, fmtDate, csrfField } from './layout.js';
 import { ic } from './icons.js';
 
 /* ============================================================
@@ -53,10 +53,15 @@ export function profilePhotoBlock({ user, profile, isOwn, isOnline, cdnBase }) {
     ? `<div class="text-center mt-4"><a href="/profile/edit" class="ds-btn ds-btn-sm">Edit Profile</a></div>`
     : '';
 
+  const statusLine = profile?.status_text
+    ? `<div class="profile-status-mood">&ldquo;${esc(profile.status_text)}&rdquo;</div>`
+    : '';
+
   return `<div class="profile-photo-block">
   ${img}
   <span class="profile-display-name">${esc(user.display_name)}</span>
   <div class="text-small text-muted">@${esc(user.username)}</div>
+  ${statusLine}
   ${onlineHtml}
   ${editLink}
 </div>`;
@@ -451,3 +456,48 @@ export function paginator(page, hasMore, baseUrl, extraParams = '') {
   if (parts.length <= 1) return '';
   return `<div class="ds-pager">${parts.join('')}</div>`;
 }
+
+/* ============================================================
+   REACTION BAR
+   Shows heart/star/wave reaction buttons for any content item.
+   @param {object} opts
+   @param {string} opts.targetType  — 'wall_post' | 'photo' | 'event_comment' | 'photo_comment'
+   @param {string} opts.targetId    — UUID of the target
+   @param {object} opts.counts      — { hearts, stars, waves } from reaction_counts view
+   @param {string} opts.userReact   — current user's reaction_type or null
+   @param {string} opts.redirectTo  — URL to redirect after reacting
+   @param {string} opts.csrfToken   — CSRF token
+   @param {boolean} opts.readOnly   — if true, show counts only
+   ============================================================ */
+export function reactionBar({ targetType, targetId, counts = {}, userReact = null, redirectTo = '/', csrfToken = '', readOnly = false }) {
+  const reactions = [
+    { type: 'heart', icon: ic.heart(11), label: 'Heart', count: counts.hearts || 0 },
+    { type: 'star',  icon: ic.star(11),  label: 'Star',  count: counts.stars  || 0 },
+    { type: 'wave',  icon: ic.handshake(11), label: 'Wave', count: counts.waves || 0 },
+  ];
+
+  const total = (counts.hearts || 0) + (counts.stars || 0) + (counts.waves || 0);
+  if (readOnly && total === 0) return '';
+
+  if (readOnly) {
+    return `<div class="reaction-bar readonly">${
+      reactions.filter(r => r.count > 0).map(r =>
+        `<span class="reaction-count">${r.icon} ${r.count}</span>`
+      ).join('')
+    }</div>`;
+  }
+
+  return `<div class="reaction-bar">${
+    reactions.map(r => `<form method="POST" action="/react" class="inline-form">
+      ${csrfField(csrfToken)}
+      <input type="hidden" name="target_type" value="${esc(targetType)}">
+      <input type="hidden" name="target_id" value="${esc(targetId)}">
+      <input type="hidden" name="reaction_type" value="${esc(r.type)}">
+      <input type="hidden" name="redirect_to" value="${esc(redirectTo)}">
+      <button type="submit" class="reaction-btn${userReact === r.type ? ' active' : ''}" title="${r.label}">
+        ${r.icon}${r.count > 0 ? ` <span class="reaction-count">${r.count}</span>` : ''}
+      </button>
+    </form>`).join('')
+  }</div>`;
+}
+

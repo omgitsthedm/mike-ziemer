@@ -13,7 +13,7 @@
 import { Hono } from 'hono';
 import { getDb, getFriendRequests, getFriends, getSailing, createNotification, q } from '../lib/db.js';
 import { requireAuth } from '../lib/auth.js';
-import { layout, esc, relTime } from '../templates/layout.js';
+import { layout, layoutCtx, esc, relTime } from '../templates/layout.js';
 import { module, avatar } from '../templates/components.js';
 
 const friends = new Hono();
@@ -108,7 +108,7 @@ friends.get('/friends', async (c) => {
     module({ header: `My Friends (${friendsList.length})`, headerRight: `<a href="/friends/manage-top">Manage Top Friends</a>`, body: `<div class="people-list">${friendsHtml}</div>` })
   ].join('');
 
-  return c.html(layout({
+  return c.html(layoutCtx(c, {
     title: 'Friends',
     user,
     sailing,
@@ -181,7 +181,7 @@ friends.get('/friends/manage-top', async (c) => {
   </div>
 </div>`;
 
-  return c.html(layout({ title: 'Manage Top Friends', user, sailing, body }));
+  return c.html(layoutCtx(c, { title: 'Manage Top Friends', user, sailing, body }));
 });
 
 /* ============================================================

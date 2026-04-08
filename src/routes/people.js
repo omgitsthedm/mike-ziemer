@@ -7,19 +7,22 @@
 import { Hono } from 'hono';
 import { getDb, browsePeople, getSailing, q } from '../lib/db.js';
 import { resolveSession } from '../lib/auth.js';
-import { layout, esc } from '../templates/layout.js';
+import { layout, layoutCtx, esc } from '../templates/layout.js';
 import { module, personRow, paginator } from '../templates/components.js';
 
 const people = new Hono();
+
+// All known vibe tags for the pill strip (union of defaults + common ones)
+const COMMON_VIBES = ['karaoke','trivia','poker','dancing','foodie','music','nightlife','chill','adventure','sea day','excursion','comedy','pool','gym'];
 
 people.get('/people', async (c) => {
   const viewer  = await resolveSession(c.env, c.req.raw);
   const db      = getDb(c.env);
   const sailing = await getSailing(db, c.env.SAILING_ID).catch(() => null);
   const cdnBase = c.env.R2_PUBLIC_URL || '';
-  const page    = parseInt(c.req.query('page') || '1', 10);
+  const page    = Math.min(Math.max(1, parseInt(c.req.query('page') || '1', 10)), 500);
   const search  = (c.req.query('q') || '').trim().slice(0, 100);
-  const vibeTag = (c.req.query('vibe') || '').trim();
+  const vibeTag = (c.req.query('vibe') || '').trim().slice(0, 50);
 
   const users = await browsePeople(db, c.env.SAILING_ID, {
     search: search || null,
@@ -55,24 +58,40 @@ people.get('/people', async (c) => {
     cdnBase
   })).join('');
 
-  const searchForm = `<form method="GET" action="/people" class="ds-form" style="display:flex;gap:4px;margin-bottom:8px;align-items:center">
+  const vibePills = `<div class="vibe-filter-strip">
+    ${vibeTag ? `<a href="/people" class="vibe-pill active-pill">All</a>` : ''}
+    ${COMMON_VIBES.map(v =>
+      `<a href="/people?vibe=${encodeURIComponent(v)}" class="vibe-pill${vibeTag === v ? ' active-pill' : ''}">${esc(v)}</a>`
+    ).join('')}
+  </div>`;
+
+  const searchForm = `<form method="GET" action="/people" class="ds-form" style="display:flex;gap:4px;margin-bottom:6px;align-items:center">
     <input name="q" type="search" class="ds-input" value="${esc(search)}" placeholder="Search by name..." style="flex:1">
+    ${vibeTag ? `<input type="hidden" name="vibe" value="${esc(vibeTag)}">` : ''}
     <button type="submit" class="ds-btn ds-btn-primary">Search</button>
-    ${search ? `<a href="/people" class="ds-btn">Clear</a>` : ''}
-  </form>`;
+    ${search || vibeTag ? `<a href="/people" class="ds-btn">Clear</a>` : ''}
+  </form>
+  ${vibePills}`;
 
   const listHtml = users.length
     ? rows
-    : `<div class="ds-empty-state">No passengers found${search ? ` for "${esc(search)}"` : ''}.</div>`;
+    : `<div class="ds-empty-state">No passengers found${search ? ` matching "${esc(search)}"` : ''}${vibeTag ? ` with vibe "${esc(vibeTag)}"` : ''}.</div>`;
 
-  const pager = paginator(page, users.length === 30, '/people', search ? `&q=${encodeURIComponent(search)}` : '');
+  const extraParams = [
+    search  ? `q=${encodeURIComponent(search)}`   : '',
+    vibeTag ? `vibe=${encodeURIComponent(vibeTag)}` : ''
+  ].filter(Boolean).join('&');
+
+  const pager = paginator(page, users.length === 30, '/people', extraParams ? `&${extraParams}` : '');
+
+  const header = vibeTag ? `Vibe: ${esc(vibeTag)}` : search ? `Search: "${esc(search)}"` : 'All Passengers';
 
   const body = `${searchForm}${module({
-    header: search ? `Search: "${esc(search)}"` : 'All Passengers',
+    header,
     body: `<div class="people-list">${listHtml}</div>${pager}`
   })}`;
 
-  return c.html(layout({
+  return c.html(layoutCtx(c, {
     title: 'People',
     user: viewer,
     sailing,

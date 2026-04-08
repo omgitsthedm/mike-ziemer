@@ -13,9 +13,9 @@ import { getDb, q, getSailing } from '../lib/db.js';
 import {
   createSession, setSessionCookie, clearSessionCookie,
   destroySession, verifyTurnstile, verifyPassword, hashPassword,
-  isSailingAccessible, resolveSession
+  isSailingAccessible, resolveSession, isRateLimited
 } from '../lib/auth.js';
-import { layout, esc } from '../templates/layout.js';
+import { layout, layoutCtx, esc } from '../templates/layout.js';
 
 const auth = new Hono();
 
@@ -27,7 +27,7 @@ auth.get('/login', async (c) => {
   if (existingUser) return c.redirect('/');
 
   const next = c.req.query('next') || '/';
-  return c.html(layout({
+  return c.html(layoutCtx(c, {
     title: 'Sign In',
     body: loginForm({ next, siteKey: c.env.TURNSTILE_SITE_KEY }),
   }));
@@ -43,12 +43,17 @@ auth.post('/login', async (c) => {
   const sailingId = c.env.SAILING_ID;
   const ip = c.req.header('cf-connecting-ip') || '';
 
-  const showLogin = (error, status = 400) => c.html(layout({
+  const showLogin = (error, status = 400) => c.html(layoutCtx(c, {
     title: 'Sign In',
     body: loginForm({ next, siteKey: c.env.TURNSTILE_SITE_KEY, error }),
   }), status);
 
   try {
+    // Rate limit: 5 attempts per IP per minute
+    if (await isRateLimited(c.env, `login:${ip}`, 5)) {
+      return showLogin('Too many login attempts. Please wait a minute and try again.', 429);
+    }
+
     // Turnstile check
     const turnstileOk = await verifyTurnstile(c.env, turnstileToken, ip);
     if (!turnstileOk) return showLogin('Please complete the verification challenge.');
@@ -95,7 +100,7 @@ auth.get('/register', async (c) => {
   const existingUser = await resolveSession(c.env, c.req.raw);
   if (existingUser) return c.redirect('/');
 
-  return c.html(layout({
+  return c.html(layoutCtx(c, {
     title: 'Create Account',
     body: registerForm({ siteKey: c.env.TURNSTILE_SITE_KEY }),
   }));
@@ -113,12 +118,17 @@ auth.post('/register', async (c) => {
   const password    = (form.get('password') || '').toString();
   const password2   = (form.get('password2') || '').toString();
 
-  const showRegister = (error, status = 400) => c.html(layout({
+  const showRegister = (error, status = 400) => c.html(layoutCtx(c, {
     title: 'Create Account',
     body: registerForm({ siteKey: c.env.TURNSTILE_SITE_KEY, error, values: { displayName, username, email } }),
   }), status);
 
   try {
+    // Rate limit: 3 registrations per IP per minute
+    if (await isRateLimited(c.env, `register:${ip}`, 3)) {
+      return showRegister('Too many attempts. Please wait a minute and try again.', 429);
+    }
+
     const turnstileToken = (form.get('cf-turnstile-response') || '').toString();
     const turnstileOk = await verifyTurnstile(c.env, turnstileToken, ip);
     if (!turnstileOk) return showRegister('Please complete the verification challenge.');
@@ -183,7 +193,7 @@ auth.get('/onboarding', async (c) => {
   const user = await resolveSession(c.env, c.req.raw);
   if (!user) return c.redirect('/login');
 
-  return c.html(layout({
+  return c.html(layoutCtx(c, {
     title: 'Set Up Your Profile',
     user,
     body: onboardingForm(),

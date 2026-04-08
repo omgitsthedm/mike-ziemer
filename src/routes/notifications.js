@@ -8,7 +8,7 @@
 import { Hono } from 'hono';
 import { getDb, getNotifications, getSailing, q } from '../lib/db.js';
 import { requireAuth } from '../lib/auth.js';
-import { layout, esc, relTime } from '../templates/layout.js';
+import { layout, layoutCtx, esc, relTime } from '../templates/layout.js';
 import { module, notifItem, paginator } from '../templates/components.js';
 
 const notifications = new Hono();
@@ -34,7 +34,7 @@ notifications.get('/notifications', async (c) => {
     body: `<div class="notif-list" id="notifications-page">${listHtml}</div>${pager}`
   });
 
-  return c.html(layout({
+  return c.html(layoutCtx(c, {
     title: 'Notifications',
     user,
     sailing,

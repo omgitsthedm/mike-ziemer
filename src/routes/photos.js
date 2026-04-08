@@ -14,7 +14,7 @@ import { Hono } from 'hono';
 import { getDb, getRecentPhotos, getSailing, createNotification, q } from '../lib/db.js';
 import { requireAuth, resolveSession, isSailingReadOnly } from '../lib/auth.js';
 import { processPhotoUpload, cdnUrl } from '../lib/media.js';
-import { layout, esc, relTime, fmtDate } from '../templates/layout.js';
+import { layout, layoutCtx, esc, relTime, fmtDate } from '../templates/layout.js';
 import { module, photoThumb, commentEntry, paginator } from '../templates/components.js';
 
 const photos = new Hono();
@@ -67,7 +67,7 @@ photos.get('/photos', async (c) => {
     body: `${gridHtml}${pager}`
   })}`;
 
-  return c.html(layout({
+  return c.html(layoutCtx(c, {
     title: 'Photos',
     user: viewer,
     sailing,
@@ -130,7 +130,7 @@ photos.get('/photos/upload', requireAuth, async (c) => {
   </div>
 </div>`;
 
-  return c.html(layout({ title: 'Upload Photo', user, sailing, activeNav: 'photos', body }));
+  return c.html(layoutCtx(c, { title: 'Upload Photo', user, sailing, activeNav: 'photos', body }));
 });
 
 /* ============================================================
@@ -145,7 +145,7 @@ photos.post('/photos/upload', requireAuth, async (c) => {
   if (readOnly) return c.redirect('/photos');
 
   if (!bucket) {
-    return c.html(layout({
+    return c.html(layoutCtx(c, {
       title: 'Upload Error',
       user,
       sailing,
@@ -181,7 +181,7 @@ photos.post('/photos/upload', requireAuth, async (c) => {
 
     return c.redirect('/photos/' + newPhoto.id);
   } catch (err) {
-    return c.html(layout({
+    return c.html(layoutCtx(c, {
       title: 'Upload Error',
       user,
       sailing,
@@ -206,7 +206,7 @@ photos.get('/photos/:id', async (c) => {
     .single();
 
   if (!photo || photo.moderation_status !== 'visible') {
-    return c.html(layout({ title: 'Not Found', user: viewer, sailing, body: '<div class="ds-empty-state">Photo not found.</div>' }), 404);
+    return c.html(layoutCtx(c, { title: 'Not Found', user: viewer, sailing, body: '<div class="ds-empty-state">Photo not found.</div>' }), 404);
   }
 
   const { data: comments } = await db.from('photo_comments')
@@ -273,7 +273,7 @@ ${module({
   body: `<div class="comment-list">${commentListHtml}</div>${commentForm}`
 })}`;
 
-  return c.html(layout({ title: photo.caption || 'Photo', user: viewer, sailing, activeNav: 'photos', body }));
+  return c.html(layoutCtx(c, { title: photo.caption || 'Photo', user: viewer, sailing, activeNav: 'photos', body }));
 });
 
 /* ============================================================

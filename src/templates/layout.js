@@ -30,6 +30,8 @@ export function layout({
   flash = '',
   readOnly = false,
   themeClass = '',
+  csrfToken = '',
+  unreadMessages = 0,
 }) {
   const pageTitle = title ? `${title} | Deckspace` : 'Deckspace';
   const themeId = user?.profiles?.theme_id || 'classic';
@@ -47,7 +49,7 @@ export function layout({
 </head>
 <body class="${bodyClass}">
 
-${renderNav(user, activeNav, notifCount)}
+${renderNav(user, activeNav, notifCount, unreadMessages)}
 ${sailing ? renderSailingBar(sailing, readOnly) : ''}
 
 <div id="ds-page">
@@ -64,20 +66,24 @@ ${sailing ? renderSailingBar(sailing, readOnly) : ''}
 /* ============================================================
    TOP NAVIGATION
    ============================================================ */
-function renderNav(user, activeNav, notifCount) {
-  const NAV_ICONS = { home: ic.home, people: ic.users, events: ic.calendar, photos: ic.camera };
+function renderNav(user, activeNav, notifCount, unreadMessages) {
+  const NAV_ICONS = { home: ic.home, people: ic.users, events: ic.calendar, photos: ic.camera, messages: ic.mail };
   const navLinks = user
     ? [
-        { href: '/',       label: 'Home',   key: 'home' },
-        { href: '/people', label: 'People', key: 'people' },
-        { href: '/events', label: 'Events', key: 'events' },
-        { href: '/photos', label: 'Photos', key: 'photos' },
+        { href: '/',         label: 'Home',     key: 'home' },
+        { href: '/people',   label: 'People',   key: 'people' },
+        { href: '/events',   label: 'Events',   key: 'events' },
+        { href: '/photos',   label: 'Photos',   key: 'photos' },
+        { href: '/messages', label: 'Messages', key: 'messages' },
+        { href: '/voyage',   label: 'Voyage',   key: 'voyage' },
       ]
     : [];
 
   const links = navLinks.map(n => {
     const iconFn = NAV_ICONS[n.key];
-    return `<a href="${n.href}" class="${activeNav === n.key ? 'active' : ''}">${iconFn ? iconFn(13) : ''}${n.label}</a>`;
+    const badge = n.key === 'messages' && unreadMessages > 0
+      ? `<span class="nav-msg-badge">${unreadMessages}</span>` : '';
+    return `<a href="${n.href}" class="${activeNav === n.key ? 'active' : ''}">${iconFn ? iconFn(13) : ''}${n.label}${badge}</a>`;
   }).join('');
 
   const rightSide = user
@@ -148,6 +154,27 @@ function renderArchiveBanner(sailing) {
    ============================================================ */
 export function flash(type, message) {
   return `<div class="ds-flash ${esc(type)}" data-dismiss="6000">${message}</div>`;
+}
+
+/* ============================================================
+   CONTEXT-AWARE LAYOUT WRAPPER
+   Call from route handlers to auto-inject notifCount, unread messages, csrf
+   ============================================================ */
+export function layoutCtx(c, opts) {
+  return layout({
+    notifCount:     c.get('notifCount')     || 0,
+    unreadMessages: c.get('unreadMessages') || 0,
+    csrfToken:      c.get('csrfToken')      || '',
+    ...opts
+  });
+}
+
+/* ============================================================
+   CSRF HIDDEN FIELD
+   Inject into every form that POSTs state-changing data.
+   ============================================================ */
+export function csrfField(csrfToken) {
+  return csrfToken ? `<input type="hidden" name="_csrf" value="${esc(csrfToken)}">` : '';
 }
 
 /* ============================================================

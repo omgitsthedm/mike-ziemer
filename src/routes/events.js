@@ -15,7 +15,7 @@
 import { Hono } from 'hono';
 import { getDb, getEvents, getEventById, getEventComments, getUserRsvp, getSailing, createNotification, q } from '../lib/db.js';
 import { requireAuth, resolveSession, isSailingReadOnly } from '../lib/auth.js';
-import { layout, esc, fmtDate, relTime } from '../templates/layout.js';
+import { layout, layoutCtx, esc, fmtDate, relTime } from '../templates/layout.js';
 import { module, eventCard, commentEntry, paginator } from '../templates/components.js';
 import { ic } from '../templates/icons.js';
 
@@ -24,32 +24,41 @@ const events = new Hono();
 /* ============================================================
    EVENTS LIST — Shattered Shores MySpace-style schedule
    ============================================================ */
+const EVENT_CATEGORIES = ['karaoke','trivia','dinner','deck','social','excursion','drinks','poker','theme','music','other'];
+
 events.get('/events', async (c) => {
-  const viewer  = await resolveSession(c.env, c.req.raw);
-  const db      = getDb(c.env);
-  const sailing = await getSailing(db, c.env.SAILING_ID).catch(() => null);
+  const viewer   = await resolveSession(c.env, c.req.raw);
+  const db       = getDb(c.env);
+  const sailing  = await getSailing(db, c.env.SAILING_ID).catch(() => null);
+  const category = (c.req.query('category') || '').toLowerCase().trim();
 
   // Fetch all visible public events for the sailing, ordered by time
-  const { data: allEventsRaw } = await db.from('events')
+  let evQuery = db.from('events')
     .select('id, title, location, start_at, category, event_type, rsvp_count, description')
     .eq('sailing_id', c.env.SAILING_ID)
     .eq('moderation_status', 'visible')
     .eq('visibility', 'public')
     .order('start_at', { ascending: true })
-    .limit(120);
+    .limit(200);
 
-  // Group by calendar date (UTC date = YYYY-MM-DD prefix of ISO string)
+  if (category && EVENT_CATEGORIES.includes(category)) {
+    evQuery = evQuery.eq('category', category);
+  }
+
+  const { data: allEventsRaw } = await evQuery;
+
+  // Group by calendar date
   const dayMap = new Map();
   for (const ev of allEventsRaw || []) {
     const d = ev.start_at.slice(0, 10);
     if (!dayMap.has(d)) dayMap.set(d, []);
     dayMap.get(d).push(ev);
   }
-  const days = [...dayMap.entries()]; // [[date, events[]], ...]
+  const days = [...dayMap.entries()];
 
-  const body = eventsSchedulePage({ viewer, sailing, days });
+  const body = eventsSchedulePage({ viewer, sailing, days, activeCategory: category });
 
-  return c.html(layout({
+  return c.html(layoutCtx(c, {
     title: 'Events',
     user: viewer,
     sailing,
@@ -69,7 +78,7 @@ events.get('/events/create', requireAuth, async (c) => {
 
   if (readOnly) return c.redirect('/events');
 
-  return c.html(layout({
+  return c.html(layoutCtx(c, {
     title: 'Create Event',
     user,
     sailing,
@@ -97,7 +106,7 @@ events.post('/events/create', requireAuth, async (c) => {
   if (!startAt) errs.push('Start time is required.');
 
   if (errs.length) {
-    return c.html(layout({
+    return c.html(layoutCtx(c, {
       title: 'Create Event',
       user,
       sailing,
@@ -120,7 +129,7 @@ events.post('/events/create', requireAuth, async (c) => {
   }).select('id').single();
 
   if (insertErr || !newEvent) {
-    return c.html(layout({
+    return c.html(layoutCtx(c, {
       title: 'Create Event', user, sailing,
       body: createEventForm({ error: 'Could not create event. Please try again.', values: { title, desc, location, startAt, endAt, category } })
     }), 500);
@@ -143,11 +152,11 @@ events.get('/events/:id', async (c) => {
   try {
     event = await getEventById(db, c.req.param('id'));
   } catch (_) {
-    return c.html(layout({ title: 'Not Found', user: viewer, sailing, body: '<div class="ds-empty-state">Event not found.</div>' }), 404);
+    return c.html(layoutCtx(c, { title: 'Not Found', user: viewer, sailing, body: '<div class="ds-empty-state">Event not found.</div>' }), 404);
   }
 
   if (event.moderation_status !== 'visible') {
-    return c.html(layout({ title: 'Unavailable', user: viewer, sailing, body: '<div class="ds-empty-state">This event is not available.</div>' }), 410);
+    return c.html(layoutCtx(c, { title: 'Unavailable', user: viewer, sailing, body: '<div class="ds-empty-state">This event is not available.</div>' }), 410);
   }
 
   const [comments, userRsvp, attendees] = await Promise.all([
@@ -166,7 +175,7 @@ events.get('/events/:id', async (c) => {
 
   const body = eventDetailPage({ event, comments, userRsvp, attendees, viewer, sailing, readOnly, isCreator, page, hasMore: comments.length === 30, cdnBase });
 
-  return c.html(layout({
+  return c.html(layoutCtx(c, {
     title: event.title,
     user: viewer,
     sailing,
@@ -271,7 +280,7 @@ events.get('/events/:id/edit', requireAuth, async (c) => {
   const canEdit = event.creator_user_id === user.id || ['admin','moderator'].includes(user.role);
   if (!canEdit) return c.text('Forbidden', 403);
 
-  return c.html(layout({
+  return c.html(layoutCtx(c, {
     title: 'Edit Event',
     user,
     sailing,
@@ -343,7 +352,7 @@ function fmtTime(dateStr) {
   return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 }
 
-function eventsSchedulePage({ viewer, sailing, days }) {
+function eventsSchedulePage({ viewer, sailing, days, activeCategory = '' }) {
   const shipName = sailing?.ship_name || 'the ship';
 
   // ---- LEFT RAIL ----
@@ -437,13 +446,22 @@ function eventsSchedulePage({ viewer, sailing, days }) {
   <span class="ss-status-item"><strong>Last Updated:</strong> 2:13 AM</span>
 </div>`;
 
+  // Category pill filter nav
+  const catPills = `<div class="event-cat-pills">
+    <a href="/events" class="event-cat-pill${!activeCategory ? ' active' : ''}">All</a>
+    ${EVENT_CATEGORIES.map(cat =>
+      `<a href="/events?category=${encodeURIComponent(cat)}" class="event-cat-pill${activeCategory === cat ? ' active' : ''}">${CAT_ICONS[cat] ? CAT_ICONS[cat]() : ''}${esc(cat)}</a>`
+    ).join('')}
+  </div>`;
+
   // Intro blurb
   const intro = `<div class="ss-intro">
   Welcome aboard <strong>Shattered Shores Cruise</strong>. This is your official-ish guide to what&rsquo;s happening on ${esc(shipName)}.
   Some events are planned. Some just happen. Some should maybe not happen, but here we are.
   Check back often, reshuffle your emotional priorities accordingly, and remember:
   missing an event may haunt you longer than attending it.
-</div>`;
+</div>
+${catPills}`;
 
   // Day schedule modules
   const dayModules = days.map(([date, evs], idx) => {

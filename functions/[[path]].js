@@ -9,9 +9,9 @@
 
 import { Hono } from 'hono';
 import { handle } from 'hono/cloudflare-pages';
-import { getDb, getUnreadNotifCount, getSailing } from '../src/lib/db.js';
-import { loadSession } from '../src/lib/auth.js';
-import { layout, esc } from '../src/templates/layout.js';
+import { getDb, getUnreadNotifCount, getUnreadMessageCount, getSailing } from '../src/lib/db.js';
+import { loadSession, getSessionToken, hashToken, generateCsrfToken, verifyCsrfToken } from '../src/lib/auth.js';
+import { layout, layoutCtx, esc } from '../src/templates/layout.js';
 import { module as dsModule } from '../src/templates/components.js';
 
 // Route modules
@@ -24,6 +24,9 @@ import photosRoutes        from '../src/routes/photos.js';
 import friendsRoutes       from '../src/routes/friends.js';
 import notificationsRoutes from '../src/routes/notifications.js';
 import adminRoutes         from '../src/routes/admin.js';
+import messagesRoutes      from '../src/routes/messages.js';
+import voyageRoutes        from '../src/routes/voyage.js';
+import reactionsRoutes     from '../src/routes/reactions.js';
 
 const app = new Hono();
 
@@ -39,15 +42,69 @@ app.use('*', async (c, next) => {
   const user = c.get('user');
   if (user) {
     try {
-      const db    = getDb(c.env);
-      const count = await getUnreadNotifCount(db, user.id);
-      c.set('notifCount', count);
+      const db = getDb(c.env);
+      const [notifCount, msgCount] = await Promise.all([
+        getUnreadNotifCount(db, user.id),
+        getUnreadMessageCount(db, user.id),
+      ]);
+      c.set('notifCount', notifCount);
+      c.set('unreadMessages', msgCount);
     } catch (_) {
       c.set('notifCount', 0);
+      c.set('unreadMessages', 0);
     }
   } else {
     c.set('notifCount', 0);
+    c.set('unreadMessages', 0);
   }
+  return next();
+});
+
+// CSRF token generation — attach to context for use in forms
+app.use('*', async (c, next) => {
+  const rawToken = getSessionToken(c.req.raw);
+  if (rawToken) {
+    const tokenHash = await hashToken(rawToken);
+    const csrfToken = await generateCsrfToken(tokenHash);
+    c.set('csrfToken', csrfToken);
+    c.set('sessionTokenHash', tokenHash);
+  } else {
+    c.set('csrfToken', '');
+    c.set('sessionTokenHash', '');
+  }
+  return next();
+});
+
+// CSRF validation on all state-changing POST requests
+app.use('*', async (c, next) => {
+  if (c.req.method !== 'POST') return next();
+  // Skip CSRF on auth routes (login/register use turnstile) and file uploads
+  const path = new URL(c.req.url).pathname;
+  const skipPaths = ['/login', '/register', '/onboarding', '/logout'];
+  if (skipPaths.includes(path)) return next();
+
+  const sessionHash = c.get('sessionTokenHash');
+  if (!sessionHash) return next(); // unauthenticated — no CSRF needed
+
+  // For multipart forms (file uploads) we skip CSRF — file uploads are
+  // protected by requireAuth and origin is same-origin by default
+  const ct = c.req.header('content-type') || '';
+  if (ct.includes('multipart/form-data')) return next();
+
+  const form = await c.req.formData().catch(() => null);
+  if (!form) return next();
+
+  const formToken = (form.get('_csrf') || '').toString();
+  const valid = await verifyCsrfToken(sessionHash, formToken);
+  if (!valid) {
+    return c.html(`<div style="font-family:Arial;padding:20px;max-width:400px;margin:40px auto;border:2px solid #cc0000;background:#fff8f8">
+      <strong>Security check failed.</strong><br>
+      Your session may have expired. <a href="javascript:history.back()">Go back</a> and try again.
+    </div>`, 403);
+  }
+
+  // Re-attach form to request context so routes can read it
+  c.set('parsedForm', form);
   return next();
 });
 
@@ -88,6 +145,9 @@ app.route('/', photosRoutes);
 app.route('/', friendsRoutes);
 app.route('/', notificationsRoutes);
 app.route('/', adminRoutes);
+app.route('/', messagesRoutes);
+app.route('/', voyageRoutes);
+app.route('/', reactionsRoutes);
 
 /* ============================================================
    REPORT FORM (available to all authenticated users)
@@ -119,7 +179,7 @@ app.get('/report', loadSession, async (c) => {
 </div>`
   });
 
-  return c.html(layout({ title: 'Report Content', user, sailing, body }));
+  return c.html(layoutCtx(c, { title: 'Report Content', user, sailing, body }));
 });
 
 app.post('/report', loadSession, async (c) => {
@@ -154,7 +214,7 @@ app.get('/health', (c) => c.json({ ok: true, ts: new Date().toISOString() }));
    ============================================================ */
 app.notFound(async (c) => {
   const user = c.get('user');
-  return c.html(layout({
+  return c.html(layoutCtx(c, {
     title: 'Not Found',
     user,
     body: `<div style="max-width:400px;margin:30px auto;text-align:center">
@@ -177,7 +237,7 @@ app.onError(async (err, c) => {
   const user = c.get('user');
   const isDev = c.env?.ENVIRONMENT === 'development';
 
-  return c.html(layout({
+  return c.html(layoutCtx(c, {
     title: 'Error',
     user,
     body: `<div style="max-width:600px;margin:30px auto">

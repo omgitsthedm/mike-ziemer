@@ -9,6 +9,30 @@
 const MAX_UPLOAD_BYTES = 8 * 1024 * 1024; // 8 MB hard limit
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
+// First-byte signatures for supported types
+const MAGIC = {
+  'image/jpeg': [[0xFF, 0xD8, 0xFF]],
+  'image/png':  [[0x89, 0x50, 0x4E, 0x47]],
+  'image/gif':  [[0x47, 0x49, 0x46, 0x38]],  // GIF8
+  'image/webp': null, // RIFF header checked below
+};
+
+/**
+ * Validate that the file buffer actually matches the claimed MIME type.
+ * Prevents spoofed content-type headers.
+ */
+export function validateMagicBytes(buffer, mimeType) {
+  const bytes = new Uint8Array(buffer.slice(0, 16));
+  if (mimeType === 'image/webp') {
+    // RIFF....WEBP
+    return bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 &&
+           bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50;
+  }
+  const sigs = MAGIC[mimeType];
+  if (!sigs) return false;
+  return sigs.some(sig => sig.every((b, i) => bytes[i] === b));
+}
+
 /**
  * Validate an uploaded file.
  * Returns { ok: true } or { ok: false, error: string }
@@ -100,6 +124,11 @@ export async function processPhotoUpload(env, bucket, { file, sailingId, userId,
   const mk = mediumKey(sailingId, userId, photoId, ext);
 
   const buf = await file.arrayBuffer();
+
+  // Validate magic bytes — reject spoofed MIME types
+  if (!validateMagicBytes(buf, file.type)) {
+    throw new Error('File content does not match its declared type. Please upload a valid image.');
+  }
 
   // Upload original
   await uploadToR2(bucket, sk, buf, file.type);

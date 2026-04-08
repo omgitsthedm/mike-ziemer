@@ -234,7 +234,7 @@ export async function getFriends(db, userId, limit = 50) {
 export async function browsePeople(db, sailingId, { search, vibeTag, page = 1, limit = 30 } = {}) {
   const from = (page - 1) * limit;
   let query = db.from('users')
-    .select('id, username, display_name, last_active_at, profiles(avatar_thumb_url, hometown, vibe_tags, about_me)')
+    .select('id, username, display_name, last_active_at, profiles(avatar_thumb_url, hometown, vibe_tags, about_me, status_text)')
     .eq('sailing_id', sailingId)
     .eq('account_status', 'active')
     .eq('activation_status', 'active')
@@ -245,7 +245,128 @@ export async function browsePeople(db, sailingId, { search, vibeTag, page = 1, l
     query = query.ilike('display_name', `%${search}%`);
   }
 
+  if (vibeTag) {
+    // PostgREST cs = "contains" operator for arrays on joined table
+    query = query.filter('profiles.vibe_tags', 'cs', JSON.stringify([vibeTag]));
+  }
+
   return q(query);
+}
+
+/**
+ * Get users active within the last N minutes.
+ */
+export async function getOnlineUsers(db, sailingId, withinMinutes = 10, limit = 8) {
+  const cutoff = new Date(Date.now() - withinMinutes * 60 * 1000).toISOString();
+  return q(
+    db.from('users')
+      .select('id, username, display_name, last_active_at, profiles(avatar_thumb_url)')
+      .eq('sailing_id', sailingId)
+      .eq('account_status', 'active')
+      .gte('last_active_at', cutoff)
+      .order('last_active_at', { ascending: false })
+      .limit(limit)
+  );
+}
+
+/* ============================================================
+   MESSAGES
+   ============================================================ */
+
+/**
+ * Get conversation threads for a user — one entry per conversation partner.
+ */
+export async function getMessageThreads(db, sailingId, userId) {
+  // Get the most recent message in each conversation
+  const { data, error } = await db.rpc('get_message_threads', {
+    p_sailing_id: sailingId,
+    p_user_id: userId
+  });
+  if (error) return []; // graceful fallback if RPC not defined
+  return data || [];
+}
+
+/**
+ * Get messages in a thread between two users.
+ */
+export async function getThread(db, sailingId, userId, otherId, limit = 50) {
+  return q(
+    db.from('messages')
+      .select('id, from_user_id, to_user_id, body, read_at, created_at, users!messages_from_user_id_fkey(username, display_name, profiles(avatar_thumb_url))')
+      .eq('sailing_id', sailingId)
+      .eq('moderation_status', 'visible')
+      .or(`and(from_user_id.eq.${userId},to_user_id.eq.${otherId}),and(from_user_id.eq.${otherId},to_user_id.eq.${userId})`)
+      .order('created_at', { ascending: true })
+      .limit(limit)
+  ).catch(() => []);
+}
+
+/**
+ * Count unread messages for a user.
+ */
+export async function getUnreadMessageCount(db, userId) {
+  const { count } = await db.from('messages')
+    .select('id', { count: 'exact', head: true })
+    .eq('to_user_id', userId)
+    .is('read_at', null)
+    .eq('moderation_status', 'visible');
+  return count || 0;
+}
+
+/* ============================================================
+   REACTIONS
+   ============================================================ */
+
+/**
+ * Get reaction counts for a target item.
+ * Returns { hearts: N, stars: N, waves: N, total: N }
+ */
+export async function getReactionCounts(db, targetType, targetId) {
+  const { data } = await db.from('reaction_counts')
+    .select('hearts, stars, waves, total')
+    .eq('target_type', targetType)
+    .eq('target_id', targetId)
+    .maybeSingle();
+  return data || { hearts: 0, stars: 0, waves: 0, total: 0 };
+}
+
+/**
+ * Get reaction counts for multiple targets in one query.
+ */
+export async function getBatchReactionCounts(db, targetType, targetIds) {
+  if (!targetIds.length) return {};
+  const { data } = await db.from('reaction_counts')
+    .select('target_id, hearts, stars, waves, total')
+    .eq('target_type', targetType)
+    .in('target_id', targetIds);
+  const map = {};
+  for (const r of data || []) map[r.target_id] = r;
+  return map;
+}
+
+/**
+ * Get the viewer's reaction on a target (null if none).
+ */
+export async function getUserReaction(db, userId, targetType, targetId) {
+  const { data } = await db.from('reactions')
+    .select('id, reaction_type')
+    .eq('user_id', userId)
+    .eq('target_type', targetType)
+    .eq('target_id', targetId)
+    .maybeSingle();
+  return data || null;
+}
+
+/* ============================================================
+   VOYAGE / ITINERARY
+   ============================================================ */
+export async function getVoyageDays(db, sailingId) {
+  return q(
+    db.from('voyage_days')
+      .select('*')
+      .eq('sailing_id', sailingId)
+      .order('day_date', { ascending: true })
+  ).catch(() => []);
 }
 
 export async function createNotification(db, { userId, type, objectType, objectId, actorId, message }) {

@@ -16,7 +16,7 @@ import { Hono } from 'hono';
 import { getDb, getUserByUsername, getProfileByUserId, getProfilePage, getWallPosts, getGuestbookEntries, getSailing, createNotification, logAudit, q } from '../lib/db.js';
 import { requireAuth, resolveSession, isSailingReadOnly } from '../lib/auth.js';
 import { processPhotoUpload, cdnUrl } from '../lib/media.js';
-import { layout, esc, relTime, fmtDate } from '../templates/layout.js';
+import { layout, layoutCtx, esc, relTime, fmtDate } from '../templates/layout.js';
 import {
   module, profilePhotoBlock, contactBox, detailsTable, songModule,
   vibeTagsModule, friendSpaceModule, wallModule, guestbookModule, paginator
@@ -37,7 +37,7 @@ profile.get('/profile/edit', requireAuth, async (c) => {
   const readOnly = sailing ? isSailingReadOnly(sailing) : false;
   if (readOnly) return c.redirect('/profile/' + user.username);
 
-  return c.html(layout({
+  return c.html(layoutCtx(c, {
     title: 'Edit Profile',
     user,
     sailing,
@@ -60,6 +60,7 @@ profile.post('/profile/edit', requireAuth, async (c) => {
   const vibeTags     = (form.get('vibe_tags') || '').toString().split(',').map(t => t.trim()).filter(Boolean).slice(0, 10);
   const whoMeet      = (form.get('who_id_like_to_meet') || '').toString().trim().slice(0, 500);
   const intent       = (form.get('social_intent') || '').toString().trim().slice(0, 200);
+  const statusText   = (form.get('status_text') || '').toString().trim().slice(0, 120);
   const themeId      = (form.get('theme_id') || 'classic').toString();
   const songTitle    = (form.get('song_title') || '').toString().trim().slice(0, 100);
   const songArtist   = (form.get('song_artist') || '').toString().trim().slice(0, 100);
@@ -75,6 +76,7 @@ profile.post('/profile/edit', requireAuth, async (c) => {
     vibe_tags: vibeTags.length ? vibeTags : null,
     who_id_like_to_meet: whoMeet || null,
     social_intent: intent || null,
+    status_text: statusText || null,
     theme_id: themeId || 'classic',
     song_title: songTitle || null,
     song_artist: songArtist || null,
@@ -147,7 +149,7 @@ profile.get('/profile/:username', async (c) => {
   try {
     target = await getUserByUsername(db, c.env.SAILING_ID, c.req.param('username'));
   } catch (_) {
-    return c.html(layout({ title: 'Not Found', user: viewer, sailing, body: '<div class="ds-empty-state">Profile not found.</div>' }), 404);
+    return c.html(layoutCtx(c, { title: 'Not Found', user: viewer, sailing, body: '<div class="ds-empty-state">Profile not found.</div>' }), 404);
   }
 
   const { topFriends, friendCount, friendStatus } = await getProfilePage(db, target.id, viewer?.id);
@@ -175,7 +177,7 @@ profile.get('/profile/:username', async (c) => {
     cdnBase, sailing
   });
 
-  return c.html(layout({
+  return c.html(layoutCtx(c, {
     title: target.display_name + "'s Profile",
     user: viewer,
     sailing,
@@ -194,7 +196,7 @@ profile.post('/wall/:profileUserId', requireAuth, async (c) => {
   const sailing = await getSailing(db, c.env.SAILING_ID).catch(() => null);
 
   if (sailing && isSailingReadOnly(sailing)) {
-    return c.html(layout({ title: 'Read Only', user: poster, sailing, body: '<div class="ds-flash error">Deckspace is in archive mode.</div>' }), 403);
+    return c.html(layoutCtx(c, { title: 'Read Only', user: poster, sailing, body: '<div class="ds-flash error">Deckspace is in archive mode.</div>' }), 403);
   }
 
   const form = await c.req.formData();
@@ -408,6 +410,10 @@ function editProfileForm({ user, profile, siteKey }) {
         <div class="ds-form-row">
           <label for="ed-who">Who I'd Like to Meet</label>
           <textarea id="ed-who" name="who_id_like_to_meet" class="ds-textarea" rows="2" maxlength="500">${esc(profile?.who_id_like_to_meet || '')}</textarea>
+        </div>
+        <div class="ds-form-row">
+          <label for="ed-status">Status <span style="font-weight:normal;color:#999">(shows on your profile, max 120 chars)</span></label>
+          <input id="ed-status" name="status_text" type="text" class="ds-input" value="${esc(profile?.status_text || '')}" maxlength="120" placeholder="What are you up to? (e.g. 'Plotting something at the pool bar')">
         </div>
         <div class="ds-form-row">
           <label for="ed-intent">Cruise Vibe</label>
