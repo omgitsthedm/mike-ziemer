@@ -13,7 +13,7 @@
  */
 
 import { Hono } from 'hono';
-import { getDb, getUserByUsername, getProfileByUserId, getProfilePage, getWallPosts, getGuestbookEntries, getSailing, createNotification, logAudit, q } from '../lib/db.js';
+import { getDb, getUserByUsername, getProfileByUserId, getProfilePage, getWallPosts, getGuestbookEntries, getSailing, getVoyageDays, createNotification, logAudit, q } from '../lib/db.js';
 import { requireAuth, resolveSession, isSailingReadOnly } from '../lib/auth.js';
 import { processPhotoUpload, cdnUrl } from '../lib/media.js';
 import { layout, layoutCtx, esc, relTime, fmtDate } from '../templates/layout.js';
@@ -21,8 +21,28 @@ import {
   module, profilePhotoBlock, contactBox, detailsTable, songModule,
   vibeTagsModule, friendSpaceModule, wallModule, guestbookModule, paginator
 } from '../templates/components.js';
+import { ic } from '../templates/icons.js';
 
 const profile = new Hono();
+
+/* ============================================================
+   QUICK MOOD UPDATE — POST /profile/mood
+   Updates status_text without navigating to full edit form.
+   ============================================================ */
+profile.post('/profile/mood', requireAuth, async (c) => {
+  const user = c.get('user');
+  const db   = getDb(c.env);
+  const form = c.get('parsedForm') || await c.req.formData().catch(() => null);
+  const mood = (form?.get('mood') || '').toString().trim().slice(0, 120);
+
+  await db.from('profiles').upsert({
+    user_id: user.id,
+    status_text: mood || null,
+    updated_at: new Date().toISOString()
+  }, { onConflict: 'user_id' }).catch(() => {});
+
+  return c.redirect('/profile/' + user.username);
+});
 
 /* ============================================================
    EDIT PROFILE  (must be registered BEFORE /profile/:username
@@ -317,6 +337,7 @@ function profilePage({ target, profile, viewer, topFriends, friendCount, friendS
   // Build left column
   const leftCol = [
     profilePhotoBlock({ user: target, profile, isOwn, isOnline, cdnBase }),
+    isOwn && !readOnly ? moodPickerModule() : '',
     contactBox({ targetUser: target, viewerUser: viewer, friendStatus }),
     mediaLinksModule(target, profile, cdnBase),
     detailsTable({ profile, user: target }),
@@ -363,6 +384,41 @@ function mediaLinksModule(user, profile, cdnBase) {
     <div class="profile-url-field" style="border-top:0;padding:4px 0 0">
       URL: <a href="/profile/${esc(user.username)}">/profile/${esc(user.username)}</a>
     </div>
+  </div>
+</div>`;
+}
+
+/* Cruise-specific mood options — quick status update from own profile */
+const CRUISE_MOODS = [
+  { emoji: '🌊', label: 'At Sea' },
+  { emoji: '☀️', label: 'Deck Life' },
+  { emoji: '🍹', label: "Bar O'Clock" },
+  { emoji: '🎤', label: 'Karaoke Mode' },
+  { emoji: '😎', label: 'Pool Vibes' },
+  { emoji: '💃', label: 'Dance Floor' },
+  { emoji: '🌙', label: 'Night Owl' },
+  { emoji: '😴', label: 'Naptime' },
+  { emoji: '🤢', label: 'Seasick' },
+  { emoji: '🫶', label: 'Good Vibes' },
+  { emoji: '🗺️', label: 'Port Day!' },
+  { emoji: '📸', label: 'Photo Mode' },
+];
+
+function moodPickerModule() {
+  const moodBtns = CRUISE_MOODS.map(m =>
+    `<form method="POST" action="/profile/mood" class="inline-form">
+      <input type="hidden" name="mood" value="${esc(m.emoji + ' ' + m.label)}">
+      <button type="submit" class="mood-btn" title="${esc(m.label)}">${m.emoji}<span class="mood-label">${esc(m.label)}</span></button>
+    </form>`
+  ).join('');
+  return `<div class="ds-module mood-picker-module">
+  <div class="ds-module-header">${ic.starFill(11)} My Mood</div>
+  <div class="ds-module-body">
+    <div class="mood-grid">${moodBtns}</div>
+    <form method="POST" action="/profile/mood" class="mood-clear-form">
+      <input type="hidden" name="mood" value="">
+      <button type="submit" class="mood-clear-btn">Clear mood</button>
+    </form>
   </div>
 </div>`;
 }

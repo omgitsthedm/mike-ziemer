@@ -155,7 +155,8 @@ export async function destroySession(env, request) {
    TURNSTILE VERIFICATION
    ============================================================ */
 export async function verifyTurnstile(env, token, ip) {
-  if (!env.TURNSTILE_SECRET_KEY) return true; // Skip when unconfigured
+  // Skip if either key is missing — widget won't render without SITE_KEY anyway
+  if (!env.TURNSTILE_SECRET_KEY || !env.TURNSTILE_SITE_KEY) return true;
   if (!token) return false;
   try {
     const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {

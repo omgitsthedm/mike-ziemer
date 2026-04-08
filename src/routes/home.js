@@ -9,7 +9,7 @@
  */
 
 import { Hono } from 'hono';
-import { getDb, getEvents, getRecentPhotos, browsePeople, getSailing, getOnlineUsers } from '../lib/db.js';
+import { getDb, getEvents, getRecentPhotos, browsePeople, getSailing, getOnlineUsers, getVoyageDays } from '../lib/db.js';
 import { resolveSession } from '../lib/auth.js';
 import { layout, layoutCtx, esc, fmtDate, relTime } from '../templates/layout.js';
 import { module, eventCard, photoThumb, personRow } from '../templates/components.js';
@@ -32,7 +32,7 @@ home.get('/', async (c) => {
     const newPeople = await browsePeople(db, c.env.SAILING_ID, { limit: 8 }).catch(() => []);
     return c.html(layoutCtx(c, {
       title: 'Deckspace — A Place for Friends on the High Seas',
-      body: landingPage({ sailing, cdnBase, newPeople, weather }),
+      body: landingPage({ sailing, cdnBase, newPeople, weather, siteKey: c.env.TURNSTILE_SITE_KEY }),
     }));
   }
 
@@ -47,7 +47,7 @@ home.get('/', async (c) => {
   const bulletin = bulletinJson ? JSON.parse(bulletinJson) : null;
 
   // Parallel fetch of all home page data
-  const [tonightEvents, upcomingEvents, recentPeople, recentPhotos, recentActivity, onlineUsers] =
+  const [tonightEvents, upcomingEvents, recentPeople, recentPhotos, recentActivity, onlineUsers, voyageDays] =
     await Promise.all([
       // Tonight's events (today only)
       db.from('events')
@@ -90,12 +90,15 @@ home.get('/', async (c) => {
         .catch(() => []),
 
       // Online now
-      getOnlineUsers(db, c.env.SAILING_ID, 10, 8).catch(() => [])
+      getOnlineUsers(db, c.env.SAILING_ID, 10, 8).catch(() => []),
+
+      // Voyage itinerary (for port countdown)
+      getVoyageDays(db, c.env.SAILING_ID).catch(() => [])
     ]);
 
   const body = homePage({
     user, sailing, cdnBase, weather,
-    tonightEvents, upcomingEvents, recentPeople, recentPhotos, recentActivity, onlineUsers, bulletin
+    tonightEvents, upcomingEvents, recentPeople, recentPhotos, recentActivity, onlineUsers, bulletin, voyageDays
   });
 
   return c.html(layoutCtx(c, {
@@ -158,9 +161,59 @@ function weatherWidget(weather) {
 }
 
 /* ============================================================
+   PORT COUNTDOWN WIDGET
+   Shows the next port stop from voyage_days. Hidden if no data.
+   ============================================================ */
+function portCountdownWidget(voyageDays) {
+  if (!voyageDays || !voyageDays.length) return '';
+
+  const now = new Date();
+  // Find the next port day (port_name present, in the future or today)
+  const nextPort = voyageDays.find(d => {
+    if (!d.port_name) return false;
+    const dayDate = new Date(d.day_date + 'T06:00:00'); // arrival ~ 6am
+    return dayDate >= now;
+  });
+
+  if (!nextPort) return '';
+
+  const arrival = new Date(nextPort.day_date + 'T06:00:00');
+  const diffMs  = arrival - now;
+  const diffH   = Math.floor(diffMs / 3600000);
+  const diffM   = Math.floor((diffMs % 3600000) / 60000);
+
+  let countdownStr;
+  if (diffMs <= 0) {
+    countdownStr = 'We&rsquo;re here!';
+  } else if (diffH < 1) {
+    countdownStr = `${diffM}m away`;
+  } else if (diffH < 24) {
+    countdownStr = `${diffH}h ${diffM}m away`;
+  } else {
+    const days = Math.floor(diffH / 24);
+    const hrs  = diffH % 24;
+    countdownStr = `${days}d ${hrs}h away`;
+  }
+
+  const descHtml = nextPort.description
+    ? `<div class="port-desc">${esc(nextPort.description.slice(0, 120))}</div>`
+    : '';
+
+  return module({
+    header: `${ic.anchor(12)} Next Port`,
+    body: `<div class="port-countdown">
+  <div class="port-name">${esc(nextPort.port_name)}</div>
+  <div class="port-timer">${ic.clock(14)} ${countdownStr}</div>
+  ${descHtml}
+  <a href="/voyage" class="port-itinerary-link">View full itinerary &raquo;</a>
+</div>`
+  });
+}
+
+/* ============================================================
    HOME PAGE TEMPLATE
    ============================================================ */
-function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEvents, recentPeople, recentPhotos, recentActivity, onlineUsers, bulletin }) {
+function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEvents, recentPeople, recentPhotos, recentActivity, onlineUsers, bulletin, voyageDays }) {
   // Tonight's events module
   const tonightHtml = tonightEvents.length
     ? tonightEvents.map(e => eventCard({ event: e, cdnBase })).join('')
@@ -268,6 +321,7 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
   </div>` : '';
 
   const wx = weatherWidget(weather);
+  const portCountdown = portCountdownWidget(voyageDays);
 
   return `${bulletinHtml}${sailingNotice}
 <div class="home-grid">
@@ -277,6 +331,7 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
     ${photosModule}
   </div>
   <div>
+    ${portCountdown}
     ${wx}
     ${upcomingModule}
     ${onlineModule}
@@ -289,7 +344,7 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
    LANDING PAGE (unauthenticated visitors)
    OG MySpace layout: 60% left (hero + How It Works + Cool New People), 40% right (login + signup)
    ============================================================ */
-function landingPage({ sailing, cdnBase, newPeople, weather }) {
+function landingPage({ sailing, cdnBase, newPeople, weather, siteKey }) {
   const shipName = sailing?.ship_name || 'Your Ship';
   const sailName = sailing?.name      || 'This Sailing';
 
@@ -378,10 +433,14 @@ function landingPage({ sailing, cdnBase, newPeople, weather }) {
           </tr>
           <tr>
             <td></td>
-            <td style="padding-top:6px"><button type="submit" class="ds-btn ds-btn-primary landing-login-btn" data-loading-text="Signing in...">${ic.logIn(13)} Sign In</button></td>
+            <td style="padding-top:6px">
+              ${siteKey ? `<div class="cf-turnstile" data-sitekey="${esc(siteKey)}" data-theme="light" style="margin-bottom:6px"></div>` : ''}
+              <button type="submit" class="ds-btn ds-btn-primary landing-login-btn" data-loading-text="Signing in...">${ic.logIn(13)} Sign In</button>
+            </td>
           </tr>
         </table>
       </form>
+      ${siteKey ? `<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>` : ''}
     </div>
   </div>
 

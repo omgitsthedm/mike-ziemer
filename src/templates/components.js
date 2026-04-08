@@ -57,12 +57,17 @@ export function profilePhotoBlock({ user, profile, isOwn, isOnline, cdnBase }) {
     ? `<div class="profile-status-mood">&ldquo;${esc(profile.status_text)}&rdquo;</div>`
     : '';
 
+  const viewCount = profile?.profile_views > 0
+    ? `<div class="profile-view-count">${ic.user(10)} ${Number(profile.profile_views).toLocaleString()} profile view${profile.profile_views === 1 ? '' : 's'}</div>`
+    : '';
+
   return `<div class="profile-photo-block">
   ${img}
   <span class="profile-display-name">${esc(user.display_name)}</span>
   <div class="text-small text-muted">@${esc(user.username)}</div>
   ${statusLine}
   ${onlineHtml}
+  ${viewCount}
   ${editLink}
 </div>`;
 }
