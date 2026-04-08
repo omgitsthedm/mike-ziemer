@@ -93,7 +93,7 @@ events.post('/events/create', requireAuth, async (c) => {
   const readOnly = sailing ? isSailingReadOnly(sailing) : false;
   if (readOnly) return c.text('Archive mode', 403);
 
-  const form = await c.req.formData();
+  const form = c.get('parsedForm') || await c.req.formData();
   const title    = (form.get('title') || '').toString().trim().slice(0, 200);
   const desc     = (form.get('description') || '').toString().trim().slice(0, 5000);
   const location = (form.get('location') || '').toString().trim().slice(0, 200);
@@ -173,7 +173,8 @@ events.get('/events/:id', async (c) => {
   const readOnly = sailing ? isSailingReadOnly(sailing) : false;
   const isCreator = viewer?.id === event.creator_user_id;
 
-  const body = eventDetailPage({ event, comments, userRsvp, attendees, viewer, sailing, readOnly, isCreator, page, hasMore: comments.length === 30, cdnBase });
+  const csrf = c.get('csrfToken') || '';
+  const body = eventDetailPage({ event, comments, userRsvp, attendees, viewer, sailing, readOnly, isCreator, page, hasMore: comments.length === 30, cdnBase, csrfToken: csrf });
 
   return c.html(layoutCtx(c, {
     title: event.title,
@@ -191,7 +192,7 @@ events.post('/events/:id/rsvp', requireAuth, async (c) => {
   const user    = c.get('user');
   const eventId = c.req.param('id');
   const db      = getDb(c.env);
-  const form    = await c.req.formData();
+  const form    = c.get('parsedForm') || await c.req.formData();
   const status  = (form.get('status') || 'going').toString();
   const sailing = await getSailing(db, c.env.SAILING_ID).catch(() => null);
 
@@ -237,7 +238,7 @@ events.post('/events/:id/comment', requireAuth, async (c) => {
 
   if (sailing && isSailingReadOnly(sailing)) return c.redirect('/events/' + eventId);
 
-  const form = await c.req.formData();
+  const form = c.get('parsedForm') || await c.req.formData();
   const body = (form.get('body') || '').toString().trim().slice(0, 1000);
   if (!body) return c.redirect('/events/' + eventId);
 
@@ -301,7 +302,7 @@ events.post('/events/:id/edit', requireAuth, async (c) => {
   const canEdit = event.creator_user_id === user.id || ['admin','moderator'].includes(user.role);
   if (!canEdit) return c.text('Forbidden', 403);
 
-  const form     = await c.req.formData();
+  const form     = c.get('parsedForm') || await c.req.formData();
   const title    = (form.get('title') || '').toString().trim().slice(0, 200);
   const desc     = (form.get('description') || '').toString().trim().slice(0, 5000);
   const location = (form.get('location') || '').toString().trim().slice(0, 200);
@@ -558,7 +559,7 @@ ${catPills}`;
 /* ============================================================
    TEMPLATES
    ============================================================ */
-function eventDetailPage({ event, comments, userRsvp, attendees, viewer, sailing, readOnly, isCreator, page, hasMore, cdnBase }) {
+function eventDetailPage({ event, comments, userRsvp, attendees, viewer, sailing, readOnly, isCreator, page, hasMore, cdnBase, csrfToken }) {
   const creator = event.users;
   const coverImg = event.cover_image_url
     ? `<img src="${esc(`${cdnBase}/${event.cover_image_url}`)}" alt="" style="max-width:100%;max-height:200px;object-fit:cover;display:block;margin-bottom:8px" loading="lazy">`
@@ -595,7 +596,15 @@ function eventDetailPage({ event, comments, userRsvp, attendees, viewer, sailing
 
   // Comments
   const commentListHtml = comments.length
-    ? comments.map(c => commentEntry({ authorUser: c.users, body: c.body, time: c.created_at, id: c.id, cdnBase })).join('')
+    ? comments.map(c => commentEntry({
+        authorUser: c.users, body: c.body, time: c.created_at, id: c.id, cdnBase,
+        viewerUser: viewer,
+        deleteAction: `/events/${esc(event.id)}/comment/${esc(c.id)}/delete`,
+        canDelete: viewer && (viewer.id === c.author_user_id || ['admin','moderator'].includes(viewer.role)),
+        targetType: 'event_comment',
+        redirectTo: `/events/${esc(event.id)}`,
+        csrfToken,
+      })).join('')
     : `<div class="ds-empty-state">No comments yet. Be the first!</div>`;
 
   const commentForm = viewer && !readOnly

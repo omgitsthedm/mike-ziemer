@@ -154,7 +154,7 @@ photos.post('/photos/upload', requireAuth, async (c) => {
   }
 
   try {
-    const form     = await c.req.formData();
+    const form     = c.get('parsedForm') || await c.req.formData();
     const file     = form.get('photo');
     const caption  = (form.get('caption') || '').toString().trim().slice(0, 300);
     const eventId  = (form.get('event_id') || '').toString() || null;
@@ -223,8 +223,19 @@ photos.get('/photos/:id', async (c) => {
     ? `${cdnBase}/${photo.users.profiles.avatar_thumb_url}`
     : null;
 
+  const csrf = c.get('csrfToken') || '';
+
   const commentListHtml = (comments || []).length
-    ? (comments || []).map(c => commentEntry({ authorUser: c.users, body: c.body, time: c.created_at, id: c.id, viewerUser: viewer, deleteAction: `/photos/${photo.id}/comment/${c.id}/delete`, canDelete: viewer && (c.author_user_id === viewer.id || ['admin','moderator'].includes(viewer.role)), cdnBase })).join('')
+    ? (comments || []).map(cm => commentEntry({
+        authorUser: cm.users, body: cm.body, time: cm.created_at, id: cm.id,
+        viewerUser: viewer,
+        deleteAction: `/photos/${photo.id}/comment/${cm.id}/delete`,
+        canDelete: viewer && (cm.author_user_id === viewer.id || ['admin','moderator'].includes(viewer.role)),
+        cdnBase,
+        targetType: 'photo_comment',
+        redirectTo: `/photos/${photo.id}`,
+        csrfToken: csrf,
+      })).join('')
     : `<div class="ds-empty-state">No comments yet.</div>`;
 
   const commentForm = viewer && !readOnly
@@ -286,7 +297,7 @@ photos.post('/photos/:id/comment', requireAuth, async (c) => {
   const sailing = await getSailing(db, c.env.SAILING_ID).catch(() => null);
   if (sailing && isSailingReadOnly(sailing)) return c.redirect('/photos/' + photoId);
 
-  const form = await c.req.formData();
+  const form = c.get('parsedForm') || await c.req.formData();
   const body = (form.get('body') || '').toString().trim().slice(0, 500);
   if (!body) return c.redirect('/photos/' + photoId);
 

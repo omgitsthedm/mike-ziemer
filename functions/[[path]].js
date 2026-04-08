@@ -91,7 +91,7 @@ app.use('*', async (c, next) => {
   const ct = c.req.header('content-type') || '';
   if (ct.includes('multipart/form-data')) return next();
 
-  const form = await c.req.formData().catch(() => null);
+  const form = c.get('parsedForm') || await c.req.formData().catch(() => null);
   if (!form) return next();
 
   const formToken = (form.get('_csrf') || '').toString();
@@ -187,7 +187,7 @@ app.post('/report', loadSession, async (c) => {
   if (!user) return c.redirect('/login');
 
   const db       = getDb(c.env);
-  const form     = await c.req.formData();
+  const form     = c.get('parsedForm') || await c.req.formData();
   const type     = (form.get('target_type') || '').toString();
   const id       = (form.get('target_id') || '').toString();
   const reason   = (form.get('reason') || '').toString().trim().slice(0, 1000);

@@ -52,7 +52,7 @@ profile.post('/profile/edit', requireAuth, async (c) => {
   const readOnly = sailing ? isSailingReadOnly(sailing) : false;
   if (readOnly) return c.redirect('/profile/' + user.username);
 
-  const form = await c.req.formData();
+  const form = c.get('parsedForm') || await c.req.formData();
 
   const displayName  = (form.get('display_name') || '').toString().trim().slice(0, 50);
   const aboutMe      = (form.get('about_me') || '').toString().trim().slice(0, 3000);
@@ -96,7 +96,7 @@ profile.post('/profile/avatar', requireAuth, async (c) => {
   const photoId = crypto.randomUUID();
 
   try {
-    const form = await c.req.formData();
+    const form = c.get('parsedForm') || await c.req.formData();
     const file = form.get('avatar');
     const { storageKey, thumbKey } = await processPhotoUpload(c.env, bucket, {
       file, sailingId: c.env.SAILING_ID, userId: user.id, photoId
@@ -116,7 +116,7 @@ profile.post('/profile/avatar', requireAuth, async (c) => {
 profile.post('/profile/top-friends', requireAuth, async (c) => {
   const user = c.get('user');
   const db   = getDb(c.env);
-  const form = await c.req.formData();
+  const form = c.get('parsedForm') || await c.req.formData();
 
   const ids = form.getAll('friend_ids[]').slice(0, 8).map(id => id.toString());
 
@@ -170,11 +170,13 @@ profile.get('/profile/:username', async (c) => {
   const readOnly   = sailing ? isSailingReadOnly(sailing) : false;
   const isOnline   = target.last_active_at && (Date.now() - new Date(target.last_active_at).getTime()) < 5 * 60 * 1000;
 
+  const csrf = c.get('csrfToken') || '';
+
   const body = profilePage({
     target, profile, viewer, topFriends, friendCount, friendStatus,
     wallPosts, guestbook, isOwn, isOnline, readOnly,
     page, hasMoreWall: wallPosts.length === 20,
-    cdnBase, sailing
+    cdnBase, sailing, csrfToken: csrf
   });
 
   return c.html(layoutCtx(c, {
@@ -199,7 +201,7 @@ profile.post('/wall/:profileUserId', requireAuth, async (c) => {
     return c.html(layoutCtx(c, { title: 'Read Only', user: poster, sailing, body: '<div class="ds-flash error">Deckspace is in archive mode.</div>' }), 403);
   }
 
-  const form = await c.req.formData();
+  const form = c.get('parsedForm') || await c.req.formData();
   const body = (form.get('body') || '').toString().trim().slice(0, 2000);
 
   // Fetch target first so we can redirect to /profile/username on errors
@@ -265,7 +267,7 @@ profile.post('/guestbook/:profileUserId', requireAuth, async (c) => {
 
   if (sailing && isSailingReadOnly(sailing)) return c.text('Archive mode', 403);
 
-  const form = await c.req.formData();
+  const form = c.get('parsedForm') || await c.req.formData();
   const body = (form.get('body') || '').toString().trim().slice(0, 500);
   if (!body) return c.redirect(c.req.header('referer') || '/');
 
@@ -311,7 +313,7 @@ profile.post('/guestbook/:entryId/delete', requireAuth, async (c) => {
 /* ============================================================
    PROFILE PAGE TEMPLATE
    ============================================================ */
-function profilePage({ target, profile, viewer, topFriends, friendCount, friendStatus, wallPosts, guestbook, isOwn, isOnline, readOnly, page, hasMoreWall, cdnBase, sailing }) {
+function profilePage({ target, profile, viewer, topFriends, friendCount, friendStatus, wallPosts, guestbook, isOwn, isOnline, readOnly, page, hasMoreWall, cdnBase, sailing, csrfToken }) {
   // Build left column
   const leftCol = [
     profilePhotoBlock({ user: target, profile, isOwn, isOnline, cdnBase }),
@@ -336,7 +338,7 @@ function profilePage({ target, profile, viewer, topFriends, friendCount, friendS
 
   const wall = wallModule({
     posts: wallPosts, profileUser: target, viewerUser: viewer, readOnly,
-    page, hasMore: hasMoreWall
+    page, hasMore: hasMoreWall, csrfToken
   });
 
   const gb = guestbookModule({ entries: guestbook, profileUser: target, viewerUser: viewer, readOnly });

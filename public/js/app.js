@@ -216,6 +216,45 @@
   }
 
   /* ============================================================
+     CSRF AUTO-INJECTION
+     Reads the meta[name="csrf-token"] and injects a hidden _csrf
+     field into every non-multipart form before submission.
+     ============================================================ */
+  function initCsrf() {
+    var meta = document.querySelector('meta[name="csrf-token"]');
+    if (!meta) return;
+    var token = meta.getAttribute('content');
+    if (!token) return;
+
+    // Inject into already-present forms
+    function injectIntoForm(form) {
+      if (form.enctype === 'multipart/form-data') return; // file uploads excluded
+      if (form.querySelector('input[name="_csrf"]')) return; // already has one
+      var input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = '_csrf';
+      input.value = token;
+      form.appendChild(input);
+    }
+
+    document.querySelectorAll('form').forEach(injectIntoForm);
+
+    // Watch for dynamically added forms
+    if (window.MutationObserver) {
+      var obs = new MutationObserver(function(mutations) {
+        mutations.forEach(function(m) {
+          m.addedNodes.forEach(function(node) {
+            if (node.nodeType !== 1) return;
+            if (node.tagName === 'FORM') injectIntoForm(node);
+            node.querySelectorAll && node.querySelectorAll('form').forEach(injectIntoForm);
+          });
+        });
+      });
+      obs.observe(document.body, { childList: true, subtree: true });
+    }
+  }
+
+  /* ============================================================
      MOBILE NAV HAMBURGER
      Toggle #ds-nav-links open/closed on mobile.
      ============================================================ */
@@ -340,6 +379,7 @@
      INIT
      ============================================================ */
   function init() {
+    initCsrf();
     initRetryForms();
     initPhotoPreview();
     initSongPlayer();

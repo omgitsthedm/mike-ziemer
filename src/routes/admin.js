@@ -139,7 +139,7 @@ admin.post('/admin/reports/:id/resolve', async (c) => {
   const user      = c.get('user');
   const reportId  = c.req.param('id');
   const db        = getDb(c.env);
-  const form      = await c.req.formData();
+  const form      = c.get('parsedForm') || await c.req.formData();
   const action    = (form.get('action') || 'dismiss').toString();
   const notes     = (form.get('notes') || '').toString().trim().slice(0, 2000);
 
@@ -377,7 +377,7 @@ admin.get('/admin/bulletin', async (c) => {
 
 admin.post('/admin/bulletin', async (c) => {
   const user = c.get('user');
-  const form = c.get('parsedForm') || await c.req.formData().catch(() => null);
+  const form = c.get('parsedForm') || c.get('parsedForm') || await c.req.formData().catch(() => null);
   const text = (form?.get('text') || '').toString().trim().slice(0, 500);
   if (!text) return c.redirect('/admin/bulletin');
 
@@ -449,7 +449,7 @@ admin.get('/admin/voyage', async (c) => {
 
 admin.post('/admin/voyage/add', async (c) => {
   const db   = getDb(c.env);
-  const form = c.get('parsedForm') || await c.req.formData().catch(() => null);
+  const form = c.get('parsedForm') || c.get('parsedForm') || await c.req.formData().catch(() => null);
 
   await db.from('voyage_days').insert({
     sailing_id:  c.env.SAILING_ID,

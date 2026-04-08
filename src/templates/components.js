@@ -193,9 +193,10 @@ export function friendSpaceModule({ topFriends, friendCount, cdnBase }) {
 /* ============================================================
    WALL POSTS MODULE
    ============================================================ */
-export function wallModule({ posts, profileUser, viewerUser, readOnly, page, hasMore }) {
+export function wallModule({ posts, profileUser, viewerUser, readOnly, page, hasMore, csrfToken = '' }) {
   const canPost = viewerUser && !readOnly && viewerUser.id !== profileUser.id;
   const postForm = canPost ? wallPostForm(profileUser.id) : '';
+  const redirectTo = `/profile/${esc(profileUser.username)}`;
 
   const postList = posts && posts.length
     ? posts.map(post => commentEntry({
@@ -205,7 +206,12 @@ export function wallModule({ posts, profileUser, viewerUser, readOnly, page, has
         id: post.id,
         viewerUser,
         deleteAction: `/wall/${post.id}/delete`,
-        canDelete: viewerUser && (viewerUser.id === post.author_user_id || viewerUser.id === profileUser.id || ['admin','moderator'].includes(viewerUser.role))
+        canDelete: viewerUser && (viewerUser.id === post.author_user_id || viewerUser.id === profileUser.id || ['admin','moderator'].includes(viewerUser.role)),
+        targetType: 'wall_post',
+        reactions: post.reactions || {},
+        userReact: post.userReact || null,
+        redirectTo,
+        csrfToken,
       })).join('')
     : `<div class="ds-empty-state">No wall posts yet. Be the first!</div>`;
 
@@ -275,7 +281,7 @@ function guestbookForm(profileUserId) {
 /* ============================================================
    COMMENT ENTRY (shared by wall, guestbook, events, photos)
    ============================================================ */
-export function commentEntry({ authorUser, body, time, id, viewerUser, deleteAction, canDelete, cdnBase }) {
+export function commentEntry({ authorUser, body, time, id, viewerUser, deleteAction, canDelete, cdnBase, targetType, reactions, userReact, redirectTo, csrfToken }) {
   const thumbUrl = authorUser?.profiles?.avatar_thumb_url
     ? `${cdnBase || ''}/${authorUser.profiles.avatar_thumb_url}`
     : null;
@@ -289,6 +295,10 @@ export function commentEntry({ authorUser, body, time, id, viewerUser, deleteAct
        </form>`
     : '';
 
+  const reactBar = (targetType && id)
+    ? reactionBar({ targetType, targetId: id, counts: reactions || {}, userReact, redirectTo: redirectTo || '/', csrfToken: csrfToken || '' })
+    : '';
+
   return `<div class="comment-entry">
   <div class="comment-avatar">
     <a href="/profile/${esc(authorUser?.username || '')}">${imgHtml}</a>
@@ -297,6 +307,7 @@ export function commentEntry({ authorUser, body, time, id, viewerUser, deleteAct
     <a href="/profile/${esc(authorUser?.username || '')}" class="comment-author">${esc(authorUser?.display_name || 'Unknown')}</a>
     <div class="comment-text">${esc(body)}</div>
     <div class="comment-time">${relTime(time)} ${deleteHtml}</div>
+    ${reactBar}
   </div>
 </div>`;
 }
