@@ -160,7 +160,7 @@ setup.get('/setup', async (c) => {
     return c.html(layoutCtx(c, {
       title: 'Setup Error',
       body: `<div style="max-width:400px;margin:40px auto">
-        <div class="ds-flash error">Database not configured. Set SUPABASE_URL, SUPABASE_SERVICE_KEY, and SAILING_ID in the Cloudflare Pages dashboard, then redeploy.</div>
+        <div class="ds-flash error">Database error: ${err && err.message ? esc(err.message) : 'unknown'} (URL:${c.env.SUPABASE_URL ? c.env.SUPABASE_URL.slice(0,20) : 'unset'}, SID:${c.env.SAILING_ID ? c.env.SAILING_ID.slice(0,8) : 'unset'})</div>
         <p style="font-size:12px;margin-top:8px"><a href="/setup">Try again</a></p>
       </div>`
     }), 500);
