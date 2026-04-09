@@ -44,7 +44,7 @@ export function layout({
   <meta name="theme-color" content="#003399">
   ${csrfToken ? `<meta name="csrf-token" content="${esc(csrfToken)}">` : ''}
   <title>${esc(pageTitle)}</title>
-  <link rel="stylesheet" href="/css/deckspace.css">
+  <link rel="stylesheet" href="/css/deckspace.css?v=3">
   <link rel="icon" href="/favicon.ico" sizes="any">
 </head>
 <body class="${bodyClass}">
