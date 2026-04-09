@@ -157,7 +157,9 @@ setup.get('/setup', async (c) => {
 
   return c.html(layoutCtx(c, { title: 'Setup', body }));
   } catch (err) {
-    return c.text('Setup error: ' + (err?.message || String(err)) + ' | env keys: ' + Object.keys(c.env || {}).join(','), 500);
+    const url = c.env?.SUPABASE_URL ? c.env.SUPABASE_URL.slice(0,20)+'...' : 'MISSING';
+    const sid = c.env?.SAILING_ID || 'MISSING';
+    return c.text('err=' + (err?.message||String(err)) + ' url=' + url + ' sid=' + sid, 500);
   }
 });
 
