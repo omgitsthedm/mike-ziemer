@@ -116,17 +116,6 @@ export async function getWallPosts(db, profileUserId, page = 1, limit = 20) {
   );
 }
 
-export async function getGuestbookEntries(db, profileUserId, page = 1, limit = 20) {
-  const from = (page - 1) * limit;
-  return q(
-    db.from('guestbook_entries')
-      .select('id, body, created_at, author_user_id, users!guestbook_entries_author_user_id_fkey(username, display_name, profiles(avatar_thumb_url))')
-      .eq('profile_user_id', profileUserId)
-      .eq('moderation_status', 'visible')
-      .order('created_at', { ascending: false })
-      .range(from, from + limit - 1)
-  );
-}
 
 export async function getEvents(db, sailingId, { type, upcoming, limit = 20, page = 1 } = {}) {
   const from = (page - 1) * limit;

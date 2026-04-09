@@ -6,20 +6,18 @@
  * POST /profile/edit                 — save profile edits
  * POST /wall/:profileUserId          — post on wall
  * POST /wall/:postId/delete          — delete wall post
- * POST /guestbook/:profileUserId     — sign guestbook
- * POST /guestbook/:entryId/delete    — delete guestbook entry
  * POST /profile/avatar               — upload avatar
  * POST /profile/top-friends          — update top friends ordering
  */
 
 import { Hono } from 'hono';
-import { getDb, getUserByUsername, getProfileByUserId, getProfilePage, getWallPosts, getGuestbookEntries, getSailing, createNotification, logAudit, q } from '../lib/db.js';
+import { getDb, getUserByUsername, getProfileByUserId, getProfilePage, getWallPosts, getSailing, createNotification, logAudit, q } from '../lib/db.js';
 import { requireAuth, resolveSession, isSailingReadOnly } from '../lib/auth.js';
 import { processPhotoUpload, cdnUrl } from '../lib/media.js';
 import { layout, layoutCtx, esc, relTime, fmtDate } from '../templates/layout.js';
 import {
   module, profilePhotoBlock, contactBox, detailsTable, songModule,
-  vibeTagsModule, friendSpaceModule, wallModule, guestbookModule, paginator
+  vibeTagsModule, friendSpaceModule, wallModule, paginator
 } from '../templates/components.js';
 
 const profile = new Hono();
@@ -155,10 +153,7 @@ profile.get('/profile/:username', async (c) => {
   const { topFriends, friendCount, friendStatus } = await getProfilePage(db, target.id, viewer?.id);
   const profile = target.profiles;
 
-  const [wallPosts, guestbook] = await Promise.all([
-    getWallPosts(db, target.id, page),
-    getGuestbookEntries(db, target.id, 1, 5)
-  ]);
+  const wallPosts = await getWallPosts(db, target.id, page);
 
   // Profile views increment (fire-and-forget, skip own views)
   if (viewer && viewer.id !== target.id) {
@@ -174,7 +169,7 @@ profile.get('/profile/:username', async (c) => {
 
   const body = profilePage({
     target, profile, viewer, topFriends, friendCount, friendStatus,
-    wallPosts, guestbook, isOwn, isOnline, readOnly,
+    wallPosts, isOwn, isOnline, readOnly,
     page, hasMoreWall: wallPosts.length === 20,
     cdnBase, sailing, csrfToken: csrf
   });
@@ -257,63 +252,9 @@ profile.post('/wall/:postId/delete', requireAuth, async (c) => {
 });
 
 /* ============================================================
-   GUESTBOOK
-   ============================================================ */
-profile.post('/guestbook/:profileUserId', requireAuth, async (c) => {
-  const signer = c.get('user');
-  const profileUserId = c.req.param('profileUserId');
-  const db = getDb(c.env);
-  const sailing = await getSailing(db, c.env.SAILING_ID).catch(() => null);
-
-  if (sailing && isSailingReadOnly(sailing)) return c.text('Archive mode', 403);
-
-  const form = c.get('parsedForm') || await c.req.formData();
-  const body = (form.get('body') || '').toString().trim().slice(0, 500);
-  if (!body) return c.redirect(c.req.header('referer') || '/');
-
-  const { data: targetUser } = await db.from('users').select('id, username').eq('id', profileUserId).single();
-  if (!targetUser) return c.text('Not found', 404);
-
-  await q(db.from('guestbook_entries').insert({
-    profile_user_id: profileUserId,
-    author_user_id: signer.id,
-    body
-  }));
-
-  if (targetUser.id !== signer.id) {
-    await createNotification(db, {
-      userId: targetUser.id,
-      type: 'guestbook',
-      objectType: 'guestbook_entry',
-      actorId: signer.id,
-      message: 'signed your guestbook.'
-    });
-  }
-
-  return c.redirect('/profile/' + targetUser.username);
-});
-
-profile.post('/guestbook/:entryId/delete', requireAuth, async (c) => {
-  const user    = c.get('user');
-  const entryId = c.req.param('entryId');
-  const db      = getDb(c.env);
-
-  const { data: entry } = await db.from('guestbook_entries').select('*').eq('id', entryId).single();
-  if (!entry) return c.text('Not found', 404);
-
-  const canDelete = entry.author_user_id === user.id || entry.profile_user_id === user.id || ['admin','moderator'].includes(user.role);
-  if (!canDelete) return c.text('Forbidden', 403);
-
-  await db.from('guestbook_entries').update({ moderation_status: 'removed' }).eq('id', entryId);
-
-  const { data: profileUser } = await db.from('users').select('username').eq('id', entry.profile_user_id).single();
-  return c.redirect('/profile/' + (profileUser?.username || ''));
-});
-
-/* ============================================================
    PROFILE PAGE TEMPLATE
    ============================================================ */
-function profilePage({ target, profile, viewer, topFriends, friendCount, friendStatus, wallPosts, guestbook, isOwn, isOnline, readOnly, page, hasMoreWall, cdnBase, sailing, csrfToken }) {
+function profilePage({ target, profile, viewer, topFriends, friendCount, friendStatus, wallPosts, isOwn, isOnline, readOnly, page, hasMoreWall, cdnBase, sailing, csrfToken }) {
   // Build left column
   const leftCol = [
     profilePhotoBlock({ user: target, profile, isOwn, isOnline, cdnBase }),
@@ -341,9 +282,7 @@ function profilePage({ target, profile, viewer, topFriends, friendCount, friendS
     page, hasMore: hasMoreWall, csrfToken
   });
 
-  const gb = guestbookModule({ entries: guestbook, profileUser: target, viewerUser: viewer, readOnly });
-
-  const rightCol = [aboutMe, whoMeet, friendSpace, wall, gb].join('');
+  const rightCol = [aboutMe, whoMeet, friendSpace, wall].join('');
 
   return `<div class="profile-wrap">
   <div class="profile-left">${leftCol}</div>

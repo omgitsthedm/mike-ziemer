@@ -300,7 +300,6 @@ function tableForType(type) {
   const map = {
     user: 'users',
     wall_post: 'wall_posts',
-    guestbook_entry: 'guestbook_entries',
     event: 'events',
     event_comment: 'event_comments',
     photo: 'photos',

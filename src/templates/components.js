@@ -95,7 +95,6 @@ export function contactBox({ targetUser, viewerUser, friendStatus }) {
   <div class="contact-actions">
     ${friendAction}
     <a href="#wall-post-form" class="contact-btn">${ic.pencil(13)} Write on Wall</a>
-    <a href="#guestbook-form" class="contact-btn">${ic.book(13)} Sign Guestbook</a>
     <a href="/report?type=user&id=${esc(targetUser.id)}" class="contact-btn subtle">${ic.flag(12)} Report</a>
     <form method="POST" action="/friends/${esc(targetUser.id)}/block" data-confirm="Block this user?" data-retry="true">
       <button type="submit" class="contact-btn danger">${ic.xmark(12)} Block</button>
@@ -239,47 +238,7 @@ function wallPostForm(profileUserId) {
 }
 
 /* ============================================================
-   GUESTBOOK MODULE
-   ============================================================ */
-export function guestbookModule({ entries, profileUser, viewerUser, readOnly }) {
-  const canSign = viewerUser && !readOnly && viewerUser.id !== profileUser.id;
-  const signForm = canSign ? guestbookForm(profileUser.id) : '';
-
-  const entryList = entries && entries.length
-    ? entries.map(e => commentEntry({
-        authorUser: e.users,
-        body: e.body,
-        time: e.created_at,
-        id: e.id,
-        viewerUser,
-        deleteAction: `/guestbook/${e.id}/delete`,
-        canDelete: viewerUser && (viewerUser.id === e.author_user_id || viewerUser.id === profileUser.id || ['admin','moderator'].includes(viewerUser.role))
-      })).join('')
-    : `<div class="ds-empty-state">No guestbook entries yet.</div>`;
-
-  return module({
-    header: 'Guestbook',
-    id: 'guestbook',
-    body: `${entryList}${signForm}`
-  });
-}
-
-function guestbookForm(profileUserId) {
-  return `<div class="comment-form" id="guestbook-form">
-  <form method="POST" action="/guestbook/${esc(profileUserId)}" data-retry="true">
-    <div class="ds-form-row">
-      <label for="gb-body" class="sr-only">Sign guestbook</label>
-      <textarea id="gb-body" name="body" class="ds-textarea" placeholder="Leave a message in their guestbook..." required maxlength="500"></textarea>
-    </div>
-    <div class="form-row">
-      <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm" data-loading-text="Signing...">${ic.pencil(11)} Sign Guestbook</button>
-    </div>
-  </form>
-</div>`;
-}
-
-/* ============================================================
-   COMMENT ENTRY (shared by wall, guestbook, events, photos)
+   COMMENT ENTRY (shared by wall, events, photos)
    ============================================================ */
 export function commentEntry({ authorUser, body, time, id, viewerUser, deleteAction, canDelete, cdnBase, targetType, reactions, userReact, redirectTo, csrfToken }) {
   const thumbUrl = authorUser?.profiles?.avatar_thumb_url
@@ -432,7 +391,6 @@ export function notifItem(n) {
     friend_request:  ic.userPlus,
     friend_accepted: ic.userCheck,
     wall_post:       ic.pencil,
-    guestbook:       ic.book,
     event_comment:   ic.msgSquare,
     photo_comment:   ic.camera,
     rsvp:            ic.calendar,
@@ -456,7 +414,6 @@ function defaultNotifMessage(n) {
     friend_request: 'wants to be your friend.',
     friend_accepted: 'accepted your friend request.',
     wall_post: 'posted on your wall.',
-    guestbook: 'signed your guestbook.',
     event_comment: 'commented on an event.',
     photo_comment: 'commented on a photo.',
     rsvp: 'RSVPed to your event.',
