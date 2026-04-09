@@ -157,7 +157,7 @@ setup.get('/setup', async (c) => {
 
   return c.html(layoutCtx(c, { title: 'Setup', body }));
   } catch (err) {
-    return c.text('Setup error: ' + (err?.message || String(err)), 500);
+    return c.text('Setup error: ' + (err?.message || String(err)) + ' | env keys: ' + Object.keys(c.env || {}).join(','), 500);
   }
 });
 
