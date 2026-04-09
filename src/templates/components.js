@@ -13,7 +13,7 @@ import { ic } from './icons.js';
    MODULE WRAPPER
    Standard orange-header module box.
    ============================================================ */
-function absUrl(cdnBase, key) {
+export function absUrl(cdnBase, key) {
   if (!key) return null;
   return key.startsWith('http') ? key : `${cdnBase || ''}/${key}`;
 }

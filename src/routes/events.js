@@ -16,7 +16,7 @@ import { Hono } from 'hono';
 import { getDb, getEvents, getEventById, getEventComments, getUserRsvp, getSailing, createNotification, q } from '../lib/db.js';
 import { requireAuth, resolveSession, isSailingReadOnly } from '../lib/auth.js';
 import { layout, layoutCtx, esc, fmtDate, relTime } from '../templates/layout.js';
-import { module, eventCard, commentEntry, paginator } from '../templates/components.js';
+import { module, eventCard, commentEntry, paginator, absUrl } from '../templates/components.js';
 import { ic } from '../templates/icons.js';
 
 const events = new Hono();
@@ -562,7 +562,7 @@ ${catPills}`;
 function eventDetailPage({ event, comments, userRsvp, attendees, viewer, sailing, readOnly, isCreator, page, hasMore, cdnBase, csrfToken }) {
   const creator = event.users;
   const coverImg = event.cover_image_url
-    ? `<img src="${esc(`${cdnBase}/${event.cover_image_url}`)}" alt="" style="max-width:100%;max-height:200px;object-fit:cover;display:block;margin-bottom:8px" loading="lazy">`
+    ? `<img src="${esc(absUrl(cdnBase, event.cover_image_url))}" alt="" style="max-width:100%;max-height:200px;object-fit:cover;display:block;margin-bottom:8px" loading="lazy">`
     : '';
 
   // RSVP state
@@ -585,7 +585,7 @@ function eventDetailPage({ event, comments, userRsvp, attendees, viewer, sailing
   // Attendees
   const attendeeHtml = attendees.length
     ? attendees.map(a => {
-        const thumbUrl = a.users?.profiles?.avatar_thumb_url ? `${cdnBase}/${a.users.profiles.avatar_thumb_url}` : null;
+        const thumbUrl = absUrl(cdnBase, a.users?.profiles?.avatar_thumb_url);
         return `<a href="/profile/${esc(a.users?.username || '')}" title="${esc(a.users?.display_name || '')}">
           ${thumbUrl
             ? `<img src="${esc(thumbUrl)}" width="32" height="32" loading="lazy" style="border:1px solid #ccc">`
