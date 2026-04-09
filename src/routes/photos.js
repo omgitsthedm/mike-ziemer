@@ -216,12 +216,14 @@ photos.get('/photos/:id', async (c) => {
     .eq('moderation_status', 'visible')
     .order('created_at', { ascending: true });
 
-  const mediumUrl = (photo.medium_key || photo.storage_key)
-    ? `${cdnBase}/${photo.medium_key || photo.storage_key}`
+  const mediumKey = photo.medium_key || photo.storage_key;
+  const mediumUrl = mediumKey
+    ? (mediumKey.startsWith('http') ? mediumKey : `${cdnBase}/${mediumKey}`)
     : null;
 
-  const uploaderThumbUrl = photo.users?.profiles?.avatar_thumb_url
-    ? `${cdnBase}/${photo.users.profiles.avatar_thumb_url}`
+  const avatarKey = photo.users?.profiles?.avatar_thumb_url;
+  const uploaderThumbUrl = avatarKey
+    ? (avatarKey.startsWith('http') ? avatarKey : `${cdnBase}/${avatarKey}`)
     : null;
 
   const csrf = c.get('csrfToken') || '';

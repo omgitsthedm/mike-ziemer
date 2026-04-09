@@ -13,6 +13,11 @@ import { ic } from './icons.js';
    MODULE WRAPPER
    Standard orange-header module box.
    ============================================================ */
+function absUrl(cdnBase, key) {
+  if (!key) return null;
+  return key.startsWith('http') ? key : `${cdnBase || ''}/${key}`;
+}
+
 export function module({ header, headerRight = '', body, headerStyle = '', id = '' }) {
   return `<div class="ds-module"${id ? ` id="${esc(id)}"` : ''}>
   <div class="ds-module-header${headerStyle ? ' ' + headerStyle : ''}">
@@ -38,7 +43,7 @@ export function avatar(url, displayName, size = 'thumb', extra = '') {
    PROFILE PHOTO BLOCK (left rail)
    ============================================================ */
 export function profilePhotoBlock({ user, profile, isOwn, isOnline, cdnBase }) {
-  const avatarUrl = profile?.avatar_url ? `${cdnBase || ''}/${profile.avatar_url}` : null;
+  const avatarUrl = profile?.avatar_url ? absUrl(cdnBase, profile.avatar_url) : null;
   const img = avatarUrl
     ? `<img class="avatar" src="${esc(avatarUrl)}" alt="${esc(user.display_name)}" width="160" height="160" loading="lazy">`
     : `<div class="no-photo" aria-label="No photo">No Photo</div>`;
@@ -171,7 +176,7 @@ export function friendSpaceModule({ topFriends, friendCount, cdnBase }) {
   const gridItems = topFriends.map(tf => {
     const friend = tf.users;
     const thumbUrl = friend?.profiles?.avatar_thumb_url
-      ? `${cdnBase || ''}/${friend.profiles.avatar_thumb_url}`
+      ? absUrl(cdnBase, friend.profiles.avatar_thumb_url)
       : null;
     const imgHtml = thumbUrl
       ? `<img src="${esc(thumbUrl)}" alt="${esc(friend.display_name)}" width="60" height="60" loading="lazy">`
@@ -242,7 +247,7 @@ function wallPostForm(profileUserId) {
    ============================================================ */
 export function commentEntry({ authorUser, body, time, id, viewerUser, deleteAction, canDelete, cdnBase, targetType, reactions, userReact, redirectTo, csrfToken }) {
   const thumbUrl = authorUser?.profiles?.avatar_thumb_url
-    ? `${cdnBase || ''}/${authorUser.profiles.avatar_thumb_url}`
+    ? absUrl(cdnBase, authorUser.profiles.avatar_thumb_url)
     : null;
   const imgHtml = thumbUrl
     ? `<img src="${esc(thumbUrl)}" alt="${esc(authorUser?.display_name || '')}" width="40" height="40" loading="lazy">`
@@ -287,7 +292,7 @@ function timeOfDayIcon(dateStr) {
 
 export function eventCard({ event, cdnBase }) {
   const thumbHtml = event.cover_image_url
-    ? `<img src="${esc(`${cdnBase || ''}/${event.cover_image_url}`)}" alt="" width="50" height="50" loading="lazy">`
+    ? `<img src="${esc(absUrl(cdnBase, event.cover_image_url))}" alt="" width="50" height="50" loading="lazy">`
     : `<div class="event-cat-icon-block">${categoryIcon(event.category)}</div>`;
 
   const typeBadge = event.event_type === 'official'
@@ -331,8 +336,9 @@ function categoryIcon(cat) {
    PHOTO THUMBNAIL
    ============================================================ */
 export function photoThumb({ photo, cdnBase }) {
-  const url = photo.thumb_key || photo.storage_key
-    ? `${cdnBase || ''}/${photo.thumb_key || photo.storage_key}`
+  const key = photo.thumb_key || photo.storage_key;
+  const url = key
+    ? (key.startsWith('http') ? key : absUrl(cdnBase, key))
     : null;
 
   if (!url) return '';
@@ -349,7 +355,7 @@ export function photoThumb({ photo, cdnBase }) {
    ============================================================ */
 export function personRow({ user, profile, viewerUser, friendStatus, cdnBase }) {
   const thumbUrl = profile?.avatar_thumb_url
-    ? `${cdnBase || ''}/${profile.avatar_thumb_url}`
+    ? absUrl(cdnBase, profile.avatar_thumb_url)
     : null;
   const imgHtml = thumbUrl
     ? `<img class="person-thumb" src="${esc(thumbUrl)}" alt="${esc(user.display_name)}" width="44" height="44" loading="lazy">`

@@ -472,7 +472,7 @@ ${catPills}`;
       const time = fmtTime(ev.start_at);
       return `<tr class="ss-row">
   <td class="ss-time">${time}</td>
-  <td class="ss-icon">${icon}</td>
+  <td class="ss-icon">${icon()}</td>
   <td class="ss-evtitle"><a href="/events/${esc(ev.id)}">${esc(ev.title)}</a></td>
   <td class="ss-loc">${esc(ev.location || '')}</td>
   <td class="ss-rsvp">${ev.rsvp_count > 0 ? `${ev.rsvp_count} going` : ''}</td>
