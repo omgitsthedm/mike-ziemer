@@ -50,15 +50,15 @@
         }
         if (!res.ok) {
           return res.text().then(function (text) {
-            // Extract a meaningful error from the HTML response instead of
-            // injecting the full page. Look for a flash/error element first.
-            var tmp = document.createElement('div');
-            tmp.innerHTML = text;
-            var flash = tmp.querySelector('.ds-flash.error, .ds-flash, .error-message');
-            var msg = flash
-              ? flash.textContent.trim().slice(0, 300)
-              : ('Server error (' + res.status + '). Please try again.');
-            throw new Error(msg);
+            // Parse the response HTML to find the flash/error message.
+            // DOMParser handles full HTML documents reliably.
+            var msg;
+            try {
+              var doc = (new DOMParser()).parseFromString(text, 'text/html');
+              var el = doc.querySelector('.ds-flash.error, .ds-flash, .error-message');
+              if (el) msg = el.textContent.trim().replace(/\s+/g, ' ').slice(0, 300);
+            } catch (e) {}
+            throw new Error(msg || ('Error ' + res.status + ' — please try again.'));
           });
         }
         // For fragment responses (htmx-style), swap if target specified

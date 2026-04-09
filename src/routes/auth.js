@@ -66,11 +66,11 @@ auth.post('/login', async (c) => {
       .ilike('username', username)
       .maybeSingle();
 
-    if (!user) return showLogin('Invalid username or password.', 401);
+    if (!user) return showLogin('No account found with that username. Not signed up yet?', 401);
     if (user.account_status === 'banned') return showLogin('This account has been suspended.', 403);
 
     const passwordOk = await verifyPassword(password, user.password_hash);
-    if (!passwordOk) return showLogin('Invalid username or password.', 401);
+    if (!passwordOk) return showLogin('Wrong password — give it another try!', 401);
 
     // Check sailing access window
     const sailing = await getSailing(db, sailingId).catch(() => null);
