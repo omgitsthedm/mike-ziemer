@@ -15,7 +15,7 @@
 
 set -euo pipefail
 
-BRANCH="claude/deckspace-pdr-IhYsR"
+BRANCH="main"
 PROJECT="deckspace"
 NO_COMMIT=false
 CHECK_ONLY=false
