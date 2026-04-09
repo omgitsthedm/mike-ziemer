@@ -488,7 +488,7 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [] 
           </tr>
           <tr>
             <td></td>
-            <td style="padding-top:6px"><button type="submit" class="ds-btn ds-btn-primary landing-login-btn" data-loading-text="Signing in...">Come Aboard &rarr;</button></td>
+            <td style="padding-top:6px"><button type="submit" class="ds-btn ds-btn-primary landing-login-btn" data-loading-text="Signing in...">Log In &rarr;</button></td>
           </tr>
         </table>
       </form>
@@ -504,7 +504,7 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [] 
       Make a free profile and connect with everyone on <strong>${esc(shipName)}</strong>.
       Takes about 2 minutes &mdash; you don&rsquo;t even need an email!
     </p>
-    <a href="/register" class="ds-btn ds-btn-orange landing-signup-btn">Join the Crew &rarr;</a>
+    <a href="/register" class="ds-btn ds-btn-orange landing-signup-btn">Join the Cruise &rarr;</a>
   </div>
 
   <div class="ds-module">

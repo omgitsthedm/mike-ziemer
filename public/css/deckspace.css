@@ -1305,6 +1305,18 @@ ul {
   background: linear-gradient(to bottom, #4477aa 0%, #336699 100%);
   color: #fff;
 }
+/* Anchor tags styled as primary buttons — override global a:hover color/underline */
+a.ds-btn-primary,
+a.ds-btn-primary:link,
+a.ds-btn-primary:visited,
+a.ds-btn-primary:hover,
+a.ds-btn-primary:active {
+  color: #ffffff;
+  text-decoration: none;
+}
+a.ds-btn-primary:hover {
+  background: linear-gradient(to bottom, #4477aa 0%, #336699 100%);
+}
 
 .ds-btn-orange {
   background: linear-gradient(to bottom, #ff7722 0%, #dd5500 100%);
@@ -1314,6 +1326,18 @@ ul {
 .ds-btn-orange:hover {
   background: linear-gradient(to bottom, #ff8833 0%, #ee6611 100%);
   color: #fff;
+}
+/* Anchor tags styled as orange buttons — override global a:hover color/underline */
+a.ds-btn-orange,
+a.ds-btn-orange:link,
+a.ds-btn-orange:visited,
+a.ds-btn-orange:hover,
+a.ds-btn-orange:active {
+  color: #ffffff;
+  text-decoration: none;
+}
+a.ds-btn-orange:hover {
+  background: linear-gradient(to bottom, #ff8833 0%, #ee6611 100%);
 }
 
 .ds-btn-danger {
