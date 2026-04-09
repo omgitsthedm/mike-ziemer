@@ -15,6 +15,7 @@ import { getDb, getRecentPhotos, getSailing, createNotification, q } from '../li
 import { requireAuth, resolveSession, isSailingReadOnly } from '../lib/auth.js';
 import { processPhotoUpload, cdnUrl } from '../lib/media.js';
 import { layout, layoutCtx, esc, relTime, fmtDate } from '../templates/layout.js';
+import { ic } from '../templates/icons.js';
 import { module, photoThumb, commentEntry, paginator } from '../templates/components.js';
 
 const photos = new Hono();
@@ -62,7 +63,7 @@ photos.get('/photos', async (c) => {
   const pager = paginator(page, hasMore, '/photos', userFilter ? `&user=${encodeURIComponent(userFilter)}` : '');
 
   const body = `${uploadBtn}${module({
-    header: userFilter ? `Photos by ${esc(userFilter)}` : 'Recent Photos',
+    header: userFilter ? `${ic.camera(12)} Photos by ${esc(userFilter)}` : `${ic.camera(12)} Recent Photos`,
     headerRight: `<a href="/photos">All Photos</a>`,
     body: `${gridHtml}${pager}`
   })}`;
@@ -101,7 +102,7 @@ photos.get('/photos/upload', requireAuth, async (c) => {
 
   const body = `<div style="max-width:480px;margin:0 auto">
   <div class="ds-module">
-    <div class="ds-module-header">Upload Photos</div>
+    <div class="ds-module-header">${ic.camera(12)} Upload Photos</div>
     <div class="ds-module-body">
       <p class="text-small text-muted mb-8">Max 8 MB per photo. JPEG, PNG, GIF, WebP supported.</p>
       <form method="POST" action="/photos/upload" enctype="multipart/form-data" class="ds-form" data-retry="true">
@@ -263,7 +264,7 @@ photos.get('/photos/:id', async (c) => {
     : '';
 
   const body = `<div class="ds-module">
-  <div class="ds-module-header blue">Photo</div>
+  <div class="ds-module-header blue">${ic.camera(12)} Photo</div>
   <div class="photo-view-img">
     ${mediumUrl
       ? `<img src="${esc(mediumUrl)}" alt="${esc(photo.caption || '')}" loading="lazy">`
@@ -280,7 +281,7 @@ photos.get('/photos/:id', async (c) => {
   </div>
 </div>
 ${module({
-  header: 'Comments',
+  header: `${ic.msgSquare(12)} Comments`,
   body: `<div class="comment-list">${commentListHtml}</div>${commentForm}`
 })}`;
 

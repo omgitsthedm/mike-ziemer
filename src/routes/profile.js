@@ -15,6 +15,7 @@ import { getDb, getUserByUsername, getProfileByUserId, getProfilePage, getWallPo
 import { requireAuth, resolveSession, isSailingReadOnly } from '../lib/auth.js';
 import { processPhotoUpload, cdnUrl } from '../lib/media.js';
 import { layout, layoutCtx, esc, relTime, fmtDate } from '../templates/layout.js';
+import { ic } from '../templates/icons.js';
 import {
   module, profilePhotoBlock, contactBox, detailsTable, songModule,
   vibeTagsModule, friendSpaceModule, wallModule, paginator
@@ -268,11 +269,11 @@ function profilePage({ target, profile, viewer, topFriends, friendCount, friendS
 
   // Build right column
   const aboutMe = profile?.about_me
-    ? module({ header: 'About Me', body: `<div class="blurb-body">${esc(profile.about_me)}</div>` })
-    : (isOwn ? module({ header: 'About Me', body: `<div class="ds-empty-state"><a href="/profile/edit">Add a bio</a></div>` }) : '');
+    ? module({ header: `${ic.bookOpen(12)} About Me`, body: `<div class="blurb-body">${esc(profile.about_me)}</div>` })
+    : (isOwn ? module({ header: `${ic.bookOpen(12)} About Me`, body: `<div class="ds-empty-state"><a href="/profile/edit">Add a bio</a></div>` }) : '');
 
   const whoMeet = profile?.who_id_like_to_meet
-    ? module({ header: "Who I'd Like to Meet", body: `<div class="blurb-body">${esc(profile.who_id_like_to_meet)}</div>` })
+    ? module({ header: `${ic.users(12)} Who I'd Like to Meet`, body: `<div class="blurb-body">${esc(profile.who_id_like_to_meet)}</div>` })
     : '';
 
   const friendSpace = friendSpaceModule({ topFriends, friendCount, cdnBase });
@@ -296,7 +297,7 @@ function mediaLinksModule(user, profile, cdnBase) {
     `<a href="/events?user=${esc(user.username)}">My Events</a>`,
   ];
   return `<div class="ds-module">
-  <div class="ds-module-header">Links</div>
+  <div class="ds-module-header">${ic.list(12)} Links</div>
   <div class="ds-module-body" style="padding:5px 6px">
     ${links.map(l => `<div>${l}</div>`).join('')}
     <div class="profile-url-field" style="border-top:0;padding:4px 0 0">
@@ -308,7 +309,7 @@ function mediaLinksModule(user, profile, cdnBase) {
 
 function editTopFriendsLink() {
   return `<div class="ds-module">
-  <div class="ds-module-header">Top Friends</div>
+  <div class="ds-module-header">${ic.heart(12)} Top Friends</div>
   <div class="ds-module-body">
     <a href="/friends/manage-top" class="ds-btn ds-btn-sm w-full" style="display:block;text-align:center">Manage Top Friends</a>
   </div>
@@ -323,7 +324,7 @@ function editProfileForm({ user, profile, siteKey }) {
 
   return `<div style="max-width:600px;margin:0 auto">
   <div class="ds-module">
-    <div class="ds-module-header">Edit My Profile</div>
+    <div class="ds-module-header">${ic.settings(12)} Edit My Profile</div>
     <div class="ds-module-body">
       <form method="POST" action="/profile/edit" class="ds-form">
         <div class="ds-form-row">
@@ -381,7 +382,7 @@ function editProfileForm({ user, profile, siteKey }) {
   </div>
 
   <div class="ds-module">
-    <div class="ds-module-header">Profile Photo</div>
+    <div class="ds-module-header">${ic.camera(12)} Profile Photo</div>
     <div class="ds-module-body">
       <form method="POST" action="/profile/avatar" enctype="multipart/form-data" class="ds-form">
         <div class="ds-form-row">

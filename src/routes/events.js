@@ -376,7 +376,7 @@ function eventsSchedulePage({ viewer, sailing, days, activeCategory = '' }) {
   </div>
 
   <div class="ds-module ss-rail-module">
-    <div class="ds-module-header">Now Boarding</div>
+    <div class="ds-module-header">${ic.anchor(12)} Now Boarding</div>
     <div class="ds-module-body ss-nowboarding">
       <table class="ss-info-table">
         <tr><td class="ss-info-key">Theme:</td><td>Emo / Rock / Scene</td></tr>
@@ -389,7 +389,7 @@ function eventsSchedulePage({ viewer, sailing, days, activeCategory = '' }) {
   </div>
 
   <div class="ds-module ss-rail-module">
-    <div class="ds-module-header">Top 8 Events</div>
+    <div class="ds-module-header">${ic.star(12)} Top 8 Events</div>
     <div class="ds-module-body">
       <ol class="ss-top8">
         ${top8Items.map(t => `<li>${t}</li>`).join('')}
@@ -398,14 +398,14 @@ function eventsSchedulePage({ viewer, sailing, days, activeCategory = '' }) {
   </div>
 
   <div class="ds-module ss-rail-module">
-    <div class="ds-module-header">Cruise Bulletin</div>
+    <div class="ds-module-header">${ic.flag(12)} Cruise Bulletin</div>
     <div class="ds-module-body ss-bulletin">
       Whoever keeps leaving fully devastating voice messages in Missed Call Confessional needs to either be stopped or given a headlining slot.
     </div>
   </div>
 
   <div class="ds-module ss-rail-module">
-    <div class="ds-module-header">Who&rsquo;s Here</div>
+    <div class="ds-module-header">${ic.users(12)} Who&rsquo;s Here</div>
     <div class="ds-module-body">
       <table class="ss-online-table">
         <tr><td class="ss-online-num">148</td><td>guests online now</td></tr>
@@ -418,7 +418,7 @@ function eventsSchedulePage({ viewer, sailing, days, activeCategory = '' }) {
   </div>
 
   <div class="ds-module ss-rail-module">
-    <div class="ds-module-header">Event Legend</div>
+    <div class="ds-module-header">${ic.info(12)} Event Legend</div>
     <div class="ds-module-body">
       <table class="ss-legend-table">
         <tr><td>${ic.music(13)}</td><td>Live Set</td></tr>
@@ -514,7 +514,7 @@ ${catPills}`;
     'Photo Drop: new blurry photos added at the Crisis Center.',
   ];
   const incidentsModule = `<div class="ds-module">
-  <div class="ds-module-header">Random Incidents</div>
+  <div class="ds-module-header">${ic.alertTri(12)} Random Incidents</div>
   <div class="ds-module-body">
     <ul class="ss-incidents">
       ${incidents.map(i => `<li>${i}</li>`).join('')}
@@ -531,7 +531,7 @@ ${catPills}`;
     { user: 'cringe_archivist',      body: 'the lyric notebook exhibition ruined me in the most healing possible way' },
   ];
   const commentsModule = `<div class="ds-module">
-  <div class="ds-module-header">Comments</div>
+  <div class="ds-module-header">${ic.msgSquare(12)} Comments</div>
   <div class="ds-module-body" style="padding:0">
     ${fakeComments.map(fc => `<div class="ss-fake-comment">
   <span class="ss-fc-user">${fc.user}</span>:
@@ -623,7 +623,7 @@ function eventDetailPage({ event, comments, userRsvp, attendees, viewer, sailing
   const editLink = isCreator ? `<a href="/events/${esc(event.id)}/edit" class="ds-btn ds-btn-sm">Edit Event</a>` : '';
 
   return `<div class="event-detail-header ds-module">
-  <div class="ds-module-header blue">${esc(event.event_type === 'official' ? 'Official Event' : 'Event')}</div>
+  <div class="ds-module-header blue">${ic.calendar(12)} ${esc(event.event_type === 'official' ? 'Official Event' : 'Event')}</div>
   <div class="ds-module-body">
     ${coverImg}
     <div class="event-detail-title">${esc(event.title)}</div>
@@ -639,10 +639,10 @@ function eventDetailPage({ event, comments, userRsvp, attendees, viewer, sailing
   </div>
 </div>
 
-${module({ header: 'Who\'s Going', body: `<div style="padding:6px">${attendeeHtml}</div>` })}
+${module({ header: `${ic.users(12)} Who's Going`, body: `<div style="padding:6px">${attendeeHtml}</div>` })}
 
 ${module({
-  header: 'Comments',
+  header: `${ic.msgSquare(12)} Comments`,
   body: `<div class="comment-list">${commentListHtml}</div>${paginator(page, hasMore, `/events/${event.id}`)}${commentForm}`
 })}`;
 }
@@ -658,7 +658,7 @@ function createEventForm({ error, values = {}, eventId }) {
   return `<div style="max-width:540px;margin:0 auto">
   ${error ? `<div class="ds-flash error">${esc(error)}</div>` : ''}
   <div class="ds-module">
-    <div class="ds-module-header">${eventId ? 'Edit Event' : 'Create a New Event'}</div>
+    <div class="ds-module-header">${ic.calendar(12)} ${eventId ? 'Edit Event' : 'Create a New Event'}</div>
     <div class="ds-module-body">
       <form method="POST" action="${action}" class="ds-form">
         <div class="ds-form-row">

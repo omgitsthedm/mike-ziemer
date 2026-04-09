@@ -8,6 +8,7 @@ import { Hono } from 'hono';
 import { getDb, browsePeople, getSailing, q } from '../lib/db.js';
 import { resolveSession } from '../lib/auth.js';
 import { layout, layoutCtx, esc } from '../templates/layout.js';
+import { ic } from '../templates/icons.js';
 import { module, personRow, paginator } from '../templates/components.js';
 
 const people = new Hono();
@@ -84,7 +85,7 @@ people.get('/people', async (c) => {
 
   const pager = paginator(page, users.length === 30, '/people', extraParams ? `&${extraParams}` : '');
 
-  const header = vibeTag ? `Vibe: ${esc(vibeTag)}` : search ? `Search: "${esc(search)}"` : 'All Passengers';
+  const header = vibeTag ? `${ic.star(12)} Vibe: ${esc(vibeTag)}` : search ? `${ic.users(12)} Search: "${esc(search)}"` : `${ic.users(12)} All Passengers`;
 
   const body = `${searchForm}${module({
     header,

@@ -91,7 +91,7 @@ export function contactBox({ targetUser, viewerUser, friendStatus }) {
   }
 
   return `<div class="contact-box">
-  <div class="ds-module-header">Contacting ${esc(targetUser.display_name)}</div>
+  <div class="ds-module-header">${ic.user(11)} ${esc(targetUser.display_name)}</div>
   <div class="contact-actions">
     ${friendAction}
     <a href="#wall-post-form" class="contact-btn">${ic.pencil(13)} Write on Wall</a>
@@ -119,7 +119,7 @@ export function detailsTable({ profile, user }) {
   ).join('');
 
   return module({
-    header: 'Details',
+    header: `${ic.list(12)} Details`,
     body: `<table class="details-table">${trs}</table>`
   });
 }
@@ -130,7 +130,7 @@ export function detailsTable({ profile, user }) {
 export function songModule(profile) {
   if (!profile?.song_title) return '';
   return module({
-    header: 'Profile Song',
+    header: `${ic.music(12)} Profile Song`,
     body: `<div class="song-player">
   <span class="song-title">${esc(profile.song_title)}</span>
   <span class="song-artist">${esc(profile.song_artist || '')}</span>
@@ -150,7 +150,7 @@ export function vibeTagsModule(profile) {
   if (!tags || !tags.length) return '';
   const chips = tags.map(t => `<span class="vibe-tag">${esc(t)}</span>`).join('');
   return module({
-    header: 'Vibes',
+    header: `${ic.star(12)} Vibes`,
     body: `<div class="vibe-tags">${chips}</div>`
   });
 }
@@ -163,7 +163,7 @@ export function friendSpaceModule({ topFriends, friendCount, cdnBase }) {
 
   if (!topFriends || !topFriends.length) {
     return module({
-      header: 'Friend Space',
+      header: `${ic.users(12)} Friend Space`,
       body: `${countLine}<div class="ds-empty-state">No top friends yet.</div>`
     });
   }
@@ -183,7 +183,7 @@ export function friendSpaceModule({ topFriends, friendCount, cdnBase }) {
   }).join('');
 
   return module({
-    header: 'Friend Space',
+    header: `${ic.users(12)} Friend Space`,
     headerRight: `<a href="/friends">View All</a>`,
     body: `${countLine}<div class="friend-grid">${gridItems}</div>`
   });
@@ -217,7 +217,7 @@ export function wallModule({ posts, profileUser, viewerUser, readOnly, page, has
   const pager = paginator(page || 1, hasMore, `/profile/${profileUser.username}`);
 
   return module({
-    header: 'Wall Posts',
+    header: `${ic.msgSquare(12)} Wall Posts`,
     id: 'wall-posts',
     body: `${postList}${pager}${postForm}`
   });

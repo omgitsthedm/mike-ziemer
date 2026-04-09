@@ -115,7 +115,7 @@ function renderSailingBar(sailing, readOnly) {
     ? ` &mdash; ${ic.anchor(11)} <em>The ship has docked.</em>`
     : ` ${ic.waves(11)}`;
   return `<div id="ds-sailing-bar">
-  ${ic.ship(12)} <strong>${esc(sailing.ship_name)}</strong> &mdash; ${esc(sailing.name)}${status}
+  ${ic.ferry(12)} <strong>${esc(sailing.ship_name)}</strong> &mdash; ${ic.shipWheel(11)} ${esc(sailing.name)}${status}
 </div>`;
 }
 

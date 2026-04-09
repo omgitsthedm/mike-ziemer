@@ -64,7 +64,7 @@ voyage.get('/voyage', async (c) => {
 
   const body = `${sailingInfo}
 ${module({
-  header: 'Voyage Schedule',
+  header: `${ic.shipWheel(12)} Voyage Schedule`,
   body: `<div class="voyage-schedule">${scheduleHtml}</div>`
 })}`;
 
