@@ -1,4 +1,4 @@
-/* v3 */
+/* v4 */
 /*
  * DECKSPACE — Visual Design System
  * Faithful OG MySpace recreation for cruise social networking
@@ -30,8 +30,8 @@
    BASE
    ============================================================ */
 :root {
-  --ds-navy:       #003399;
-  --ds-blue-mid:   #336699;
+  --ds-navy:       #1752B0;  /* MySpace royal blue — brighter, clearly blue */
+  --ds-blue-mid:   #3A7BD5;  /* secondary / sailing bar blue */
   --ds-blue-lt:    #6699cc;
   --ds-blue-bg:    #dce9f5;
   --ds-orange:     #ff6600;
@@ -42,7 +42,7 @@
   --ds-border-dk:  #999999;
   --ds-text:       #333333;
   --ds-text-light: #666666;
-  --ds-link:       #003399;
+  --ds-link:       #1752B0;
   --ds-link-hover: #cc5200;
   --ds-error:      #cc0000;
   --ds-success:    #006600;
@@ -86,8 +86,8 @@ ul {
    TOP NAVIGATION BAR — deep blue, MySpace faithful
    ============================================================ */
 #ds-nav {
-  background: linear-gradient(to bottom, #003399 0%, #002277 100%);
-  border-bottom: 2px solid #001166;
+  background: linear-gradient(to bottom, #2266CC 0%, #1144AA 100%);
+  border-bottom: 2px solid #0A3080;
   padding: 0;
   width: 100%;
   position: sticky;
@@ -184,8 +184,8 @@ ul {
    SECONDARY / SAILING BAR
    ============================================================ */
 #ds-sailing-bar {
-  background: #336699;
-  border-bottom: 1px solid #224477;
+  background: #3A7BD5;
+  border-bottom: 1px solid #2A5AAA;
   text-align: center;
   padding: 3px 8px;
   font-size: 11px;
@@ -638,7 +638,7 @@ ul {
 
 /* Badge / logo block */
 .ss-rail-badge {
-  background: linear-gradient(to bottom, #003399 0%, #001166 100%);
+  background: linear-gradient(to bottom, #1752B0 0%, #0A3080 100%);
   color: #fff;
   text-align: center;
   padding: 10px 6px 8px;
@@ -736,11 +736,11 @@ ul {
 
 /* Title banner */
 .ss-banner {
-  background: linear-gradient(to bottom, #003399 0%, #002277 100%);
+  background: linear-gradient(to bottom, #1752B0 0%, #0A3080 100%);
   color: #fff;
   padding: 10px 12px 8px;
   margin-bottom: 6px;
-  border: 1px solid #001166;
+  border: 1px solid #0A3080;
 }
 .ss-banner-title {
   font-size: 16px;
@@ -841,7 +841,7 @@ ul {
   font-weight: bold;
   font-size: 11px;
 }
-.ss-evtitle a { color: #003399; }
+.ss-evtitle a { color: #1752B0; }
 .ss-evtitle a:hover { text-decoration: underline; }
 .ss-loc {
   font-size: 10px;
@@ -873,7 +873,7 @@ ul {
 .ss-fake-comment:last-child { border-bottom: none; }
 .ss-fc-user {
   font-weight: bold;
-  color: #003399;
+  color: #1752B0;
 }
 .ss-fc-body { color: #333; }
 
@@ -970,7 +970,7 @@ ul {
 .ds-tabs {
   display: flex;
   gap: 0;
-  border-bottom: 2px solid #003399;
+  border-bottom: 2px solid #1752B0;
   margin-bottom: 8px;
 }
 .ds-tab {
@@ -978,7 +978,7 @@ ul {
   font-size: 11px;
   font-family: Arial, Helvetica, sans-serif;
   background: #e8f0f8;
-  color: #003399;
+  color: #1752B0;
   text-decoration: none;
   border: 1px solid #cccccc;
   border-bottom: none;
@@ -986,9 +986,9 @@ ul {
 }
 .ds-tab:hover { background: #d0e0f0; text-decoration: none; }
 .ds-tab.ds-tab-active {
-  background: #003399;
+  background: #1752B0;
   color: #ffffff;
-  border-color: #003399;
+  border-color: #1752B0;
 }
 
 /* Event detail page */
@@ -1008,7 +1008,7 @@ ul {
 .event-rsvp-count {
   font-size: 14px;
   font-weight: bold;
-  color: #003399;
+  color: #1752B0;
   margin: 6px 0;
 }
 .event-rsvp-actions {
@@ -1575,7 +1575,7 @@ ul {
 .landing-hero-sub {
   font-size: 12px;
   font-weight: bold;
-  color: #003399;
+  color: #1752B0;
   margin: 0 0 6px 0;
 }
 .landing-hero-copy {
@@ -1806,7 +1806,7 @@ ul {
     top: 100%;
     left: 0;
     right: 0;
-    background: #002277;
+    background: #1144AA;
     border-top: 1px solid #001166;
     border-bottom: 2px solid #001166;
     z-index: 99;
@@ -2700,7 +2700,7 @@ ul {
 }
 .landing-event-title {
   font-weight: bold;
-  color: #003399;
+  color: #1752B0;
   flex: 1;
 }
 .landing-event-title:hover { color: #cc5200; }
@@ -2808,7 +2808,7 @@ ul {
 .landing-voyage-tagline {
   font-size: 11px;
   font-weight: bold;
-  color: #003399;
+  color: #1752B0;
   margin-bottom: 6px;
 }
 .landing-itin-table {
@@ -2844,4 +2844,470 @@ ul {
   margin-top: 6px;
   padding-top: 4px;
   border-top: 1px dotted #eee;
+}
+
+/* ============================================================
+   DESKTOP EXPANSION — bigger, cleaner, more breathing room
+   Mobile/tablet layouts (max-width rules above) are untouched.
+   ============================================================ */
+@media (min-width: 1025px) {
+  html, body {
+    font-size: 15px;
+  }
+
+  #ds-nav-inner {
+    max-width: 1280px;
+    padding: 0 16px;
+  }
+
+  #ds-logo {
+    font-size: 22px;
+    padding: 7px 14px 7px 0;
+  }
+
+  #ds-nav-links a {
+    font-size: 13px;
+    padding: 9px 11px;
+  }
+
+  #ds-nav-right {
+    font-size: 12px;
+    gap: 8px;
+  }
+
+  .nav-link-subtle,
+  .nav-link-admin {
+    font-size: 12px;
+  }
+
+  #ds-page {
+    max-width: 1280px;
+    padding: 12px 16px;
+  }
+
+  .ds-module {
+    margin-bottom: 14px;
+  }
+
+  .ds-module-header {
+    font-size: 13px;
+    padding: 6px 12px;
+  }
+
+  .ds-module-body {
+    padding: 14px;
+  }
+
+  /* Profile layout: wider left column, bigger photo */
+  .profile-wrap {
+    grid-template-columns: 250px 1fr;
+    gap: 16px;
+  }
+
+  .profile-photo-block {
+    padding: 8px;
+  }
+
+  .profile-photo-block img.avatar {
+    width: 210px;
+    height: 210px;
+  }
+
+  .profile-photo-block .no-photo {
+    width: 210px;
+    height: 210px;
+  }
+
+  .profile-display-name {
+    font-size: 17px;
+  }
+
+  .profile-status-line {
+    font-size: 13px;
+  }
+
+  /* Contact buttons */
+  .contact-actions {
+    padding: 8px 10px;
+    gap: 5px;
+  }
+
+  .contact-btn {
+    font-size: 13px;
+    padding: 6px 10px;
+  }
+
+  /* Details table */
+  .details-table {
+    font-size: 13px;
+  }
+
+  .details-table td {
+    padding: 3px 5px;
+  }
+
+  /* About Me */
+  .blurb-body {
+    font-size: 14px;
+    padding: 12px;
+    line-height: 1.6;
+  }
+
+  /* Friends grid */
+  .friend-grid {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .friend-grid-item img {
+    width: 80px;
+    height: 80px;
+  }
+
+  .friend-grid-item .no-photo-thumb {
+    width: 80px;
+    height: 80px;
+  }
+
+  .friend-grid-item .friend-name {
+    font-size: 11px;
+    max-width: 84px;
+  }
+
+  /* Wall posts */
+  .comment-entry {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .comment-avatar img {
+    width: 52px;
+    height: 52px;
+  }
+
+  .comment-avatar .no-photo-xs {
+    width: 52px;
+    height: 52px;
+  }
+
+  .comment-author {
+    font-size: 13px;
+  }
+
+  .comment-text {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .comment-time {
+    font-size: 11px;
+  }
+
+  /* Buttons */
+  .ds-btn {
+    padding: 6px 16px;
+    font-size: 13px;
+  }
+
+  .ds-btn-sm {
+    padding: 3px 10px;
+    font-size: 12px;
+  }
+
+  /* Form inputs */
+  .ds-input,
+  .ds-textarea,
+  .ds-select {
+    font-size: 13px;
+    padding: 6px 8px;
+  }
+
+  .ds-form-row label {
+    font-size: 13px;
+    margin-bottom: 3px;
+  }
+
+  .ds-form-row .hint {
+    font-size: 11px;
+  }
+
+  /* Events */
+  .event-card {
+    padding: 12px;
+    gap: 14px;
+  }
+
+  .event-title {
+    font-size: 14px;
+  }
+
+  .event-meta {
+    font-size: 12px;
+  }
+
+  .event-thumb {
+    width: 68px;
+    height: 68px;
+  }
+
+  /* Home grid */
+  .home-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  /* Landing page */
+  .landing-wrap {
+    gap: 20px;
+  }
+
+  .landing-hero {
+    padding: 24px;
+    margin-bottom: 14px;
+  }
+
+  .landing-hero-eyebrow {
+    font-size: 13px;
+  }
+
+  .landing-hero-title {
+    font-size: 30px;
+    margin-bottom: 8px;
+  }
+
+  .landing-hero-sub {
+    font-size: 15px;
+    margin-bottom: 10px;
+  }
+
+  .landing-hero-copy {
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .landing-howto-step {
+    font-size: 13px;
+    padding: 14px 12px;
+  }
+
+  .landing-howto-step > div strong {
+    font-size: 13px;
+    margin-bottom: 3px;
+  }
+
+  .landing-howto-step > div span {
+    font-size: 12px;
+  }
+
+  .landing-howto-num {
+    width: 32px;
+    height: 32px;
+  }
+
+  .landing-logo {
+    font-size: 52px;
+  }
+
+  .landing-logo-sub {
+    font-size: 14px;
+  }
+
+  .landing-signup-box {
+    padding: 18px;
+  }
+
+  .landing-signup-header {
+    font-size: 17px;
+    margin-bottom: 8px;
+  }
+
+  .landing-signup-copy {
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 12px;
+  }
+
+  .landing-events-module .ds-module-header {
+    font-size: 13px;
+  }
+
+  .landing-event-item {
+    padding: 6px 0;
+    font-size: 13px;
+    gap: 8px;
+  }
+
+  .landing-event-time {
+    font-size: 12px;
+    min-width: 72px;
+  }
+
+  .landing-venue-table {
+    font-size: 13px;
+  }
+
+  .landing-itin-table {
+    font-size: 13px;
+  }
+
+  .landing-tz {
+    font-size: 12px;
+  }
+
+  /* Login page */
+  .access-page {
+    max-width: 520px;
+    margin: 32px auto;
+  }
+
+  .access-logo .big-logo {
+    font-size: 52px;
+  }
+
+  .access-tagline {
+    font-size: 15px;
+    margin-bottom: 16px;
+  }
+
+  .login-instructions {
+    font-size: 13px;
+    padding: 10px 12px;
+    margin-bottom: 14px;
+  }
+
+  .login-help-text {
+    font-size: 13px;
+    margin-top: 14px;
+  }
+
+  .landing-login-label {
+    font-size: 14px;
+    width: 90px;
+  }
+
+  /* Register page */
+  .reg-wrap {
+    gap: 20px;
+  }
+
+  .reg-why-body {
+    padding: 14px 16px;
+  }
+
+  .reg-why-intro {
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+
+  .reg-why-list {
+    font-size: 13px;
+    line-height: 1.8;
+    margin-bottom: 12px;
+  }
+
+  .reg-why-footer {
+    font-size: 13px;
+    padding: 10px 12px;
+  }
+
+  .reg-privacy-badge {
+    font-size: 13px;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+  }
+
+  .reg-time-note {
+    font-size: 13px;
+    margin-bottom: 12px;
+  }
+
+  .reg-note-box {
+    padding: 12px 14px;
+    font-size: 13px;
+  }
+
+  .reg-note-box strong {
+    font-size: 14px;
+  }
+
+  /* Notifications */
+  .notif-item {
+    padding: 10px 14px;
+    font-size: 13px;
+    gap: 8px;
+  }
+
+  /* People browse */
+  .person-row {
+    padding: 10px 12px;
+    gap: 12px;
+  }
+
+  .person-name {
+    font-size: 14px;
+  }
+
+  .person-meta {
+    font-size: 12px;
+  }
+
+  .person-thumb {
+    width: 52px;
+    height: 52px;
+  }
+
+  .person-thumb-placeholder {
+    width: 52px;
+    height: 52px;
+  }
+
+  /* Empty states */
+  .ds-empty-state {
+    padding: 16px 12px;
+    font-size: 13px;
+  }
+
+  /* Onboarding */
+  .onboarding-intro {
+    font-size: 14px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+  }
+
+  /* Vibe tags */
+  .vibe-tag {
+    font-size: 12px;
+    padding: 2px 7px;
+  }
+
+  /* Flash messages */
+  .ds-flash {
+    font-size: 13px;
+    padding: 8px 12px;
+  }
+
+  /* Activity items */
+  .activity-item {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+
+  .activity-time {
+    font-size: 11px;
+  }
+
+  /* Online module */
+  .online-faces img {
+    width: 36px;
+    height: 36px;
+  }
+
+  .online-face-placeholder {
+    width: 36px;
+    height: 36px;
+  }
+
+  .online-count {
+    font-size: 12px;
+  }
 }

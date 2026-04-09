@@ -251,16 +251,16 @@ function loginForm({ next, siteKey, error }) {
   <div class="access-logo">
     <div class="big-logo">Deck<span class="logo-space">space</span></div>
   </div>
-  <div class="access-tagline">Your private cruise social network</div>
+  <div class="access-tagline">Your cruise. Your crew. Your page.</div>
 
   ${error ? `<div class="ds-flash error">${esc(error)}</div>` : ''}
 
   <div class="ds-module">
-    <div class="ds-module-header">Sign In to Deckspace</div>
+    <div class="ds-module-header">Welcome Back &mdash; Come Aboard!</div>
     <div class="ds-module-body">
       <div class="login-instructions">
-        Enter the <strong>username</strong> and <strong>password</strong> you created when you joined Deckspace on this sailing.
-        First time here? <a href="/register">Create a free account &raquo;</a>
+        Type your <strong>username</strong> and <strong>password</strong> to get in.
+        First time here? <a href="/register">Make a free account! &raquo;</a>
       </div>
       <form method="POST" action="/login" class="ds-form" data-retry="true">
         <input type="hidden" name="next" value="${esc(next)}">
@@ -270,7 +270,7 @@ function loginForm({ next, siteKey, error }) {
         </div>
         <div class="ds-form-row">
           <label for="password">Password</label>
-          <input id="password" name="password" type="password" class="ds-input" autocomplete="current-password" required placeholder="Your password">
+          <input id="password" name="password" type="password" class="ds-input" autocomplete="current-password" required placeholder="your password">
         </div>
         ${siteKey ? `<div class="cf-turnstile" data-sitekey="${esc(siteKey)}" data-theme="light"></div>
         <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>` : ''}
@@ -279,7 +279,7 @@ function loginForm({ next, siteKey, error }) {
         </div>
       </form>
       <div class="login-help-text">
-        <strong>Can't remember your login?</strong> Visit the Guest Services desk or ask the cruise coordinator &mdash; they can look up your account.
+        <strong>Forgot your login?</strong> No big deal! Head to the Guest Services desk &mdash; they can look you up in seconds.
       </div>
     </div>
   </div>
@@ -294,12 +294,12 @@ function registerForm({ siteKey, error, values = {} }) {
   return `<div class="reg-wrap">
   <div class="reg-left">
     <div class="reg-privacy-badge">
-      Your profile is only visible to fellow passengers on this sailing. Free forever. No ads, no spam.
+      Only people on your ship can see your profile. Free forever. No ads, no spam, no junk!
     </div>
     <div class="ds-module">
-      <div class="ds-module-header">Join Deckspace &mdash; It&rsquo;s Free!</div>
+      <div class="ds-module-header">Join the Fun &mdash; It&rsquo;s Free!</div>
       <div class="ds-module-body">
-        <div class="reg-time-note">Takes about 2 minutes &bull; Free forever &bull; No email required</div>
+        <div class="reg-time-note">Only takes 2 minutes &bull; Always free &bull; No email needed</div>
         ${error ? `<div class="ds-flash error" style="margin-bottom:8px">${esc(error)}</div>` : ''}
         <form method="POST" action="/register" class="ds-form" data-retry="true">
           <div class="ds-form-row">
@@ -341,25 +341,25 @@ function registerForm({ siteKey, error, values = {} }) {
       <div class="ds-module-header">Why Deckspace?</div>
       <div class="ds-module-body reg-why-body">
         <p class="reg-why-intro">
-          You&rsquo;re on a cruise. You&rsquo;ll meet a hundred people and forget half their names by day three.
-          <strong>Deckspace fixes that.</strong>
+          You&rsquo;re on a cruise! You&rsquo;re going to meet tons of cool people.
+          <strong>Deckspace helps you remember everyone and stay in the loop.</strong>
         </p>
         <ul class="reg-why-list">
-          <li>${ic.users(11)} <strong>Find your people</strong> &mdash; Browse fellow passengers and add friends before your first port.</li>
-          <li>${ic.calendar(11)} <strong>Plan your nights</strong> &mdash; See what&rsquo;s on, RSVP to events, get people together.</li>
-          <li>${ic.camera(11)} <strong>Share photos</strong> &mdash; Upload trip photos and browse what everyone else is doing.</li>
-          <li>${ic.mail(11)} <strong>Wall posts</strong> &mdash; Classic MySpace-style. Post on anyone&rsquo;s page, they post on yours.</li>
-          <li>${ic.bookOpen(11)} <strong>Yours forever</strong> &mdash; After the sailing ends, your Deckspace becomes a permanent scrapbook.</li>
+          <li>${ic.users(11)} <strong>Find your people</strong> &mdash; See who&rsquo;s on the ship and add friends right away.</li>
+          <li>${ic.calendar(11)} <strong>Plan your nights</strong> &mdash; Check out what&rsquo;s happening tonight and RSVP to events.</li>
+          <li>${ic.camera(11)} <strong>Share photos</strong> &mdash; Post pics from every port and see what everyone else is up to.</li>
+          <li>${ic.mail(11)} <strong>Wall posts</strong> &mdash; Write on anyone&rsquo;s page, just like the old MySpace days!</li>
+          <li>${ic.bookOpen(11)} <strong>Yours forever</strong> &mdash; Even after the trip ends, everything stays saved as your scrapbook.</li>
         </ul>
         <div class="reg-why-footer">
-          Free. Private. Just for this ship. No ads. No algorithms. No strangers.
+          Free. Private. Just your ship. No ads. No spam. No weirdos.
         </div>
       </div>
     </div>
 
     <div class="reg-note-box">
-      <strong>On a cruise to relax?</strong>
-      <p>Deckspace takes about 60 seconds to join. Fill in only what you want &mdash; you can always add more to your profile later from the comfort of your deck chair.</p>
+      <strong>Want to keep it easy?</strong>
+      <p>Deckspace takes about 60 seconds to join. Fill in only what you feel like &mdash; you can always add more later from the comfort of your deck chair.</p>
     </div>
   </div>
 </div>`;
@@ -368,11 +368,11 @@ function registerForm({ siteKey, error, values = {} }) {
 function onboardingForm() {
   return `<div style="max-width:540px;margin:0 auto">
   <div class="ds-module">
-    <div class="ds-module-header">Set Up Your Deckspace Profile</div>
+    <div class="ds-module-header">Set Up Your Profile</div>
     <div class="ds-module-body">
       <div class="onboarding-intro">
-        <strong>You're in! Now let's build your profile.</strong><br>
-        Everything below is optional &mdash; fill in what feels right. You can change or add to any of this later from your profile page.
+        <strong>You&rsquo;re in! Now let&rsquo;s set up your page.</strong><br>
+        Everything here is optional &mdash; just fill in what you want. You can always change it later.
       </div>
       <form method="POST" action="/onboarding" class="ds-form">
         <div class="ds-form-row">

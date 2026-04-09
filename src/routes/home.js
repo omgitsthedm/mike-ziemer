@@ -12,7 +12,7 @@ import { Hono } from 'hono';
 import { getDb, getEvents, getRecentPhotos, browsePeople, getSailing, getOnlineUsers } from '../lib/db.js';
 import { resolveSession } from '../lib/auth.js';
 import { layout, layoutCtx, esc, fmtDate, relTime } from '../templates/layout.js';
-import { module, eventCard, photoThumb, personRow } from '../templates/components.js';
+import { module, eventCard, photoThumb } from '../templates/components.js';
 import { ic } from '../templates/icons.js';
 
 const home = new Hono();
@@ -227,7 +227,7 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
   // Tonight's events module
   const tonightHtml = tonightEvents.length
     ? tonightEvents.map(e => eventCard({ event: e, cdnBase })).join('')
-    : `<div class="ds-empty-state">No events scheduled for tonight. <a href="/events/create">Create one!</a></div>`;
+    : `<div class="ds-empty-state">No events tonight yet. <a href="/events/create">Add one!</a></div>`;
 
   const tonightModule = module({
     header: `${ic.calendar(12)} Tonight's Events`,
@@ -326,8 +326,8 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
 
   // Sailing info notice (first-time feel)
   const sailingNotice = sailing ? `<div class="ds-flash info" style="margin-bottom:8px">
-    <strong>Welcome to ${esc(sailing.name)} on ${esc(sailing.ship_name)}!</strong>
-    Set up your profile and start meeting your fellow passengers.
+    ${ic.shipWheel(13)} <strong>Welcome to ${esc(sailing.name)} on ${esc(sailing.ship_name)}!</strong>
+    Set up your profile and start meeting everyone on the ship.
   </div>` : '';
 
   const wx = weatherWidget(weather);
@@ -377,14 +377,14 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [] 
           ${e.location ? `<span class="landing-event-loc">${esc(e.location)}</span>` : ''}
         </div>`).join('')}
       </div>
-      ${eventsIsDemo ? '<div class="landing-demo-note">Sample events — actual schedule varies by sailing</div>' : ''}
-      <div class="landing-events-cta"><a href="/register">Sign up to RSVP to events &raquo;</a></div>
+      ${eventsIsDemo ? '<div class="landing-demo-note">Sample events — real schedule varies by sailing</div>' : ''}
+      <div class="landing-events-cta"><a href="/register">Sign up to RSVP to events! &raquo;</a></div>
     </div>
   </div>`;
 
   // Venue Hours
   const venueHtml = `<div class="ds-module">
-    <div class="ds-module-header">${ic.clock(12)} Onboard Venue Hours <span class="landing-events-more">Ship Time (ET)</span></div>
+    <div class="ds-module-header">${ic.clock(12)} What&rsquo;s Open &amp; When <span class="landing-events-more">Ship Time (ET)</span></div>
     <div class="ds-module-body">
       <table class="landing-venue-table">
         ${DEMO_VENUES.map(v => `<tr>
@@ -413,14 +413,15 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [] 
   const leftCol = `<div class="landing-left">
 
   <div class="landing-hero">
-    <div class="landing-hero-eyebrow">Welcome aboard <strong>${esc(shipName)}</strong></div>
+    <div class="landing-hero-eyebrow">${ic.shipWheel(13)} Welcome aboard <strong>${esc(shipName)}</strong></div>
     <h1 class="landing-hero-title">A Place for Friends<br>on the High Seas</h1>
-    <p class="landing-hero-sub">${esc(sailName)} &mdash; Your private cruise social network</p>
+    <p class="landing-hero-sub">${esc(sailName)} &mdash; Your cruise social network</p>
     <p class="landing-hero-copy">
-      Think of it like MySpace, but just for this ship. Browse fellow passengers,
-      plan your nights, share photos from every port, and post on each other&rsquo;s walls.
-      When the sailing ends, your Deckspace becomes a permanent scrapbook of the trip.
-      <strong>Your people are already here.</strong>
+      It&rsquo;s like having your own cool page &mdash; but just for your ship!
+      Meet the people on this cruise, see what&rsquo;s happening tonight, share photos
+      from every port, and write on each other&rsquo;s pages.
+      When the trip ends, it all stays saved forever.
+      <strong>Your people are already here!</strong>
     </p>
   </div>
 
@@ -432,31 +433,31 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [] 
     <div class="landing-howto-step">
       <span class="landing-howto-num" aria-hidden="true">${ic.user(14)}</span>
       <div>
-        <strong>Create your profile</strong>
-        <span>Pick a username, upload a photo, add your vibe. Takes 60 seconds.</span>
+        <strong>Make your profile</strong>
+        <span>Pick a username, add a photo, and show your vibe. Done in one minute!</span>
       </div>
     </div>
     <div class="landing-howto-step">
       <span class="landing-howto-num" aria-hidden="true">${ic.users(14)}</span>
       <div>
         <strong>Find your people</strong>
-        <span>Browse passengers, add friends, post on walls, RSVP to events.</span>
+        <span>Browse everyone on the ship, add friends, post on their pages, and RSVP to parties.</span>
       </div>
     </div>
     <div class="landing-howto-step">
       <span class="landing-howto-num" aria-hidden="true">${ic.bookOpen(14)}</span>
       <div>
-        <strong>Keep the memories</strong>
-        <span>Photos, posts, and moments &mdash; saved as a scrapbook after you dock.</span>
+        <strong>Save the memories</strong>
+        <span>Every photo and post stays saved forever &mdash; even after you get home.</span>
       </div>
     </div>
   </div>
 
   <div class="ds-module landing-people-module">
-    <div class="ds-module-header">${ic.users(12)} Cool New People</div>
+    <div class="ds-module-header">${ic.users(12)} People on the Ship</div>
     <div class="ds-module-body">
       <div class="landing-people-grid">${peopleHtml}</div>
-      <div style="margin-top:8px;font-size:11px"><a href="/register">Join to see everyone &raquo;</a></div>
+      <div style="margin-top:8px;font-size:11px"><a href="/register">Sign up to see everyone! &raquo;</a></div>
     </div>
   </div>
 
@@ -466,14 +467,14 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [] 
 
   <div class="landing-logo-wrap">
     <div class="landing-logo">Deck<span class="landing-logo-accent">space</span></div>
-    <div class="landing-logo-sub">a space for friends at sea</div>
+    <div class="landing-logo-sub">your cruise, your crew, your page</div>
   </div>
 
   <div class="ds-module landing-login-module">
     <div class="ds-module-header">Already a Member? Sign In</div>
     <div class="ds-module-body">
       <div class="login-instructions">
-        <strong>Returning passenger?</strong> Enter the username and password you created when you joined Deckspace.
+        <strong>Been here before?</strong> Type your username and password below and you&rsquo;re in!
       </div>
       <form method="POST" action="/login" class="landing-login-form" data-retry="true">
         <table class="landing-login-table">
@@ -492,22 +493,22 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [] 
         </table>
       </form>
       <div class="login-help-text">
-        <strong>Forgot your info?</strong> Ask Guest Services or the cruise coordinator's desk.
+        <strong>Forgot your login?</strong> No worries! Head to the Guest Services desk and they can look you up.
       </div>
     </div>
   </div>
 
   <div class="landing-signup-box">
-    <div class="landing-signup-header">New Passenger?</div>
+    <div class="landing-signup-header">New Here?</div>
     <p class="landing-signup-copy">
-      Create your free Deckspace profile and connect with everyone on <strong>${esc(shipName)}</strong>.
-      Takes about 2 minutes &mdash; no email required.
+      Make a free profile and connect with everyone on <strong>${esc(shipName)}</strong>.
+      Takes about 2 minutes &mdash; you don&rsquo;t even need an email!
     </p>
     <a href="/register" class="ds-btn ds-btn-orange landing-signup-btn">Join the Crew &rarr;</a>
   </div>
 
   <div class="ds-module">
-    <div class="ds-module-header">${ic.ship(12)} ${esc(shipName)} &mdash; Voyage</div>
+    <div class="ds-module-header">${ic.ferry(12)} ${esc(shipName)} &mdash; Voyage</div>
     <div class="ds-module-body">
       <div class="landing-voyage-tagline">${esc(sailName)}</div>
       <table class="landing-itin-table">
@@ -517,7 +518,7 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [] 
           <td class="landing-itin-note">${esc(d.note)}</td>
         </tr>`).join('')}
       </table>
-      <div class="landing-tz">${ic.clock(10)} All times: Eastern Time (ET, UTC−5)</div>
+      <div class="landing-tz">${ic.clock(10)} All times: Eastern Time (ET, UTC&minus;5)</div>
     </div>
   </div>
 
