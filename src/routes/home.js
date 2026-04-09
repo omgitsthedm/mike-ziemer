@@ -55,7 +55,7 @@ home.get('/', async (c) => {
   if (!c.env.SUPABASE_URL || !c.env.SUPABASE_SERVICE_KEY) {
     return c.html(layout({
       title: 'Deckspace — A Place for Friends on the High Seas',
-      body:  landingPage({ sailing: DEMO_SAILING, cdnBase: '', newPeople: [], weather: null, tonightEvents: [] }),
+      body:  landingPage({ sailing: DEMO_SAILING, cdnBase: '', newPeople: [], weather: null, tonightEvents: [], siteKey: c.env.TURNSTILE_SITE_KEY || '' }),
       notifCount: 0,
       csrfToken:  '',
     }));
@@ -95,7 +95,7 @@ home.get('/', async (c) => {
 
     return c.html(layoutCtx(c, {
       title: 'Deckspace — A Place for Friends on the High Seas',
-      body: landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents }),
+      body: landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents, siteKey: c.env.TURNSTILE_SITE_KEY || '' }),
     }));
   }
 
@@ -352,7 +352,7 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
    LANDING PAGE (unauthenticated visitors)
    OG MySpace layout: 60% left, 40% right
    ============================================================ */
-function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [] }) {
+function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [], siteKey = '' }) {
   const s        = sailing || DEMO_SAILING;
   const shipName = s.ship_name;
   const sailName = s.name;
@@ -488,7 +488,11 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [] 
           </tr>
           <tr>
             <td></td>
-            <td style="padding-top:6px"><button type="submit" class="ds-btn ds-btn-primary landing-login-btn" data-loading-text="Signing in...">Log In &rarr;</button></td>
+            <td style="padding-top:6px">
+              ${siteKey ? `<div class="cf-turnstile" data-sitekey="${esc(siteKey)}" data-theme="light" style="margin-bottom:6px"></div>
+              <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>` : ''}
+              <button type="submit" class="ds-btn ds-btn-primary landing-login-btn" data-loading-text="Signing in...">Log In &rarr;</button>
+            </td>
           </tr>
         </table>
       </form>
