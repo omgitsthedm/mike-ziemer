@@ -116,6 +116,7 @@ async function isFirstRun(db, sailingId) {
 }
 
 setup.get('/setup', async (c) => {
+  try {
   const db = getDb(c.env);
   if (!(await isFirstRun(db, c.env.SAILING_ID))) return c.redirect('/login');
 
@@ -155,6 +156,9 @@ setup.get('/setup', async (c) => {
 </div>`;
 
   return c.html(layoutCtx(c, { title: 'Setup', body }));
+  } catch (err) {
+    return c.text('Setup error: ' + (err?.message || String(err)), 500);
+  }
 });
 
 setup.post('/setup', async (c) => {
