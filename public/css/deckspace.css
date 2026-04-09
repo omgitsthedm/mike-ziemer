@@ -2772,3 +2772,76 @@ ul {
   border: 1px solid #aabbdd;
   margin-bottom: 10px;
 }
+
+/* ============================================================
+   LANDING PAGE — VENUE HOURS + ITINERARY
+   ============================================================ */
+.landing-venue-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+.landing-venue-table tr {
+  border-bottom: 1px dotted #ddd;
+}
+.landing-venue-table tr:last-child { border-bottom: none; }
+.landing-venue-name {
+  padding: 4px 6px 4px 0;
+  color: #333;
+  font-weight: bold;
+  width: 55%;
+}
+.landing-venue-hours {
+  padding: 4px 0;
+  color: #555;
+}
+
+.landing-demo-note {
+  font-size: 10px;
+  color: #999;
+  font-style: italic;
+  margin-top: 5px;
+  padding-top: 4px;
+  border-top: 1px dotted #eee;
+}
+
+.landing-voyage-tagline {
+  font-size: 11px;
+  font-weight: bold;
+  color: #003399;
+  margin-bottom: 6px;
+}
+.landing-itin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+.landing-itin-table tr {
+  border-bottom: 1px dotted #ddd;
+}
+.landing-itin-table tr:last-child { border-bottom: none; }
+.landing-itin-sea td { color: #999; font-style: italic; }
+.landing-itin-date {
+  padding: 3px 6px 3px 0;
+  white-space: nowrap;
+  font-weight: bold;
+  width: 30px;
+}
+.landing-itin-port {
+  padding: 3px 6px;
+  flex: 1;
+}
+.landing-itin-note {
+  padding: 3px 0;
+  font-size: 10px;
+  color: #777;
+  white-space: nowrap;
+  text-align: right;
+}
+.landing-tz {
+  font-size: 10px;
+  color: #888;
+  margin-top: 6px;
+  padding-top: 4px;
+  border-top: 1px dotted #eee;
+}

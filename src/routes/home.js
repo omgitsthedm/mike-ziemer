@@ -17,7 +17,50 @@ import { ic } from '../templates/icons.js';
 
 const home = new Hono();
 
+/* ============================================================
+   DEMO DATA — shown on preview/unconfigured deployments and
+   as fallback when the DB has no sailing / no events yet.
+   ============================================================ */
+const DEMO_SAILING = {
+  ship_name: 'Norwegian Sun',
+  name:      'Eastern Caribbean Getaway',
+};
+
+const DEMO_EVENTS = [
+  { time: '7:00 PM',  title: 'Caribbean Deck Party',         location: 'Pool Deck' },
+  { time: '8:30 PM',  title: 'Live Music: Coral Reef Trio',  location: 'Atrium Stage' },
+  { time: '9:00 PM',  title: 'Comedy Showcase',              location: 'Stardust Theater' },
+  { time: '11:00 PM', title: 'Late Night DJ & Dancing',      location: 'Sugarcane Bar' },
+];
+
+const DEMO_VENUES = [
+  { name: 'The Garden Café (Buffet)',  hours: '6:00 AM – Midnight' },
+  { name: 'Main Dining Room',          hours: '7–9 AM · Noon–2 PM · 6–9:30 PM' },
+  { name: 'Pool Bar',                  hours: '10:00 AM – 11:00 PM' },
+  { name: 'Spa & Fitness Center',      hours: '6:00 AM – 10:00 PM' },
+  { name: 'Casino',                    hours: '8:00 PM – 2:00 AM' },
+  { name: 'Shore Excursions Desk',     hours: '7:00–9:00 AM · 5:00–7:00 PM' },
+];
+
+const DEMO_ITINERARY = [
+  { date: 'Fri', port: 'Miami, FL',          note: 'Embarkation',    sea: false },
+  { date: 'Sat', port: 'At Sea',             note: '',                sea: true  },
+  { date: 'Sun', port: 'Nassau, Bahamas',    note: '8 AM – 5 PM',    sea: false },
+  { date: 'Mon', port: 'Great Stirrup Cay', note: 'Private Island',  sea: false },
+  { date: 'Tue', port: 'Miami, FL',          note: 'Disembarkation', sea: false },
+];
+
 home.get('/', async (c) => {
+  // Guard: no Supabase config → show full demo landing page (works on preview deploys)
+  if (!c.env.SUPABASE_URL || !c.env.SUPABASE_SERVICE_KEY) {
+    return c.html(layout({
+      title: 'Deckspace — A Place for Friends on the High Seas',
+      body:  landingPage({ sailing: DEMO_SAILING, cdnBase: '', newPeople: [], weather: null, tonightEvents: [] }),
+      notifCount: 0,
+      csrfToken:  '',
+    }));
+  }
+
   const user    = await resolveSession(c.env, c.req.raw).catch(() => null);
   const db      = getDb(c.env);
   const sailing = await getSailing(db, c.env.SAILING_ID).catch(() => null);
@@ -307,33 +350,51 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
 
 /* ============================================================
    LANDING PAGE (unauthenticated visitors)
-   OG MySpace layout: 60% left (hero + events + howto + people), 40% right (login + weather)
+   OG MySpace layout: 60% left, 40% right
    ============================================================ */
 function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [] }) {
-  const shipName = sailing?.ship_name || 'Your Ship';
-  const sailName = sailing?.name      || 'This Sailing';
+  const s        = sailing || DEMO_SAILING;
+  const shipName = s.ship_name;
+  const sailName = s.name;
 
-  // Tonight's Events preview — only show if there are events
-  const eventsPreviewHtml = tonightEvents.length
-    ? `<div class="ds-module landing-events-module">
-        <div class="ds-module-header">Tonight on ${esc(shipName)} <span class="landing-events-more"><a href="/register">all events &raquo;</a></span></div>
-        <div class="ds-module-body">
-          <div class="landing-events-list">
-            ${tonightEvents.map(e => {
-              const time = e.start_at
-                ? new Date(e.start_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
-                : '';
-              return `<div class="landing-event-item">
-                <span class="landing-event-time">${esc(time)}</span>
-                <a href="/register" class="landing-event-title">${esc(e.title)}</a>
-                ${e.location ? `<span class="landing-event-loc">${esc(e.location)}</span>` : ''}
-              </div>`;
-            }).join('')}
-          </div>
-          <div class="landing-events-cta"><a href="/register">Sign up to RSVP to events &raquo;</a></div>
-        </div>
-      </div>`
-    : '';
+  // Tonight's Events — real if available, demo otherwise
+  const eventsToShow = tonightEvents.length
+    ? tonightEvents.map(e => ({
+        time:     e.start_at ? new Date(e.start_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '',
+        title:    e.title,
+        location: e.location || '',
+      }))
+    : DEMO_EVENTS;
+  const eventsIsDemo = !tonightEvents.length;
+
+  const eventsPreviewHtml = `<div class="ds-module landing-events-module">
+    <div class="ds-module-header">${ic.calendar(12)} Tonight on ${esc(shipName)} <span class="landing-events-more"><a href="/register">all events &raquo;</a></span></div>
+    <div class="ds-module-body">
+      <div class="landing-events-list">
+        ${eventsToShow.map(e => `<div class="landing-event-item">
+          <span class="landing-event-time">${esc(e.time)}</span>
+          <a href="/register" class="landing-event-title">${esc(e.title)}</a>
+          ${e.location ? `<span class="landing-event-loc">${esc(e.location)}</span>` : ''}
+        </div>`).join('')}
+      </div>
+      ${eventsIsDemo ? '<div class="landing-demo-note">Sample events — actual schedule varies by sailing</div>' : ''}
+      <div class="landing-events-cta"><a href="/register">Sign up to RSVP to events &raquo;</a></div>
+    </div>
+  </div>`;
+
+  // Venue Hours
+  const venueHtml = `<div class="ds-module">
+    <div class="ds-module-header">${ic.clock(12)} Onboard Venue Hours <span class="landing-events-more">Ship Time (ET)</span></div>
+    <div class="ds-module-body">
+      <table class="landing-venue-table">
+        ${DEMO_VENUES.map(v => `<tr>
+          <td class="landing-venue-name">${esc(v.name)}</td>
+          <td class="landing-venue-hours">${esc(v.hours)}</td>
+        </tr>`).join('')}
+      </table>
+      <div class="landing-demo-note">Hours vary by sailing — check daily newsletter for updates</div>
+    </div>
+  </div>`;
 
   // Cool New People grid: up to 8, 60×60 square photos
   const peopleHtml = newPeople.length
@@ -364,6 +425,8 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [] 
   </div>
 
   ${eventsPreviewHtml}
+
+  ${venueHtml}
 
   <div class="landing-howto">
     <div class="landing-howto-step">
@@ -443,11 +506,20 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [] 
     <a href="/register" class="ds-btn ds-btn-orange landing-signup-btn">Join the Crew &rarr;</a>
   </div>
 
-  ${sailing ? `<div class="landing-voyage-box">
-    <div class="landing-voyage-label">Current Sailing</div>
-    <div class="landing-voyage-ship">${esc(sailing.ship_name)}</div>
-    <div class="landing-voyage-name">${esc(sailing.name)}</div>
-  </div>` : ''}
+  <div class="ds-module">
+    <div class="ds-module-header">${ic.ship(12)} ${esc(shipName)} &mdash; Voyage</div>
+    <div class="ds-module-body">
+      <div class="landing-voyage-tagline">${esc(sailName)}</div>
+      <table class="landing-itin-table">
+        ${DEMO_ITINERARY.map(d => `<tr class="${d.sea ? 'landing-itin-sea' : ''}">
+          <td class="landing-itin-date">${esc(d.date)}</td>
+          <td class="landing-itin-port">${esc(d.port)}</td>
+          <td class="landing-itin-note">${esc(d.note)}</td>
+        </tr>`).join('')}
+      </table>
+      <div class="landing-tz">${ic.clock(10)} All times: Eastern Time (ET, UTC−5)</div>
+    </div>
+  </div>
 
   ${weatherWidget(weather)}
 
