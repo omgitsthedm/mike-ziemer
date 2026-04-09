@@ -358,14 +358,14 @@ function eventsSchedulePage({ viewer, sailing, days, activeCategory = '' }) {
 
   // ---- LEFT RAIL ----
   const top8Items = [
-    'Missed Call Confessional',
-    'Battle of the Side Parts',
-    'Breakup Letter Swap Meet',
-    'Silent Disco: Internal Monologue Edition',
-    'Cringe Archive Screening',
-    'Acoustic Set You Weren&rsquo;t Ready For',
-    'Away Message Workshop',
-    'The Deck at 3:17 AM',
+    { title: 'Missed Call Confessional',               id: '4031ab55-ce1d-494c-8273-e7c8164b40ec' },
+    { title: 'Battle of the Side Parts',               id: 'eae54a72-daae-4c5b-b804-afc85bb420f6' },
+    { title: 'Breakup Letter Swap Meet',               id: '3ad94f37-753b-48a9-aeba-901d2b2ae6f2' },
+    { title: 'Silent Disco: Internal Monologue Ed.',   id: 'daedb8fb-ae23-4ba3-8b15-bc3febe02ba8' },
+    { title: 'Cringe Archive Screening',               id: '0e3f0a3e-2f14-41ad-952a-f45afaf779c0' },
+    { title: "Acoustic Set You Weren't Ready For",     id: '3464f083-0c32-4791-9f47-46b7bc990c91' },
+    { title: 'Away Message Workshop',                  id: '5ed0fc00-2f23-4462-a73d-3c1b7b42ad9f' },
+    { title: 'The Deck at 3:17 AM',                    id: 'ac0dc68f-99ec-4015-8fc2-12f1d81b17a7' },
   ];
 
   const leftRail = `<div class="ss-rail">
@@ -392,7 +392,7 @@ function eventsSchedulePage({ viewer, sailing, days, activeCategory = '' }) {
     <div class="ds-module-header">${ic.star(12)} Top 8 Events</div>
     <div class="ds-module-body">
       <ol class="ss-top8">
-        ${top8Items.map(t => `<li>${t}</li>`).join('')}
+        ${top8Items.map(t => `<li><a href="/events/${esc(t.id)}">${esc(t.title)}</a></li>`).join('')}
       </ol>
     </div>
   </div>

@@ -14,7 +14,7 @@ import { Hono } from 'hono';
 import { getDb, getFriendRequests, getFriends, getSailing, createNotification, q } from '../lib/db.js';
 import { requireAuth } from '../lib/auth.js';
 import { layout, layoutCtx, esc, relTime } from '../templates/layout.js';
-import { module, avatar } from '../templates/components.js';
+import { module, avatar, absUrl } from '../templates/components.js';
 
 const friends = new Hono();
 
@@ -42,7 +42,7 @@ friends.get('/friends', async (c) => {
   const incomingHtml = incoming.length
     ? incoming.map(f => {
         const u = f.users;
-        const thumbUrl = u?.profiles?.avatar_thumb_url ? `${cdnBase}/${u.profiles.avatar_thumb_url}` : null;
+        const thumbUrl = absUrl(cdnBase, u?.profiles?.avatar_thumb_url);
         const img = thumbUrl
           ? `<img src="${esc(thumbUrl)}" width="40" height="40" loading="lazy" style="border:1px solid #ccc">`
           : `<span style="display:inline-block;width:40px;height:40px;background:#e8e8e8;border:1px solid #ccc;text-align:center;line-height:40px">${esc((u?.display_name || '?').charAt(0))}</span>`;
@@ -84,7 +84,7 @@ friends.get('/friends', async (c) => {
   const friendsHtml = friendsList.length
     ? friendsList.map(f => {
         const u = (f.users || f.users_addressee);
-        const thumbUrl = u?.profiles?.avatar_thumb_url ? `${cdnBase}/${u.profiles.avatar_thumb_url}` : null;
+        const thumbUrl = absUrl(cdnBase, u?.profiles?.avatar_thumb_url);
         const img = thumbUrl
           ? `<img src="${esc(thumbUrl)}" width="40" height="40" loading="lazy" style="border:1px solid #ccc">`
           : `<span style="display:inline-block;width:40px;height:40px;background:#e8e8e8;border:1px solid #ccc;text-align:center;line-height:40px">${esc((u?.display_name || '?').charAt(0))}</span>`;

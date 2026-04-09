@@ -12,7 +12,7 @@ import { Hono } from 'hono';
 import { getDb, getEvents, getRecentPhotos, browsePeople, getSailing, getOnlineUsers } from '../lib/db.js';
 import { resolveSession } from '../lib/auth.js';
 import { layout, layoutCtx, esc, fmtDate, relTime } from '../templates/layout.js';
-import { module, eventCard, photoThumb } from '../templates/components.js';
+import { module, eventCard, photoThumb, absUrl } from '../templates/components.js';
 import { ic } from '../templates/icons.js';
 
 const home = new Hono();
@@ -270,7 +270,7 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
   // New members module
   const peopleHtml = recentPeople.length
     ? recentPeople.slice(0, 4).map(p => {
-        const thumbUrl = p.profiles?.avatar_thumb_url ? `${cdnBase}/${p.profiles.avatar_thumb_url}` : null;
+        const thumbUrl = absUrl(cdnBase, p.profiles?.avatar_thumb_url);
         const img = thumbUrl
           ? `<img src="${esc(thumbUrl)}" width="44" height="44" loading="lazy">`
           : `<div class="home-member-thumb-placeholder">${esc((p.display_name || '?').charAt(0))}</div>`;
@@ -308,7 +308,7 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
   // Who's online now
   const onlineHtml = onlineUsers.length
     ? `<div class="online-faces">${onlineUsers.map(u => {
-        const thumb = u.profiles?.avatar_thumb_url ? `${cdnBase}/${u.profiles.avatar_thumb_url}` : null;
+        const thumb = absUrl(cdnBase, u.profiles?.avatar_thumb_url);
         return `<a href="/profile/${esc(u.username)}" title="${esc(u.display_name)}">
           ${thumb
             ? `<img src="${esc(thumb)}" width="28" height="28" loading="lazy">`
@@ -399,7 +399,7 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [],
   // Cool New People grid: up to 8, 60×60 square photos
   const peopleHtml = newPeople.length
     ? newPeople.map(p => {
-        const thumbUrl = p.profiles?.avatar_thumb_url ? `${cdnBase}/${p.profiles.avatar_thumb_url}` : null;
+        const thumbUrl = absUrl(cdnBase, p.profiles?.avatar_thumb_url);
         const img = thumbUrl
           ? `<img src="${esc(thumbUrl)}" width="60" height="60" alt="${esc(p.display_name)}">`
           : `<div class="landing-person-placeholder">${esc((p.display_name || '?').charAt(0))}</div>`;
