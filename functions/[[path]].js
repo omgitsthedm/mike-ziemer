@@ -26,6 +26,7 @@ import notificationsRoutes from '../src/routes/notifications.js';
 import adminRoutes         from '../src/routes/admin.js';
 import voyageRoutes        from '../src/routes/voyage.js';
 import reactionsRoutes     from '../src/routes/reactions.js';
+import setupRoutes         from '../src/routes/setup.js';
 
 const app = new Hono();
 
@@ -73,7 +74,7 @@ app.use('*', async (c, next) => {
   if (c.req.method !== 'POST') return next();
   // Skip CSRF on auth routes (login/register use turnstile) and file uploads
   const path = new URL(c.req.url).pathname;
-  const skipPaths = ['/login', '/register', '/onboarding', '/logout'];
+  const skipPaths = ['/login', '/register', '/onboarding', '/logout', '/setup'];
   if (skipPaths.includes(path)) return next();
 
   const sessionHash = c.get('sessionTokenHash');
@@ -140,6 +141,7 @@ app.route('/', notificationsRoutes);
 app.route('/', adminRoutes);
 app.route('/', voyageRoutes);
 app.route('/', reactionsRoutes);
+app.route('/', setupRoutes);
 
 /* ============================================================
    REPORT FORM (available to all authenticated users)
