@@ -28,9 +28,12 @@ auth.get('/login', async (c) => {
   if (existingUser) return c.redirect('/');
 
   const next = c.req.query('next') || '/';
+  const flash = c.req.query('registered') === '1'
+    ? 'Account created! Sign in with your new username and password.'
+    : null;
   return c.html(layoutCtx(c, {
     title: 'Sign In',
-    body: loginForm({ next, siteKey: c.env.TURNSTILE_SITE_KEY }),
+    body: loginForm({ next, siteKey: c.env.TURNSTILE_SITE_KEY, flash }),
   }));
 });
 
@@ -177,10 +180,16 @@ auth.post('/register', async (c) => {
     // Create empty profile (upsert so duplicate is safe)
     await db.from('profiles').upsert({ user_id: newUser.id }, { onConflict: 'user_id' }).catch(() => {});
 
-    const { token, expiresAt } = await createSession(c.env, newUser.id, c.req.raw);
-    const res = c.redirect('/onboarding');
-    setSessionCookie(res, token, expiresAt);
-    return res;
+    // Create session — if this fails, account exists so redirect to login
+    try {
+      const { token, expiresAt } = await createSession(c.env, newUser.id, c.req.raw);
+      const res = c.redirect('/onboarding');
+      setSessionCookie(res, token, expiresAt);
+      return res;
+    } catch (_sessionErr) {
+      console.error('[Register session error]', _sessionErr);
+      return c.redirect('/login?registered=1');
+    }
   } catch (err) {
     console.error('[Register Error]', err);
     return showRegister('Something went wrong. Please try again.', 500);
@@ -246,13 +255,14 @@ auth.get('/logout', async (c) => {
 /* ============================================================
    HTML TEMPLATES
    ============================================================ */
-function loginForm({ next, siteKey, error }) {
+function loginForm({ next, siteKey, error, flash }) {
   return `<div class="access-page">
   <div class="access-logo">
     <div class="big-logo">Deck<span class="logo-space">space</span></div>
   </div>
   <div class="access-tagline">Your cruise. Your crew. Your page.</div>
 
+  ${flash ? `<div class="ds-flash success">${esc(flash)}</div>` : ''}
   ${error ? `<div class="ds-flash error">${esc(error)}</div>` : ''}
 
   <div class="ds-module">
