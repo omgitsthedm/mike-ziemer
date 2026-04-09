@@ -10,25 +10,7 @@ ALTER TABLE deckspace.profiles
   ADD COLUMN IF NOT EXISTS status_text TEXT CHECK (length(status_text) <= 120);
 
 -- ------------------------------------------------------------
--- 2. Direct messages
--- ------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS deckspace.messages (
-  id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  sailing_id      UUID        NOT NULL REFERENCES deckspace.sailings(id) ON DELETE CASCADE,
-  from_user_id    UUID        NOT NULL REFERENCES deckspace.users(id) ON DELETE CASCADE,
-  to_user_id      UUID        NOT NULL REFERENCES deckspace.users(id) ON DELETE CASCADE,
-  body            TEXT        NOT NULL CHECK (length(body) BETWEEN 1 AND 2000),
-  read_at         TIMESTAMPTZ,
-  created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-  moderation_status TEXT      NOT NULL DEFAULT 'visible' CHECK (moderation_status IN ('visible','removed'))
-);
-
-CREATE INDEX IF NOT EXISTS messages_to_user_idx    ON deckspace.messages(to_user_id,   created_at DESC);
-CREATE INDEX IF NOT EXISTS messages_from_user_idx  ON deckspace.messages(from_user_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS messages_thread_idx     ON deckspace.messages(sailing_id, LEAST(from_user_id, to_user_id), GREATEST(from_user_id, to_user_id), created_at DESC);
-
--- ------------------------------------------------------------
--- 3. Reactions (heart / star / wave on wall posts, photos, comments)
+-- 2. Reactions (heart / star / wave on wall posts, photos, comments)
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS deckspace.reactions (
   id            UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -53,7 +35,7 @@ CREATE OR REPLACE VIEW deckspace.reaction_counts AS
   GROUP BY target_type, target_id;
 
 -- ------------------------------------------------------------
--- 4. Voyage / itinerary days
+-- 3. Voyage / itinerary days
 --    (admins can populate via /admin/voyage or direct SQL)
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS deckspace.voyage_days (
@@ -72,6 +54,6 @@ CREATE TABLE IF NOT EXISTS deckspace.voyage_days (
 CREATE INDEX IF NOT EXISTS voyage_days_sailing_idx ON deckspace.voyage_days(sailing_id, day_date);
 
 -- ------------------------------------------------------------
--- 5. Grant access to service role (already has full access via RLS bypass)
+-- 4. Grant access to service role (already has full access via RLS bypass)
 -- ------------------------------------------------------------
 -- No additional grants needed — Worker uses service role key which bypasses RLS.

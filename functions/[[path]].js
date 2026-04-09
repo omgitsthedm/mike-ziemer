@@ -9,7 +9,7 @@
 
 import { Hono } from 'hono';
 import { handle } from 'hono/cloudflare-pages';
-import { getDb, getUnreadNotifCount, getUnreadMessageCount, getSailing } from '../src/lib/db.js';
+import { getDb, getUnreadNotifCount, getSailing } from '../src/lib/db.js';
 import { loadSession, getSessionToken, hashToken, generateCsrfToken, verifyCsrfToken } from '../src/lib/auth.js';
 import { layout, layoutCtx, esc } from '../src/templates/layout.js';
 import { module as dsModule } from '../src/templates/components.js';
@@ -24,7 +24,6 @@ import photosRoutes        from '../src/routes/photos.js';
 import friendsRoutes       from '../src/routes/friends.js';
 import notificationsRoutes from '../src/routes/notifications.js';
 import adminRoutes         from '../src/routes/admin.js';
-import messagesRoutes      from '../src/routes/messages.js';
 import voyageRoutes        from '../src/routes/voyage.js';
 import reactionsRoutes     from '../src/routes/reactions.js';
 
@@ -43,19 +42,13 @@ app.use('*', async (c, next) => {
   if (user) {
     try {
       const db = getDb(c.env);
-      const [notifCount, msgCount] = await Promise.all([
-        getUnreadNotifCount(db, user.id),
-        getUnreadMessageCount(db, user.id),
-      ]);
+      const notifCount = await getUnreadNotifCount(db, user.id);
       c.set('notifCount', notifCount);
-      c.set('unreadMessages', msgCount);
     } catch (_) {
       c.set('notifCount', 0);
-      c.set('unreadMessages', 0);
     }
   } else {
     c.set('notifCount', 0);
-    c.set('unreadMessages', 0);
   }
   return next();
 });
@@ -145,7 +138,6 @@ app.route('/', photosRoutes);
 app.route('/', friendsRoutes);
 app.route('/', notificationsRoutes);
 app.route('/', adminRoutes);
-app.route('/', messagesRoutes);
 app.route('/', voyageRoutes);
 app.route('/', reactionsRoutes);
 

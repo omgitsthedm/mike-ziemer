@@ -270,50 +270,6 @@ export async function getOnlineUsers(db, sailingId, withinMinutes = 10, limit = 
 }
 
 /* ============================================================
-   MESSAGES
-   ============================================================ */
-
-/**
- * Get conversation threads for a user — one entry per conversation partner.
- */
-export async function getMessageThreads(db, sailingId, userId) {
-  // Get the most recent message in each conversation
-  const { data, error } = await db.rpc('get_message_threads', {
-    p_sailing_id: sailingId,
-    p_user_id: userId
-  });
-  if (error) return []; // graceful fallback if RPC not defined
-  return data || [];
-}
-
-/**
- * Get messages in a thread between two users.
- */
-export async function getThread(db, sailingId, userId, otherId, limit = 50) {
-  return q(
-    db.from('messages')
-      .select('id, from_user_id, to_user_id, body, read_at, created_at, users!messages_from_user_id_fkey(username, display_name, profiles(avatar_thumb_url))')
-      .eq('sailing_id', sailingId)
-      .eq('moderation_status', 'visible')
-      .or(`and(from_user_id.eq.${userId},to_user_id.eq.${otherId}),and(from_user_id.eq.${otherId},to_user_id.eq.${userId})`)
-      .order('created_at', { ascending: true })
-      .limit(limit)
-  ).catch(() => []);
-}
-
-/**
- * Count unread messages for a user.
- */
-export async function getUnreadMessageCount(db, userId) {
-  const { count } = await db.from('messages')
-    .select('id', { count: 'exact', head: true })
-    .eq('to_user_id', userId)
-    .is('read_at', null)
-    .eq('moderation_status', 'visible');
-  return count || 0;
-}
-
-/* ============================================================
    REACTIONS
    ============================================================ */
 

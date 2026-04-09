@@ -31,7 +31,6 @@ export function layout({
   readOnly = false,
   themeClass = '',
   csrfToken = '',
-  unreadMessages = 0,
 }) {
   const pageTitle = title ? `${title} | Deckspace` : 'Deckspace';
   const themeId = user?.profiles?.theme_id || 'classic';
@@ -50,7 +49,7 @@ export function layout({
 </head>
 <body class="${bodyClass}">
 
-${renderNav(user, activeNav, notifCount, unreadMessages)}
+${renderNav(user, activeNav, notifCount)}
 ${sailing ? renderSailingBar(sailing, readOnly) : ''}
 
 <div id="ds-page">
@@ -67,24 +66,21 @@ ${sailing ? renderSailingBar(sailing, readOnly) : ''}
 /* ============================================================
    TOP NAVIGATION
    ============================================================ */
-function renderNav(user, activeNav, notifCount, unreadMessages) {
-  const NAV_ICONS = { home: ic.home, people: ic.users, events: ic.calendar, photos: ic.camera, messages: ic.mail };
+function renderNav(user, activeNav, notifCount) {
+  const NAV_ICONS = { home: ic.home, people: ic.users, events: ic.calendar, photos: ic.camera, voyage: ic.ship };
   const navLinks = user
     ? [
-        { href: '/',         label: 'Home',     key: 'home' },
-        { href: '/people',   label: 'People',   key: 'people' },
-        { href: '/events',   label: 'Events',   key: 'events' },
-        { href: '/photos',   label: 'Photos',   key: 'photos' },
-        { href: '/messages', label: 'Messages', key: 'messages' },
-        { href: '/voyage',   label: 'Voyage',   key: 'voyage' },
+        { href: '/',       label: 'Home',    key: 'home' },
+        { href: '/people', label: 'People',  key: 'people' },
+        { href: '/events', label: 'Events',  key: 'events' },
+        { href: '/photos', label: 'Photos',  key: 'photos' },
+        { href: '/voyage', label: 'Voyage',  key: 'voyage' },
       ]
     : [];
 
   const links = navLinks.map(n => {
     const iconFn = NAV_ICONS[n.key];
-    const badge = n.key === 'messages' && unreadMessages > 0
-      ? `<span class="nav-msg-badge">${unreadMessages}</span>` : '';
-    return `<a href="${n.href}" class="${activeNav === n.key ? 'active' : ''}">${iconFn ? iconFn(13) : ''}${n.label}${badge}</a>`;
+    return `<a href="${n.href}" class="${activeNav === n.key ? 'active' : ''}">${iconFn ? iconFn(13) : ''}${n.label}</a>`;
   }).join('');
 
   const rightSide = user
@@ -173,9 +169,8 @@ export function flash(type, message) {
    ============================================================ */
 export function layoutCtx(c, opts) {
   return layout({
-    notifCount:     c.get('notifCount')     || 0,
-    unreadMessages: c.get('unreadMessages') || 0,
-    csrfToken:      c.get('csrfToken')      || '',
+    notifCount: c.get('notifCount') || 0,
+    csrfToken:  c.get('csrfToken')  || '',
     ...opts
   });
 }

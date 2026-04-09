@@ -315,9 +315,6 @@ Uses KV with sliding window (per-minute):
 | `POST /friends/accept` | Accept request |
 | `POST /friends/decline` | Decline request |
 | `POST /friends/remove` | Remove friend |
-| `GET /messages` | Message inbox |
-| `GET /messages/:username` | Message thread |
-| `POST /messages/:username` | Send message |
 | `POST /react` | Toggle reaction (heart/star/wave) |
 | `GET /voyage` | Sailing itinerary |
 | `GET /notifications` | Notification inbox |

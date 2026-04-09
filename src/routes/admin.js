@@ -379,7 +379,7 @@ admin.get('/admin/bulletin', async (c) => {
 
 admin.post('/admin/bulletin', async (c) => {
   const user = c.get('user');
-  const form = c.get('parsedForm') || c.get('parsedForm') || await c.req.formData().catch(() => null);
+  const form = c.get('parsedForm') || await c.req.formData().catch(() => null);
   const text = (form?.get('text') || '').toString().trim().slice(0, 500);
   if (!text) return c.redirect('/admin/bulletin');
 
@@ -451,7 +451,7 @@ admin.get('/admin/voyage', async (c) => {
 
 admin.post('/admin/voyage/add', async (c) => {
   const db   = getDb(c.env);
-  const form = c.get('parsedForm') || c.get('parsedForm') || await c.req.formData().catch(() => null);
+  const form = c.get('parsedForm') || await c.req.formData().catch(() => null);
 
   await db.from('voyage_days').insert({
     sailing_id:  c.env.SAILING_ID,
@@ -550,7 +550,7 @@ admin.get('/admin/weather', async (c) => {
 });
 
 admin.post('/admin/weather', async (c) => {
-  const form = await c.req.formData();
+  const form = c.get('parsedForm') || await c.req.formData();
   const weather = {
     temp_f:     parseInt((form.get('temp_f') || '84').toString(), 10),
     temp_c:     parseInt((form.get('temp_c') || '29').toString(), 10),

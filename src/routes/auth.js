@@ -348,7 +348,7 @@ function registerForm({ siteKey, error, values = {} }) {
           <li>${ic.users(11)} <strong>Find your people</strong> &mdash; Browse fellow passengers and add friends before your first port.</li>
           <li>${ic.calendar(11)} <strong>Plan your nights</strong> &mdash; See what&rsquo;s on, RSVP to events, get people together.</li>
           <li>${ic.camera(11)} <strong>Share photos</strong> &mdash; Upload trip photos and browse what everyone else is doing.</li>
-          <li>${ic.mail(11)} <strong>Walls &amp; messages</strong> &mdash; Classic MySpace-style. Post on anyone&rsquo;s page, message directly.</li>
+          <li>${ic.mail(11)} <strong>Wall posts</strong> &mdash; Classic MySpace-style. Post on anyone&rsquo;s page, they post on yours.</li>
           <li>${ic.bookOpen(11)} <strong>Yours forever</strong> &mdash; After the sailing ends, your Deckspace becomes a permanent scrapbook.</li>
         </ul>
         <div class="reg-why-footer">
