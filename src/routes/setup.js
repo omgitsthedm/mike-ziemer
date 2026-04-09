@@ -117,8 +117,8 @@ async function isFirstRun(db, sailingId) {
 
 setup.get('/setup', async (c) => {
   try {
-  const db = getDb(c.env);
-  if (!(await isFirstRun(db, c.env.SAILING_ID))) return c.redirect('/login');
+    const db = getDb(c.env);
+    if (!(await isFirstRun(db, c.env.SAILING_ID))) return c.redirect('/login');
 
   const body = `<div style="max-width:400px;margin:40px auto">
   <div class="ds-module">
@@ -157,9 +157,13 @@ setup.get('/setup', async (c) => {
 
   return c.html(layoutCtx(c, { title: 'Setup', body }));
   } catch (err) {
-    const url = c.env?.SUPABASE_URL ? c.env.SUPABASE_URL.slice(0,20)+'...' : 'MISSING';
-    const sid = c.env?.SAILING_ID || 'MISSING';
-    return c.text('err=' + (err?.message||String(err)) + ' url=' + url + ' sid=' + sid, 500);
+    return c.html(layoutCtx(c, {
+      title: 'Setup Error',
+      body: `<div style="max-width:400px;margin:40px auto">
+        <div class="ds-flash error">Database not configured. Set SUPABASE_URL, SUPABASE_SERVICE_KEY, and SAILING_ID in the Cloudflare Pages dashboard, then redeploy.</div>
+        <p style="font-size:12px;margin-top:8px"><a href="/setup">Try again</a></p>
+      </div>`
+    }), 500);
   }
 });
 
