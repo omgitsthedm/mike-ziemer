@@ -25,7 +25,7 @@ The aesthetic is deliberately dense/retro: orange section headers, blue nav bar,
 | Project name | `deckspace` |
 | Production URL | https://deckspace.pages.dev |
 | Active branch | `claude/deckspace-pdr-IhYsR` |
-| Deploy command | `npx wrangler pages deploy . --project-name=deckspace --branch=claude/deckspace-pdr-IhYsR` |
+| Deploy command | `npx wrangler pages deploy public --project-name=deckspace --branch=claude/deckspace-pdr-IhYsR` |
 
 Every push to the active branch **does not** auto-deploy. You must run the deploy command manually (credentials are in `.env.local`).
 
@@ -414,7 +414,7 @@ source .env.local  # or export them manually
 
 # Deploy to production branch
 CLOUDFLARE_API_TOKEN=<token> CLOUDFLARE_ACCOUNT_ID=<id> \
-  npx wrangler pages deploy . \
+  npx wrangler pages deploy public \
   --project-name=deckspace \
   --branch=claude/deckspace-pdr-IhYsR
 ```
