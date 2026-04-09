@@ -50,7 +50,15 @@
         }
         if (!res.ok) {
           return res.text().then(function (text) {
-            throw new Error(text || 'Server error ' + res.status);
+            // Extract a meaningful error from the HTML response instead of
+            // injecting the full page. Look for a flash/error element first.
+            var tmp = document.createElement('div');
+            tmp.innerHTML = text;
+            var flash = tmp.querySelector('.ds-flash.error, .ds-flash, .error-message');
+            var msg = flash
+              ? flash.textContent.trim().slice(0, 300)
+              : ('Server error (' + res.status + '). Please try again.');
+            throw new Error(msg);
           });
         }
         // For fragment responses (htmx-style), swap if target specified
