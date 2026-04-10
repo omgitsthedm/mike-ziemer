@@ -179,7 +179,7 @@ profile.get('/profile/:username', async (c) => {
   return c.html(layoutCtx(c, {
     title: `${target.display_name}'s Deckspace Profile (@${target.username})`,
     description: profile?.about_me
-      ? `${target.display_name}'s Deckspace profile on this sailing. ${profile.about_me.slice(0, 140)}`
+      ? `${target.display_name}'s Deckspace profile on this sailing. ${profile.about_me.slice(0, 105)}`
       : `View ${target.display_name}'s Deckspace profile, public wall, vibes, and sailing activity.`,
     user: viewer,
     sailing,

@@ -16,7 +16,7 @@ import { Hono } from 'hono';
 import { getDb, getEvents, getEventById, getEventComments, getUserRsvp, getSailing, createNotification, q } from '../lib/db.js';
 import { requireAuth, resolveSession, isSailingReadOnly } from '../lib/auth.js';
 import { layout, layoutCtx, esc, fmtDate, relTime, csrfField } from '../templates/layout.js';
-import { module, eventCard, commentEntry, paginator, absUrl } from '../templates/components.js';
+import { module, eventCard, commentEntry, paginator, absUrl, pixelAvatarImg, isLegacyAvatarUrl } from '../templates/components.js';
 import { ic } from '../templates/icons.js';
 
 const events = new Hono();
@@ -57,10 +57,10 @@ events.get('/events', async (c) => {
   const days = [...dayMap.entries()];
   const userFilter = (c.req.query('user') || '').trim();
   const title = category
-    ? `Events: ${category}`
+    ? `Cruise Events: ${category}`
     : userFilter
-    ? `Events by ${userFilter}`
-    : 'Cruise Events';
+    ? `Cruise Events by ${userFilter}`
+    : 'Cruise Events and Plans';
 
   const body = eventsSchedulePage({ viewer, sailing, days, activeCategory: category });
 
@@ -609,9 +609,9 @@ function eventDetailPage({ event, comments, userRsvp, attendees, viewer, sailing
     ? attendees.map(a => {
         const thumbUrl = absUrl(cdnBase, a.users?.profiles?.avatar_thumb_url);
         return `<a href="/profile/${esc(a.users?.username || '')}" title="${esc(a.users?.display_name || '')}">
-          ${thumbUrl
+          ${thumbUrl && !isLegacyAvatarUrl(thumbUrl)
             ? `<img src="${esc(thumbUrl)}" width="32" height="32" alt="${esc(a.users?.display_name || 'Passenger')}" loading="lazy" style="border:1px solid #ccc">`
-            : `<span style="display:inline-block;width:32px;height:32px;background:#e8e8e8;border:1px solid #ccc;text-align:center;line-height:32px;font-size:10px">${esc((a.users?.display_name || '?').charAt(0))}</span>`}
+            : pixelAvatarImg(a.users?.display_name || 'Passenger', a.users?.username || a.users?.display_name || '', 32, 'event-attendee-pixel-avatar')}
         </a>`;
       }).join(' ')
     : `<span class="text-muted text-small">No RSVPs yet.</span>`;

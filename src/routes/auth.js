@@ -38,7 +38,7 @@ auth.get('/login', async (c) => {
     ? 'Account created! Sign in with your new username and password.'
     : null;
   return c.html(layoutCtx(c, {
-    title: 'Sign In to Deckspace',
+    title: 'Sign In to Your Deckspace Sailing',
     description: 'Sign in to Deckspace to view your sailing community, browse passenger profiles, check events, post on walls, and share photos during the voyage.',
     body: loginForm({ next, siteKey: c.env.TURNSTILE_SITE_KEY, flash }),
   }));
@@ -55,7 +55,7 @@ auth.post('/login', async (c) => {
   const ip = c.req.header('cf-connecting-ip') || '';
 
   const showLogin = (error, status = 400) => c.html(layoutCtx(c, {
-    title: 'Sign In to Deckspace',
+    title: 'Sign In to Your Deckspace Sailing',
     description: 'Sign in to Deckspace to view your sailing community, browse passenger profiles, check events, post on walls, and share photos during the voyage.',
     body: loginForm({ next, siteKey: c.env.TURNSTILE_SITE_KEY, error }),
   }), status);
@@ -113,7 +113,7 @@ auth.get('/register', async (c) => {
   if (existingUser) return c.redirect('/');
 
   return c.html(layoutCtx(c, {
-    title: 'Create Your Deckspace Account',
+    title: 'Create Your Deckspace Sailing Account',
     description: 'Create a Deckspace account for your sailing to meet passengers, RSVP to events, share photos, and join the public-by-design onboard community.',
     body: registerForm({ siteKey: c.env.TURNSTILE_SITE_KEY }),
   }));
@@ -132,7 +132,7 @@ auth.post('/register', async (c) => {
   const password2   = (form.get('password2') || '').toString();
 
   const showRegister = (error, status = 400) => c.html(layoutCtx(c, {
-    title: 'Create Your Deckspace Account',
+    title: 'Create Your Deckspace Sailing Account',
     description: 'Create a Deckspace account for your sailing to meet passengers, RSVP to events, share photos, and join the public-by-design onboard community.',
     body: registerForm({ siteKey: c.env.TURNSTILE_SITE_KEY, error, values: { displayName, username, email } }),
   }), status);

@@ -12,7 +12,7 @@ import { Hono } from 'hono';
 import { getDb, getEvents, getRecentPhotos, browsePeople, getSailing, getOnlineUsers } from '../lib/db.js';
 import { resolveSession } from '../lib/auth.js';
 import { layout, layoutCtx, esc, fmtDate, relTime } from '../templates/layout.js';
-import { module, eventCard, photoThumb, absUrl } from '../templates/components.js';
+import { module, eventCard, photoThumb, absUrl, pixelAvatarImg, isLegacyAvatarUrl } from '../templates/components.js';
 import { ic } from '../templates/icons.js';
 
 const home = new Hono();
@@ -98,7 +98,7 @@ home.get('/', async (c) => {
 
     return c.html(layoutCtx(c, {
       title: 'Deckspace — A Place for Friends on the High Seas',
-      description: `Join Deckspace for ${sailing?.name || 'your sailing'} on ${sailing?.ship_name || 'your ship'} to meet passengers, follow tonight's events, share photos, and keep the ship scrapbook alive a little longer after the trip.`,
+      description: `Join Deckspace for ${sailing?.name || 'your sailing'} on ${sailing?.ship_name || 'your ship'} to meet passengers, follow tonight's events, and share photos during the trip.`,
       body: landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents, siteKey: c.env.TURNSTILE_SITE_KEY || '' }),
       showPageHeading: false,
     }));
@@ -277,9 +277,9 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
   const peopleHtml = recentPeople.length
     ? recentPeople.slice(0, 4).map(p => {
         const thumbUrl = absUrl(cdnBase, p.profiles?.avatar_thumb_url);
-        const img = thumbUrl
+        const img = thumbUrl && !isLegacyAvatarUrl(thumbUrl)
           ? `<img src="${esc(thumbUrl)}" width="44" height="44" alt="${esc(p.display_name)}" loading="lazy">`
-          : `<div class="home-member-thumb-placeholder">${esc((p.display_name || '?').charAt(0))}</div>`;
+          : pixelAvatarImg(p.display_name || '?', p.username || p.display_name || '', 44, 'home-member-pixel-avatar');
         return `<div class="home-member-item">
   <a href="/profile/${esc(p.username)}">${img}</a>
   <a href="/profile/${esc(p.username)}" class="home-member-name">${esc(p.display_name)}</a>
@@ -316,9 +316,9 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
     ? `<div class="online-faces">${onlineUsers.map(u => {
         const thumb = absUrl(cdnBase, u.profiles?.avatar_thumb_url);
         return `<a href="/profile/${esc(u.username)}" title="${esc(u.display_name)}">
-          ${thumb
+          ${thumb && !isLegacyAvatarUrl(thumb)
             ? `<img src="${esc(thumb)}" width="28" height="28" alt="${esc(u.display_name)}" loading="lazy">`
-            : `<span class="online-face-placeholder">${esc((u.display_name||'?').charAt(0))}</span>`}
+            : pixelAvatarImg(u.display_name || '?', u.username || u.display_name || '', 28, 'online-face-pixel-avatar')}
         </a>`;
       }).join('')}</div>
       <div class="online-count">${onlineUsers.length} active in the last 10 min</div>`
@@ -418,9 +418,9 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [],
     ? newPeople.map(p => {
         const thumbUrl = absUrl(cdnBase, p.profiles?.avatar_thumb_url);
         const label = duplicateCounts[p.display_name] > 1 ? `${p.display_name} (@${p.username})` : p.display_name;
-        const img = thumbUrl
+        const img = thumbUrl && !isLegacyAvatarUrl(thumbUrl)
           ? `<img src="${esc(thumbUrl)}" width="60" height="60" alt="${esc(label)}" loading="lazy">`
-          : `<div class="landing-person-placeholder">${esc((p.display_name || '?').charAt(0))}</div>`;
+          : pixelAvatarImg(label || '?', p.username || label || '', 60, 'landing-person-pixel-avatar');
         return `<div class="landing-person-item">
   <a href="/profile/${esc(p.username)}">${img}</a>
   <a href="/profile/${esc(p.username)}" class="landing-person-name">${esc(label)}</a>

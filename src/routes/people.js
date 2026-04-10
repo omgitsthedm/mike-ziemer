@@ -31,6 +31,11 @@ people.get('/people', async (c) => {
     page,
     limit: 30
   });
+  const duplicateCounts = users.reduce((acc, u) => {
+    const key = u.display_name || '';
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
 
   // If viewer is logged in, batch fetch friendship statuses
   let friendStatuses = {};
@@ -57,7 +62,8 @@ people.get('/people', async (c) => {
     viewerUser: viewer,
     friendStatus: friendStatuses[u.id] || null,
     cdnBase,
-    csrfToken: c.get('csrfToken') || ''
+    csrfToken: c.get('csrfToken') || '',
+    displayLabel: duplicateCounts[u.display_name] > 1 ? `${u.display_name} (@${u.username})` : u.display_name
   })).join('');
 
   const vibePills = `<div class="vibe-filter-strip">
@@ -68,7 +74,8 @@ people.get('/people', async (c) => {
   </div>`;
 
   const searchForm = `<form method="GET" action="/people" class="ds-form" style="display:flex;gap:4px;margin-bottom:6px;align-items:center">
-    <input name="q" type="search" class="ds-input" value="${esc(search)}" placeholder="Search by name..." style="flex:1">
+    <label for="people-search" class="sr-only">Search passengers by name</label>
+    <input id="people-search" name="q" type="search" class="ds-input" value="${esc(search)}" placeholder="Search by name..." style="flex:1">
     ${vibeTag ? `<input type="hidden" name="vibe" value="${esc(vibeTag)}">` : ''}
     <button type="submit" class="ds-btn ds-btn-primary">Search</button>
     ${search || vibeTag ? `<a href="/people" class="ds-btn">Clear</a>` : ''}
@@ -103,7 +110,7 @@ people.get('/people', async (c) => {
     title: pageTitle,
     description: search || vibeTag
       ? `Browse Deckspace passengers for this sailing${search ? ` matching ${search}` : ''}${vibeTag ? ` with the vibe ${vibeTag}` : ''}.`
-      : 'Browse Deckspace passengers on this sailing, discover shared vibes, and connect through public profiles.',
+      : 'Browse Deckspace passengers on this sailing, discover shared vibes, follow profile activity, and connect through public profiles.',
     user: viewer,
     sailing,
     activeNav: 'people',

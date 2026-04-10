@@ -31,8 +31,8 @@ site.get('/about', async (c) => {
   ].join('');
 
   return c.html(layoutCtx(c, {
-    title: 'About Deckspace',
-    description: 'Learn what Deckspace is: a public-by-design cruise intranet with a temporary social layer, event schedule, passenger directory, photos, and a short post-cruise archive.',
+    title: 'About the Deckspace Cruise Network',
+    description: 'Learn what Deckspace is: a temporary cruise social network for events, profiles, photos, and a short post-cruise scrapbook.',
     canonicalUrl: new URL('/about', c.req.url).toString(),
     user,
     sailing,
@@ -66,8 +66,8 @@ site.get('/contact', async (c) => {
   ].join('');
 
   return c.html(layoutCtx(c, {
-    title: 'Contact Deckspace Support',
-    description: 'Find Deckspace support information for passengers, onboard staff, moderation concerns, account lookup, and public-content reporting during a sailing.',
+    title: 'Deckspace Help, Support, and Safety',
+    description: 'Find Deckspace help for onboard support, moderation concerns, account lookup, and public-content reporting during a sailing.',
     canonicalUrl: new URL('/contact', c.req.url).toString(),
     user,
     sailing,
@@ -118,6 +118,26 @@ site.get('/robots.txt', (c) => {
 site.get('/sitemap.xml', async (c) => {
   const origin = new URL(c.req.url).origin;
   const now = new Date().toISOString();
+  const db = getDb(c.env);
+
+  const [usersRes, eventsRes, photosRes] = await Promise.all([
+    db.from('users')
+      .select('username, updated_at, created_at')
+      .eq('sailing_id', c.env.SAILING_ID)
+      .limit(200),
+    db.from('events')
+      .select('id, updated_at, created_at')
+      .eq('sailing_id', c.env.SAILING_ID)
+      .eq('moderation_status', 'visible')
+      .eq('visibility', 'public')
+      .limit(200),
+    db.from('photos')
+      .select('id, created_at')
+      .eq('sailing_id', c.env.SAILING_ID)
+      .eq('moderation_status', 'visible')
+      .limit(200),
+  ]);
+
   const urls = [
     { loc: '/', lastmod: now },
     { loc: '/login', lastmod: now },
@@ -129,6 +149,18 @@ site.get('/sitemap.xml', async (c) => {
     { loc: '/about', lastmod: now },
     { loc: '/contact', lastmod: now },
     { loc: '/privacy', lastmod: now },
+    ...((usersRes.data || []).map((user) => ({
+      loc: `/profile/${user.username}`,
+      lastmod: user.updated_at || user.created_at || now,
+    }))),
+    ...((eventsRes.data || []).map((event) => ({
+      loc: `/events/${event.id}`,
+      lastmod: event.updated_at || event.created_at || now,
+    }))),
+    ...((photosRes.data || []).map((photo) => ({
+      loc: `/photos/${photo.id}`,
+      lastmod: photo.created_at || now,
+    }))),
   ];
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map((entry) => `  <url>\n    <loc>${esc(new URL(entry.loc, origin).toString())}</loc>\n    <lastmod>${esc(new Date(entry.lastmod).toISOString())}</lastmod>\n  </url>`).join('\n')}\n</urlset>`;

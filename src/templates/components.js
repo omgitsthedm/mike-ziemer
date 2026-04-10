@@ -18,6 +18,10 @@ export function absUrl(cdnBase, key) {
   return key.startsWith('http') ? key : `${cdnBase || ''}/${key}`;
 }
 
+export function isLegacyAvatarUrl(url = '') {
+  return /ui-avatars\.com/i.test(url);
+}
+
 function densitySrcset(url) {
   if (!url) return '';
   if (url.includes('size=')) {
@@ -25,6 +29,125 @@ function densitySrcset(url) {
     return `${esc(url)} 1x, ${esc(retinaUrl)} 2x`;
   }
   return `${esc(url)} 1x, ${esc(url)} 2x`;
+}
+
+function hashSeed(str = '') {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i += 1) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+function mulberry32(seed) {
+  let t = seed >>> 0;
+  return function () {
+    t += 0x6D2B79F5;
+    let r = Math.imul(t ^ (t >>> 15), t | 1);
+    r ^= r + Math.imul(r ^ (r >>> 7), r | 61);
+    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function pick(rng, arr) {
+  return arr[Math.floor(rng() * arr.length)];
+}
+
+function pixelRect(x, y, w, h, fill) {
+  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}"/>`;
+}
+
+function pixelAvatarDataUri(displayName = '', seedHint = '') {
+  const seed = hashSeed(`${seedHint}|${displayName}|deckspace-pixel-avatar`);
+  const rng = mulberry32(seed);
+
+  const skin = pick(rng, ['#f6d2b1', '#e8b78f', '#c98d69', '#8f5b3d']);
+  const hair = pick(rng, ['#2f241d', '#5a3d2b', '#8b5c32', '#e1c15a', '#b23a48', '#1c1c1c']);
+  const shirt = pick(rng, ['#1f6fb6', '#ff7b00', '#2ca25f', '#7b4fa3', '#d9485f', '#008b8b']);
+  const accent = pick(rng, ['#fff4cf', '#d7ebff', '#ffdce8', '#d8f5cf', '#ffe0b5']);
+  const water = pick(rng, ['#7ec9ff', '#8bd3dd', '#7aa2f7']);
+  const shadow = '#263248';
+  const line = '#152238';
+  const eye = '#101522';
+  const mouth = pick(rng, ['#9b4b4b', '#7a2b46', '#b85c38']);
+
+  const hairStyle = Math.floor(rng() * 4);
+  const shirtStyle = Math.floor(rng() * 3);
+  const accessory = Math.floor(rng() * 5);
+  const freckles = rng() > 0.62;
+
+  const parts = [
+    `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 16 16" shape-rendering="crispEdges" role="img" aria-label="${esc(displayName || 'Deckspace avatar')}">`,
+    pixelRect(0, 0, 16, 16, accent),
+    pixelRect(0, 11, 16, 5, water),
+    pixelRect(0, 10, 16, 1, '#ffffff'),
+    pixelRect(1, 1, 4, 2, '#ffffff'),
+    pixelRect(11, 2, 3, 1, '#ffffff'),
+    pixelRect(6, 10, 4, 2, skin),
+    pixelRect(4, 3, 8, 8, skin),
+    pixelRect(3, 12, 10, 4, shirt),
+  ];
+
+  if (shirtStyle === 0) {
+    parts.push(pixelRect(6, 12, 4, 1, '#ffffff'));
+    parts.push(pixelRect(7, 13, 2, 3, '#ffffff'));
+  } else if (shirtStyle === 1) {
+    parts.push(pixelRect(5, 12, 1, 4, shadow));
+    parts.push(pixelRect(10, 12, 1, 4, shadow));
+  } else {
+    parts.push(pixelRect(4, 13, 8, 1, shadow));
+  }
+
+  if (hairStyle === 0) {
+    parts.push(pixelRect(4, 2, 8, 2, hair));
+    parts.push(pixelRect(3, 3, 2, 4, hair));
+    parts.push(pixelRect(11, 3, 2, 4, hair));
+  } else if (hairStyle === 1) {
+    parts.push(pixelRect(3, 2, 10, 2, hair));
+    parts.push(pixelRect(4, 4, 2, 1, hair));
+    parts.push(pixelRect(10, 4, 2, 1, hair));
+  } else if (hairStyle === 2) {
+    parts.push(pixelRect(4, 2, 8, 1, hair));
+    parts.push(pixelRect(3, 3, 10, 2, hair));
+    parts.push(pixelRect(3, 5, 2, 2, hair));
+  } else {
+    parts.push(pixelRect(4, 2, 8, 2, hair));
+    parts.push(pixelRect(3, 3, 2, 3, hair));
+    parts.push(pixelRect(11, 3, 2, 2, hair));
+    parts.push(pixelRect(10, 5, 2, 1, hair));
+  }
+
+  parts.push(pixelRect(5, 6, 2, 1, eye));
+  parts.push(pixelRect(9, 6, 2, 1, eye));
+  parts.push(pixelRect(7, 8, 2, 1, mouth));
+
+  if (freckles) {
+    parts.push(pixelRect(5, 8, 1, 1, '#d18a73'));
+    parts.push(pixelRect(10, 8, 1, 1, '#d18a73'));
+  }
+
+  if (accessory === 0) {
+    parts.push(pixelRect(4, 1, 8, 1, '#ffffff'));
+    parts.push(pixelRect(5, 2, 6, 1, '#d94141'));
+  } else if (accessory === 1) {
+    parts.push(pixelRect(4, 6, 8, 1, line));
+    parts.push(pixelRect(6, 5, 1, 3, line));
+    parts.push(pixelRect(9, 5, 1, 3, line));
+  } else if (accessory === 2) {
+    parts.push(pixelRect(12, 8, 1, 2, '#f3d36f'));
+  } else if (accessory === 3) {
+    parts.push(pixelRect(4, 11, 8, 1, '#ffffff'));
+  }
+
+  parts.push(pixelRect(4, 10, 8, 1, shadow));
+  parts.push(`</svg>`);
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(parts.join(''))}`;
+}
+
+export function pixelAvatarImg(displayName, seedHint = '', size = 40, className = '') {
+  const src = pixelAvatarDataUri(displayName, seedHint);
+  return `<img src="${src}" alt="${esc(displayName || 'Deckspace avatar')}" width="${size}" height="${size}" loading="${size >= 120 ? 'eager' : 'lazy'}" class="pixel-avatar${className ? ' ' + className : ''}">`;
 }
 
 export function module({ header, headerRight = '', body, headerStyle = '', id = '' }) {
@@ -42,10 +165,10 @@ export function module({ header, headerRight = '', body, headerStyle = '', id = 
    ============================================================ */
 export function avatar(url, displayName, size = 'thumb', extra = '') {
   const dim = size === 'thumb' ? 40 : (size === 'large' ? 160 : 60);
-  if (url) {
+  if (url && !isLegacyAvatarUrl(url)) {
     return `<img src="${esc(url)}" srcset="${densitySrcset(url)}" alt="${esc(displayName)}" width="${dim}" height="${dim}" loading="${size === 'large' ? 'eager' : 'lazy'}"${extra ? ' ' + extra : ''}>`;
   }
-  return `<div class="no-photo-xs" style="width:${dim}px;height:${dim}px" aria-label="${esc(displayName)}">?</div>`;
+  return pixelAvatarImg(displayName, displayName, dim, size === 'large' ? 'pixel-avatar-large' : '');
 }
 
 /* ============================================================
@@ -53,9 +176,9 @@ export function avatar(url, displayName, size = 'thumb', extra = '') {
    ============================================================ */
 export function profilePhotoBlock({ user, profile, isOwn, isOnline, cdnBase }) {
   const avatarUrl = profile?.avatar_url ? absUrl(cdnBase, profile.avatar_url) : null;
-  const img = avatarUrl
+  const img = avatarUrl && !isLegacyAvatarUrl(avatarUrl)
     ? `<img class="avatar" src="${esc(avatarUrl)}" srcset="${densitySrcset(avatarUrl)}" alt="Profile photo of ${esc(user.display_name)}" width="160" height="160">`
-    : `<div class="no-photo" aria-label="No photo">No Photo</div>`;
+    : pixelAvatarImg(user.display_name, user.username, 160, 'avatar');
 
   const onlineHtml = isOnline
     ? `<span class="online-indicator">Online Now</span>`
@@ -190,9 +313,9 @@ export function friendSpaceModule({ topFriends, friendCount, cdnBase }) {
     const thumbUrl = friend?.profiles?.avatar_thumb_url
       ? absUrl(cdnBase, friend.profiles.avatar_thumb_url)
       : null;
-    const imgHtml = thumbUrl
+    const imgHtml = thumbUrl && !isLegacyAvatarUrl(thumbUrl)
       ? `<img src="${esc(thumbUrl)}" srcset="${densitySrcset(thumbUrl)}" alt="${esc(friend.display_name)}" width="60" height="60" loading="lazy">`
-      : `<div class="no-photo-thumb">${esc((friend?.display_name || '?').charAt(0))}</div>`;
+      : pixelAvatarImg(friend?.display_name || '?', friend?.username || friend?.display_name || '', 60, 'friend-pixel-avatar');
     return `<div class="friend-grid-item">
   <a href="/profile/${esc(friend?.username || '')}">${imgHtml}</a>
   <a href="/profile/${esc(friend?.username || '')}" class="friend-name">${esc(friend?.display_name || '?')}</a>
@@ -262,9 +385,9 @@ export function commentEntry({ authorUser, body, time, id, viewerUser, deleteAct
   const thumbUrl = authorUser?.profiles?.avatar_thumb_url
     ? absUrl(cdnBase, authorUser.profiles.avatar_thumb_url)
     : null;
-  const imgHtml = thumbUrl
+  const imgHtml = thumbUrl && !isLegacyAvatarUrl(thumbUrl)
     ? `<img src="${esc(thumbUrl)}" srcset="${densitySrcset(thumbUrl)}" alt="${esc(authorUser?.display_name || '')}" width="40" height="40" loading="lazy">`
-    : `<div class="no-photo-xs">${esc((authorUser?.display_name || '?').charAt(0))}</div>`;
+    : pixelAvatarImg(authorUser?.display_name || '?', authorUser?.username || authorUser?.display_name || '', 40, 'comment-pixel-avatar');
 
   const deleteHtml = canDelete
     ? `<form method="POST" action="${esc(deleteAction)}" class="inline-form">
@@ -367,13 +490,14 @@ export function photoThumb({ photo, cdnBase, eager = false }) {
 /* ============================================================
    PERSON ROW (people browse)
    ============================================================ */
-export function personRow({ user, profile, viewerUser, friendStatus, cdnBase, csrfToken = '' }) {
+export function personRow({ user, profile, viewerUser, friendStatus, cdnBase, csrfToken = '', displayLabel = '' }) {
   const thumbUrl = profile?.avatar_thumb_url
     ? absUrl(cdnBase, profile.avatar_thumb_url)
     : null;
-  const imgHtml = thumbUrl
+  const imgHtml = thumbUrl && !isLegacyAvatarUrl(thumbUrl)
     ? `<img class="person-thumb" src="${esc(thumbUrl)}" srcset="${densitySrcset(thumbUrl)}" alt="${esc(user.display_name)}" width="44" height="44" loading="lazy">`
-    : `<div class="person-thumb-placeholder">${esc((user.display_name || '?').charAt(0))}</div>`;
+    : pixelAvatarImg(user.display_name || '?', user.username || user.display_name || '', 44, 'person-pixel-avatar');
+  const label = displayLabel || user.display_name;
 
   const tags = (profile?.vibe_tags || []).slice(0, 3).map(t =>
     `<span class="vibe-tag">${esc(t)}</span>`
@@ -396,7 +520,7 @@ export function personRow({ user, profile, viewerUser, friendStatus, cdnBase, cs
   return `<div class="person-row">
   <a href="/profile/${esc(user.username)}">${imgHtml}</a>
   <div class="person-info">
-    <a href="/profile/${esc(user.username)}" class="person-name">${esc(user.display_name)}</a>
+    <a href="/profile/${esc(user.username)}" class="person-name">${esc(label)}</a>
     <div class="person-meta">${profile?.hometown ? esc(profile.hometown) + ' &mdash; ' : ''}Active ${relTime(user.last_active_at)}</div>
     <div class="vibe-tags" style="padding:2px 0">${tags}</div>
   </div>

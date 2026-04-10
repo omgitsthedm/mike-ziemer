@@ -289,7 +289,7 @@ photos.get('/photos/:id', async (c) => {
   <div class="ds-module-header blue">${ic.camera(12)} Photo</div>
   <div class="photo-view-img">
     ${mediumUrl
-      ? `<img src="${esc(mediumUrl)}" alt="${esc(photo.caption || `Photo uploaded by ${photo.users?.display_name || 'a passenger'}`)}">`
+      ? `<img src="${esc(mediumUrl)}" alt="${esc(photo.caption || `Photo uploaded by ${photo.users?.display_name || 'a passenger'}`)}" width="800" height="600">`
       : `<div class="ds-empty-state photo-view-unavailable">Image unavailable</div>`}
   </div>
   <div class="ds-module-body">

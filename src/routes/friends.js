@@ -14,7 +14,7 @@ import { Hono } from 'hono';
 import { getDb, getFriendRequests, getFriends, getSailing, createNotification, q } from '../lib/db.js';
 import { requireAuth } from '../lib/auth.js';
 import { layout, layoutCtx, esc, relTime, csrfField } from '../templates/layout.js';
-import { module, avatar, absUrl } from '../templates/components.js';
+import { module, avatar, absUrl, pixelAvatarImg, isLegacyAvatarUrl } from '../templates/components.js';
 
 const friends = new Hono();
 
@@ -44,9 +44,9 @@ friends.get('/friends', async (c) => {
     ? incoming.map(f => {
         const u = f.users;
         const thumbUrl = absUrl(cdnBase, u?.profiles?.avatar_thumb_url);
-        const img = thumbUrl
+        const img = thumbUrl && !isLegacyAvatarUrl(thumbUrl)
           ? `<img src="${esc(thumbUrl)}" width="40" height="40" alt="${esc(u?.display_name || 'Passenger')}" loading="lazy" style="border:1px solid #ccc">`
-          : `<span style="display:inline-block;width:40px;height:40px;background:#e8e8e8;border:1px solid #ccc;text-align:center;line-height:40px">${esc((u?.display_name || '?').charAt(0))}</span>`;
+          : pixelAvatarImg(u?.display_name || 'Passenger', u?.username || u?.display_name || '', 40, 'friends-pixel-avatar');
         return `<div class="person-row">
   <a href="/profile/${esc(u?.username || '')}">${img}</a>
   <div class="person-info">
@@ -89,9 +89,9 @@ friends.get('/friends', async (c) => {
     ? friendsList.map(f => {
         const u = (f.users || f.users_addressee);
         const thumbUrl = absUrl(cdnBase, u?.profiles?.avatar_thumb_url);
-        const img = thumbUrl
+        const img = thumbUrl && !isLegacyAvatarUrl(thumbUrl)
           ? `<img src="${esc(thumbUrl)}" width="40" height="40" alt="${esc(u?.display_name || 'Passenger')}" loading="lazy" style="border:1px solid #ccc">`
-          : `<span style="display:inline-block;width:40px;height:40px;background:#e8e8e8;border:1px solid #ccc;text-align:center;line-height:40px">${esc((u?.display_name || '?').charAt(0))}</span>`;
+          : pixelAvatarImg(u?.display_name || 'Passenger', u?.username || u?.display_name || '', 40, 'friends-pixel-avatar');
         return `<div class="person-row">
   <a href="/profile/${esc(u?.username || '')}">${img}</a>
   <div class="person-info">

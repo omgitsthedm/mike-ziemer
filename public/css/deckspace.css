@@ -355,6 +355,12 @@ ul {
   display: block;
   margin: 0 auto 4px;
 }
+.pixel-avatar {
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  background: #f6f2e7;
+}
 .profile-photo-block .no-photo {
   width: 160px;
   height: 160px;
@@ -560,6 +566,10 @@ ul {
   display: block;
   margin: 0 auto 2px;
 }
+.friend-grid-item .pixel-avatar {
+  border: 1px solid var(--ds-border);
+  margin: 0 auto 2px;
+}
 .friend-grid-item .no-photo-thumb {
   width: 60px;
   height: 60px;
@@ -614,6 +624,9 @@ ul {
   width: 40px;
   height: 40px;
   object-fit: cover;
+  border: 1px solid var(--ds-border);
+}
+.comment-avatar .pixel-avatar {
   border: 1px solid var(--ds-border);
 }
 .comment-avatar .no-photo-xs {
@@ -1203,6 +1216,10 @@ ul {
   color: #aaa;
   flex-shrink: 0;
 }
+.person-row .pixel-avatar {
+  flex-shrink: 0;
+  border: 1px solid var(--ds-border);
+}
 .person-info {
   flex: 1;
   min-width: 0;
@@ -1590,6 +1607,9 @@ a.ds-btn-orange:hover {
   font-size: 11px;
   color: #aaaaaa;
 }
+.home-member-item .pixel-avatar {
+  border: 1px solid var(--ds-border);
+}
 .home-member-name {
   font-size: 10px;
   display: block;
@@ -1865,6 +1885,9 @@ a.ds-btn-orange:hover {
   font-weight: bold;
   color: #999;
   text-align: center;
+}
+.landing-person-item .pixel-avatar {
+  border: 1px solid #cccccc;
 }
 .landing-person-name {
   font-size: 10px;
@@ -2519,6 +2542,11 @@ a.ds-btn-orange:hover {
   font-size: 11px;
   font-weight: bold;
   color: #666;
+}
+.online-faces .pixel-avatar {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #ccc;
 }
 .online-count {
   font-size: 10px;
