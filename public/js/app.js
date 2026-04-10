@@ -32,18 +32,42 @@
     var data = new FormData(form);
     var method = (form.method || 'POST').toUpperCase();
     var action = form.action || window.location.href;
+    var enctype = (form.enctype || '').toLowerCase();
+    var isMultipart = enctype === 'multipart/form-data';
+    var timeoutId = 0;
+    var controller = null;
+    var signal;
+
+    if (window.AbortSignal && typeof window.AbortSignal.timeout === 'function') {
+      signal = window.AbortSignal.timeout(12000);
+    } else if (window.AbortController) {
+      controller = new AbortController();
+      signal = controller.signal;
+      timeoutId = window.setTimeout(function () {
+        controller.abort();
+      }, 12000);
+    }
 
     // Mark as pending
     setFormPending(form, true);
     clearFormError(form);
 
-    fetch(action, {
+    var requestInit = {
       method: method,
-      body: method === 'POST' ? new URLSearchParams(data) : undefined,
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      signal: AbortSignal.timeout(12000)
-    })
+      body: method === 'POST'
+        ? (isMultipart ? data : new URLSearchParams(data))
+        : undefined
+    };
+    if (!isMultipart && method === 'POST') {
+      requestInit.headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+    }
+    if (signal) {
+      requestInit.signal = signal;
+    }
+
+    fetch(action, requestInit)
       .then(function (res) {
+        if (timeoutId) window.clearTimeout(timeoutId);
         if (res.redirected) {
           window.location.href = res.url;
           return;
@@ -74,6 +98,7 @@
         window.location.reload();
       })
       .catch(function (err) {
+        if (timeoutId) window.clearTimeout(timeoutId);
         setFormPending(form, false);
         var isNetworkErr = (err.name === 'TypeError' || err.name === 'AbortError');
         if (isNetworkErr && attempt < maxAttempts) {
@@ -143,7 +168,10 @@
 
       input.addEventListener('change', function () {
         var file = input.files[0];
-        if (!file) return;
+        if (!file) {
+          target.innerHTML = '';
+          return;
+        }
         if (!file.type.startsWith('image/')) {
           target.textContent = 'Not an image.';
           return;

@@ -13,7 +13,7 @@
 import { Hono } from 'hono';
 import { getDb, getRecentPhotos, getSailing, createNotification, q } from '../lib/db.js';
 import { requireAuth, resolveSession, isSailingReadOnly } from '../lib/auth.js';
-import { processPhotoUpload, cdnUrl } from '../lib/media.js';
+import { processPhotoUpload, cdnUrl, pickUploadedFile } from '../lib/media.js';
 import { layout, layoutCtx, esc, relTime, fmtDate, csrfField } from '../templates/layout.js';
 import { ic } from '../templates/icons.js';
 import { module, photoThumb, commentEntry, paginator } from '../templates/components.js';
@@ -113,7 +113,13 @@ photos.get('/photos/upload', requireAuth, async (c) => {
         ${csrfField(c.get('csrfToken') || '')}
         <div class="ds-form-row">
           <label for="ph-file">Photo *</label>
-          <input id="ph-file" name="photo" type="file" accept="image/*" required data-preview="ph-preview">
+          <input id="ph-file" name="photo" type="file" accept="image/*" data-preview="ph-preview">
+          <div class="hint">Choose one from your phone or computer.</div>
+        </div>
+        <div class="ds-form-row">
+          <label for="ph-camera">Take a new photo</label>
+          <input id="ph-camera" name="photo_camera" type="file" accept="image/*" capture="environment" data-preview="ph-preview">
+          <div class="hint">On iPhone this opens the camera so you can snap one on the spot.</div>
           <div id="ph-preview" style="margin-top:6px"></div>
         </div>
         <div class="ds-form-row">
@@ -168,7 +174,7 @@ photos.post('/photos/upload', requireAuth, async (c) => {
 
   try {
     const form     = c.get('parsedForm') || await c.req.formData();
-    const file     = form.get('photo');
+    const file     = pickUploadedFile(form, ['photo_camera', 'photo']);
     const caption  = (form.get('caption') || '').toString().trim().slice(0, 300);
     const eventId  = (form.get('event_id') || '').toString() || null;
 

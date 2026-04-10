@@ -166,3 +166,16 @@ export function avatarUrl(env, profile, size = 'thumb') {
   const key = size === 'thumb' ? profile?.avatar_thumb_url : profile?.avatar_url;
   return cdnUrl(env, key) || null;
 }
+
+/**
+ * Pick the first non-empty uploaded file from a form.
+ */
+export function pickUploadedFile(form, names = []) {
+  for (const name of names) {
+    const value = form.get(name);
+    if (value && typeof value === 'object' && typeof value.size === 'number' && value.size > 0) {
+      return value;
+    }
+  }
+  return null;
+}

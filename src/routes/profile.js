@@ -13,7 +13,7 @@
 import { Hono } from 'hono';
 import { getDb, getUserByUsername, getProfileByUserId, getProfilePage, getWallPosts, getSailing, createNotification, logAudit, q } from '../lib/db.js';
 import { requireAuth, resolveSession, isSailingReadOnly } from '../lib/auth.js';
-import { processPhotoUpload, cdnUrl } from '../lib/media.js';
+import { processPhotoUpload, cdnUrl, pickUploadedFile } from '../lib/media.js';
 import { layout, layoutCtx, esc, relTime, fmtDate, csrfField } from '../templates/layout.js';
 import { ic } from '../templates/icons.js';
 import {
@@ -97,7 +97,7 @@ profile.post('/profile/avatar', requireAuth, async (c) => {
 
   try {
     const form = c.get('parsedForm') || await c.req.formData();
-    const file = form.get('avatar');
+    const file = pickUploadedFile(form, ['avatar_camera', 'avatar']);
     const { storageKey, thumbKey } = await processPhotoUpload(c.env, bucket, {
       file, sailingId: c.env.SAILING_ID, userId: user.id, photoId
     });
@@ -392,8 +392,14 @@ function editProfileForm({ user, profile, siteKey, csrfToken = '' }) {
       <form method="POST" action="/profile/avatar" enctype="multipart/form-data" class="ds-form">
         ${csrfField(csrfToken)}
         <div class="ds-form-row">
-          <label for="avatar-file">Upload a new photo</label>
+          <label for="avatar-file">Choose a photo</label>
           <input id="avatar-file" name="avatar" type="file" accept="image/*" data-preview="avatar-preview">
+          <div class="hint">Pick one from your phone or computer.</div>
+        </div>
+        <div class="ds-form-row">
+          <label for="avatar-camera">Or take one right now</label>
+          <input id="avatar-camera" name="avatar_camera" type="file" accept="image/*" capture="user" data-preview="avatar-preview">
+          <div class="hint">On iPhone this opens the camera for a quick selfie.</div>
           <div id="avatar-preview" style="margin-top:6px"></div>
         </div>
         <div class="ds-form-row">
