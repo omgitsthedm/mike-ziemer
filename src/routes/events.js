@@ -608,7 +608,7 @@ function eventDetailPage({ event, comments, userRsvp, attendees, viewer, sailing
   const attendeeHtml = attendees.length
     ? attendees.map(a => {
         const thumbUrl = absUrl(cdnBase, a.users?.profiles?.avatar_thumb_url);
-        return `<a href="/profile/${esc(a.users?.username || '')}" title="${esc(a.users?.display_name || '')}">
+        return `<a href="/profile/${esc(a.users?.username || '')}" title="${esc(a.users?.display_name || '')}" aria-label="View ${esc(a.users?.display_name || 'this passenger')}'s profile">
           ${thumbUrl && !isLegacyAvatarUrl(thumbUrl)
             ? `<img src="${esc(thumbUrl)}" width="32" height="32" alt="${esc(a.users?.display_name || 'Passenger')}" loading="lazy" style="border:1px solid #ccc">`
             : pixelAvatarImg(a.users?.display_name || 'Passenger', a.users?.username || a.users?.display_name || '', 32, 'event-attendee-pixel-avatar')}

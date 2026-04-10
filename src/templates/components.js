@@ -317,7 +317,7 @@ export function friendSpaceModule({ topFriends, friendCount, cdnBase }) {
       ? `<img src="${esc(thumbUrl)}" srcset="${densitySrcset(thumbUrl)}" alt="${esc(friend.display_name)}" width="60" height="60" loading="lazy">`
       : pixelAvatarImg(friend?.display_name || '?', friend?.username || friend?.display_name || '', 60, 'friend-pixel-avatar');
     return `<div class="friend-grid-item">
-  <a href="/profile/${esc(friend?.username || '')}">${imgHtml}</a>
+  <a href="/profile/${esc(friend?.username || '')}" aria-label="View ${esc(friend?.display_name || 'this passenger')}'s profile">${imgHtml}</a>
   <a href="/profile/${esc(friend?.username || '')}" class="friend-name">${esc(friend?.display_name || '?')}</a>
 </div>`;
   }).join('');
@@ -402,7 +402,7 @@ export function commentEntry({ authorUser, body, time, id, viewerUser, deleteAct
 
   return `<div class="comment-entry">
   <div class="comment-avatar">
-    <a href="/profile/${esc(authorUser?.username || '')}">${imgHtml}</a>
+    <a href="/profile/${esc(authorUser?.username || '')}" aria-label="View ${esc(authorUser?.display_name || 'this passenger')}'s profile">${imgHtml}</a>
   </div>
   <div class="comment-body">
     <a href="/profile/${esc(authorUser?.username || '')}" class="comment-author">${esc(authorUser?.display_name || 'Unknown')}</a>
@@ -518,7 +518,7 @@ export function personRow({ user, profile, viewerUser, friendStatus, cdnBase, cs
   }
 
   return `<div class="person-row">
-  <a href="/profile/${esc(user.username)}">${imgHtml}</a>
+  <a href="/profile/${esc(user.username)}" aria-label="View ${esc(user.display_name || 'this passenger')}'s profile">${imgHtml}</a>
   <div class="person-info">
     <a href="/profile/${esc(user.username)}" class="person-name">${esc(label)}</a>
     <div class="person-meta">${profile?.hometown ? esc(profile.hometown) + ' &mdash; ' : ''}Active ${relTime(user.last_active_at)}</div>

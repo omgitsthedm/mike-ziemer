@@ -281,7 +281,7 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
           ? `<img src="${esc(thumbUrl)}" width="44" height="44" alt="${esc(p.display_name)}" loading="lazy">`
           : pixelAvatarImg(p.display_name || '?', p.username || p.display_name || '', 44, 'home-member-pixel-avatar');
         return `<div class="home-member-item">
-  <a href="/profile/${esc(p.username)}">${img}</a>
+  <a href="/profile/${esc(p.username)}" aria-label="View ${esc(p.display_name || 'this passenger')}'s profile">${img}</a>
   <a href="/profile/${esc(p.username)}" class="home-member-name">${esc(p.display_name)}</a>
 </div>`;
       }).join('')
@@ -315,7 +315,7 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
   const onlineHtml = onlineUsers.length
     ? `<div class="online-faces">${onlineUsers.map(u => {
         const thumb = absUrl(cdnBase, u.profiles?.avatar_thumb_url);
-        return `<a href="/profile/${esc(u.username)}" title="${esc(u.display_name)}">
+        return `<a href="/profile/${esc(u.username)}" title="${esc(u.display_name)}" aria-label="View ${esc(u.display_name || 'this passenger')}'s profile">
           ${thumb && !isLegacyAvatarUrl(thumb)
             ? `<img src="${esc(thumb)}" width="28" height="28" alt="${esc(u.display_name)}" loading="lazy">`
             : pixelAvatarImg(u.display_name || '?', u.username || u.display_name || '', 28, 'online-face-pixel-avatar')}
@@ -422,7 +422,7 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [],
           ? `<img src="${esc(thumbUrl)}" width="60" height="60" alt="${esc(label)}" loading="lazy">`
           : pixelAvatarImg(label || '?', p.username || label || '', 60, 'landing-person-pixel-avatar');
         return `<div class="landing-person-item">
-  <a href="/profile/${esc(p.username)}">${img}</a>
+  <a href="/profile/${esc(p.username)}" aria-label="View ${esc(label || 'this passenger')}'s profile">${img}</a>
   <a href="/profile/${esc(p.username)}" class="landing-person-name">${esc(label)}</a>
 </div>`;
       }).join('')

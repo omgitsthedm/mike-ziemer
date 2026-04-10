@@ -48,7 +48,7 @@ friends.get('/friends', async (c) => {
           ? `<img src="${esc(thumbUrl)}" width="40" height="40" alt="${esc(u?.display_name || 'Passenger')}" loading="lazy" style="border:1px solid #ccc">`
           : pixelAvatarImg(u?.display_name || 'Passenger', u?.username || u?.display_name || '', 40, 'friends-pixel-avatar');
         return `<div class="person-row">
-  <a href="/profile/${esc(u?.username || '')}">${img}</a>
+  <a href="/profile/${esc(u?.username || '')}" aria-label="View ${esc(u?.display_name || 'this passenger')}'s profile">${img}</a>
   <div class="person-info">
     <a href="/profile/${esc(u?.username || '')}" class="person-name">${esc(u?.display_name || 'Unknown')}</a>
     <div class="person-meta">Sent ${relTime(f.created_at)}</div>
@@ -93,7 +93,7 @@ friends.get('/friends', async (c) => {
           ? `<img src="${esc(thumbUrl)}" width="40" height="40" alt="${esc(u?.display_name || 'Passenger')}" loading="lazy" style="border:1px solid #ccc">`
           : pixelAvatarImg(u?.display_name || 'Passenger', u?.username || u?.display_name || '', 40, 'friends-pixel-avatar');
         return `<div class="person-row">
-  <a href="/profile/${esc(u?.username || '')}">${img}</a>
+  <a href="/profile/${esc(u?.username || '')}" aria-label="View ${esc(u?.display_name || 'this passenger')}'s profile">${img}</a>
   <div class="person-info">
     <a href="/profile/${esc(u?.username || '')}" class="person-name">${esc(u?.display_name || 'Unknown')}</a>
   </div>
