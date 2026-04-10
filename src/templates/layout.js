@@ -151,7 +151,7 @@ function renderNav(user, activeNav, notifCount, csrfToken = '') {
       ]
     : [{
         href: '/login',
-        label: 'Sign In',
+        label: 'Sign In to Deckspace',
         icon: ic.logIn(13),
         className: 'nav-mobile-only nav-mobile-signin',
       }];
@@ -179,7 +179,7 @@ function renderNav(user, activeNav, notifCount, csrfToken = '') {
         </form>
       </div>`
     : `<div id="ds-nav-right">
-        <a href="/login" class="nav-link-signin">Sign In</a>
+        <a href="/login" class="nav-link-signin">Sign In to Deckspace</a>
       </div>`;
 
   return `<nav id="ds-nav" role="navigation" aria-label="Main navigation">
@@ -276,6 +276,7 @@ function renderFooter() {
   <div class="ds-footer-inner">
     <div class="ds-footer-copy">Deckspace is just for this sailing. After the trip, the scrapbook sticks around a little longer, then the lights go out.</div>
     <div class="ds-footer-links">
+      <a href="/voyage">Voyage</a>
       <a href="/about">About</a>
       <a href="/contact">Contact</a>
       <a href="/privacy">Privacy</a>

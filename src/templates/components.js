@@ -147,7 +147,7 @@ function pixelAvatarDataUri(displayName = '', seedHint = '') {
 
 export function pixelAvatarImg(displayName, seedHint = '', size = 40, className = '') {
   const src = pixelAvatarDataUri(displayName, seedHint);
-  return `<img src="${src}" alt="${esc(displayName || 'Deckspace avatar')}" width="${size}" height="${size}" loading="${size >= 120 ? 'eager' : 'lazy'}" class="pixel-avatar${className ? ' ' + className : ''}">`;
+  return `<img src="${src}" alt="" aria-hidden="true" width="${size}" height="${size}" loading="${size >= 120 ? 'eager' : 'lazy'}" class="pixel-avatar${className ? ' ' + className : ''}">`;
 }
 
 export function module({ header, headerRight = '', body, headerStyle = '', id = '' }) {

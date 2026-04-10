@@ -69,8 +69,8 @@ ${module({
 })}`;
 
   return c.html(layoutCtx(c, {
-    title: 'Voyage Schedule',
-    description: `View the voyage schedule, ports, sea days, and daily itinerary for ${sailing?.name || 'this sailing'} on ${sailing?.ship_name || 'the ship'}.`,
+    title: 'Voyage Schedule and Port Planner',
+    description: `View the voyage schedule, ports, sea days, arrival times, and daily itinerary for ${sailing?.name || 'this sailing'} on ${sailing?.ship_name || 'the ship'}.`,
     user: viewer,
     sailing,
     activeNav: 'voyage',

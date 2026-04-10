@@ -99,7 +99,7 @@ site.get('/privacy', async (c) => {
   ].join('');
 
   return c.html(layoutCtx(c, {
-    title: 'Deckspace Privacy',
+    title: 'Deckspace Privacy and Archive Policy',
     description: 'Read how Deckspace handles public sailing activity, profile visibility, moderation, temporary data retention, and the short post-cruise archive period.',
     canonicalUrl: new URL('/privacy', c.req.url).toString(),
     user,
@@ -122,7 +122,7 @@ site.get('/sitemap.xml', async (c) => {
 
   const [usersRes, eventsRes, photosRes] = await Promise.all([
     db.from('users')
-      .select('username, updated_at, created_at')
+      .select('username, created_at')
       .eq('sailing_id', c.env.SAILING_ID)
       .limit(200),
     db.from('events')
@@ -151,7 +151,7 @@ site.get('/sitemap.xml', async (c) => {
     { loc: '/privacy', lastmod: now },
     ...((usersRes.data || []).map((user) => ({
       loc: `/profile/${user.username}`,
-      lastmod: user.updated_at || user.created_at || now,
+      lastmod: user.created_at || now,
     }))),
     ...((eventsRes.data || []).map((event) => ({
       loc: `/events/${event.id}`,
