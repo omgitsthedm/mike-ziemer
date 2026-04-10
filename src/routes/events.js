@@ -370,8 +370,76 @@ function fmtTime(dateStr) {
   return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 }
 
+function fmtShortDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+function eventCategoryLabel(cat) {
+  if (!cat) return 'Open Deck';
+  return cat.charAt(0).toUpperCase() + cat.slice(1);
+}
+
+function eventCategoryClass(cat) {
+  return `cat-${(cat || 'other').replace(/[^a-z0-9_-]/gi, '')}`;
+}
+
+function eventMomentLabel(dateStr) {
+  if (!dateStr) return 'all day spiral';
+  const hour = new Date(dateStr).getHours();
+  if (hour < 5) return 'after hours';
+  if (hour < 12) return 'morning deck';
+  if (hour < 17) return 'daytime drift';
+  if (hour < 21) return 'sunset crowd';
+  return 'late-night pull';
+}
+
+function eventWindowLabel(event) {
+  const start = fmtTime(event.start_at);
+  if (!event.end_at) return start;
+  return `${start} to ${fmtTime(event.end_at)}`;
+}
+
+function teaser(text = '', fallback = '') {
+  const source = (text || fallback || '').trim();
+  if (!source) return '';
+  return source.length > 180 ? `${source.slice(0, 177).trim()}...` : source;
+}
+
 function eventsSchedulePage({ viewer, sailing, days, activeCategory = '' }) {
   const shipName = sailing?.ship_name || 'the ship';
+  const allEvents = days.flatMap(([, evs]) => evs || []);
+  const now = new Date();
+  const totalEvents = allEvents.length;
+  const officialCount = allEvents.filter((ev) => ev.event_type === 'official').length;
+  const passengerCount = totalEvents - officialCount;
+  const lateNightCount = allEvents.filter((ev) => {
+    const hour = new Date(ev.start_at).getHours();
+    return hour >= 22 || hour < 2;
+  }).length;
+  const nextUp = allEvents.find((ev) => new Date(ev.start_at) >= now) || allEvents[0] || null;
+  const officialSpotlight = allEvents.find((ev) => ev.event_type === 'official' && new Date(ev.start_at) >= now)
+    || allEvents.find((ev) => ev.event_type === 'official')
+    || null;
+  const communitySpotlight = [...allEvents]
+    .filter((ev) => ev.event_type !== 'official')
+    .sort((a, b) => (b.rsvp_count || 0) - (a.rsvp_count || 0))[0]
+    || [...allEvents].sort((a, b) => (b.rsvp_count || 0) - (a.rsvp_count || 0))[0]
+    || null;
+  const busiestDay = days.reduce((best, current) => {
+    if (!best || current[1].length > best[1].length) return current;
+    return best;
+  }, null);
+  const dayJumps = days.map(([date, evs], idx) => {
+    const dayInfo = DAY_HEADERS[idx] || { label: `Day ${idx + 1}`, sub: 'Still very much happening.' };
+    return {
+      anchor: `day-${date}`,
+      label: dayInfo.label,
+      sub: fmtShortDate(date),
+      count: evs.length,
+    };
+  });
 
   // ---- LEFT RAIL ----
   const top8Items = [
@@ -385,7 +453,7 @@ function eventsSchedulePage({ viewer, sailing, days, activeCategory = '' }) {
     { title: 'The Deck at 3:17 AM',                    id: 'ac0dc68f-99ec-4015-8fc2-12f1d81b17a7' },
   ];
 
-  const leftRail = `<div class="ss-rail">
+  const leftRail = `<aside class="ss-rail">
   <div class="ss-rail-badge">
     <div class="ss-badge-title">Shattered Shores</div>
     <div class="ss-badge-sub">Cruise Events</div>
@@ -393,16 +461,25 @@ function eventsSchedulePage({ viewer, sailing, days, activeCategory = '' }) {
   </div>
 
   <div class="ds-module ss-rail-module">
-    <div class="ds-module-header">${ic.anchor(12)} Now Boarding</div>
-    <div class="ds-module-body ss-nowboarding">
-      <table class="ss-info-table" aria-label="Cruise snapshot">
-        <caption class="sr-only">Shattered Shores cruise snapshot</caption>
-        <tr><th scope="row" class="ss-info-key">Theme:</th><td>Emo / Rock / Scene</td></tr>
-        <tr><th scope="row" class="ss-info-key">Produced By:</th><td>Whet Travel</td></tr>
-        <tr><th scope="row" class="ss-info-key">Status:</th><td class="ss-status-val">emotionally unstable</td></tr>
-        <tr><th scope="row" class="ss-info-key">Dress Code:</th><td>black, white, striped, dramatic</td></tr>
-        <tr><th scope="row" class="ss-info-key">Vibe Level:</th><td>late-night top-deck honesty</td></tr>
-      </table>
+    <div class="ds-module-header">${ic.anchor(12)} Quick Plot</div>
+    <div class="ds-module-body">
+      <div class="ss-quick-plot">
+        <div class="ss-plot-row"><span>Events live</span><strong>${totalEvents}</strong></div>
+        <div class="ss-plot-row"><span>Official sets</span><strong>${officialCount}</strong></div>
+        <div class="ss-plot-row"><span>Passenger plans</span><strong>${passengerCount}</strong></div>
+        <div class="ss-plot-row"><span>Late-night pulls</span><strong>${lateNightCount}</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ds-module ss-rail-module">
+    <div class="ds-module-header">${ic.calendar(12)} Jump to a Day</div>
+    <div class="ds-module-body">
+      ${dayJumps.length
+        ? `<ul class="ss-day-jump-list">
+            ${dayJumps.map((jump) => `<li><a href="#${jump.anchor}">${esc(jump.label)}</a><span>${esc(jump.sub)}</span><strong>${jump.count}</strong></li>`).join('')}
+          </ul>`
+        : `<div class="ss-small-copy">No schedule posted yet.</div>`}
     </div>
   </div>
 
@@ -418,21 +495,18 @@ function eventsSchedulePage({ viewer, sailing, days, activeCategory = '' }) {
   <div class="ds-module ss-rail-module">
     <div class="ds-module-header">${ic.flag(12)} Cruise Bulletin</div>
     <div class="ds-module-body ss-bulletin">
-      Whoever keeps leaving fully devastating voice messages in Missed Call Confessional needs to either be stopped or given a headlining slot.
+      This board is where official programming, spontaneous plans, and "meet us in fifteen" energy all land. Check times, locations, and RSVP counts before you commit your emotional evening.
     </div>
   </div>
 
   <div class="ds-module ss-rail-module">
-    <div class="ds-module-header">${ic.users(12)} Who&rsquo;s Here</div>
+    <div class="ds-module-header">${ic.users(12)} Right Now</div>
     <div class="ds-module-body">
-      <table class="ss-online-table" aria-label="Who is here right now">
-        <caption class="sr-only">Live passenger mood counts</caption>
-        <tr><th scope="row" class="ss-online-num">148</th><td>guests online now</td></tr>
-        <tr><th scope="row" class="ss-online-num">23</th><td>currently overthinking</td></tr>
-        <tr><th scope="row" class="ss-online-num">11</th><td>reorganizing their Top 8</td></tr>
-        <tr><th scope="row" class="ss-online-num">6</th><td>pretending they &ldquo;don&rsquo;t really dance&rdquo;</td></tr>
-        <tr><th scope="row" class="ss-online-num">1</th><td>definitely in a stairwell crying in a cool way</td></tr>
-      </table>
+      <div class="ss-right-now">
+        <div><strong>${nextUp ? esc(fmtTime(nextUp.start_at)) : 'TBD'}</strong><span>next thing to leave the cabin for</span></div>
+        <div><strong>${communitySpotlight ? `${communitySpotlight.rsvp_count || 0} going` : 'Quiet'}</strong><span>community heat on the board</span></div>
+        <div><strong>${busiestDay ? busiestDay[1].length : 0} events</strong><span>${busiestDay ? `${fmtShortDate(busiestDay[0])} is the busiest stretch` : 'schedule still loading'}</span></div>
+      </div>
     </div>
   </div>
 
@@ -452,22 +526,20 @@ function eventsSchedulePage({ viewer, sailing, days, activeCategory = '' }) {
   </div>
 
   ${viewer ? `<div class="ss-create-link"><a href="/events/create">+ Create Event</a></div>` : ''}
-</div>`;
+</aside>`;
 
   // ---- MAIN CONTENT ----
 
-  // Status bar
   const statusBar = `<div class="ss-status-bar">
   <span class="ss-status-item"><strong>Mood:</strong> cautiously devastated</span>
   <span class="ss-status-sep">|</span>
-  <span class="ss-status-item"><strong>Listening To:</strong> ocean sounds + a song that still has too much power over you</span>
+  <span class="ss-status-item"><strong>Tonight's Read:</strong> official schedule meets passenger-instigated plot</span>
   <span class="ss-status-sep">|</span>
-  <span class="ss-status-item"><strong>Status:</strong> on board / emotionally buffering</span>
+  <span class="ss-status-item"><strong>Use It For:</strong> quick scans, RSVP counts, and meeting people before the thing starts</span>
   <span class="ss-status-sep">|</span>
-  <span class="ss-status-item"><strong>Last Updated:</strong> 2:13 AM</span>
+  <span class="ss-status-item"><strong>Last Updated:</strong> live from Deckspace</span>
 </div>`;
 
-  // Category pill filter nav
   const catPills = `<div class="event-cat-pills">
     <a href="/events" class="event-cat-pill${!activeCategory ? ' active' : ''}">All</a>
     ${EVENT_CATEGORIES.map(cat =>
@@ -475,103 +547,127 @@ function eventsSchedulePage({ viewer, sailing, days, activeCategory = '' }) {
     ).join('')}
   </div>`;
 
-  // Intro blurb
-  const intro = `<div class="ss-intro">
-  Welcome aboard <strong>Shattered Shores Cruise</strong>. This is your official-ish guide to what&rsquo;s happening on ${esc(shipName)}.
-  Some events are planned. Some just happen. Some should maybe not happen, but here we are.
-  Check back often, reshuffle your emotional priorities accordingly, and remember:
-  missing an event may haunt you longer than attending it.
-</div>
-${catPills}`;
+  const hero = `<section class="ss-banner ss-banner-modern">
+  <div class="ss-banner-copy">
+    <div class="ss-banner-kicker">${ic.shipWheel(13)} Deckspace Events Board</div>
+    <div class="ss-banner-title">Your shipboard calendar with a side of social damage.</div>
+    <div class="ss-banner-sub">Browse official programming, passenger-made plans, RSVP momentum, and the exact location of whatever everyone suddenly cares about tonight.</div>
+  </div>
+  <div class="ss-banner-meta">
+    <div class="ss-banner-stat"><strong>${totalEvents}</strong><span>events on deck</span></div>
+    <div class="ss-banner-stat"><strong>${officialCount}</strong><span>official ship picks</span></div>
+    <div class="ss-banner-stat"><strong>${passengerCount}</strong><span>guest-made plans</span></div>
+    <div class="ss-banner-stat"><strong>${lateNightCount}</strong><span>after-hours options</span></div>
+  </div>
+</section>`;
 
-  // Day schedule modules
+  const highlightCards = `<section class="ss-highlight-grid">
+  <article class="ss-highlight-card">
+    <div class="ss-highlight-label">${ic.calendar(12)} Next Up</div>
+    ${nextUp
+      ? `<a href="/events/${esc(nextUp.id)}" class="ss-highlight-title">${esc(nextUp.title)}</a>
+         <div class="ss-highlight-meta">${fmtShortDate(nextUp.start_at)} at ${fmtTime(nextUp.start_at)}${nextUp.location ? ` &middot; ${esc(nextUp.location)}` : ''}</div>
+         <p>${esc(teaser(nextUp.description, 'This one is next on the board, so if you are choosing one plan fast, start here.'))}</p>`
+      : `<div class="ss-highlight-empty">The board is quiet right now. That seems unlikely to last.</div>`}
+  </article>
+  <article class="ss-highlight-card">
+    <div class="ss-highlight-label">${ic.ship(12)} Official Spotlight</div>
+    ${officialSpotlight
+      ? `<a href="/events/${esc(officialSpotlight.id)}" class="ss-highlight-title">${esc(officialSpotlight.title)}</a>
+         <div class="ss-highlight-meta">${fmtShortDate(officialSpotlight.start_at)} at ${fmtTime(officialSpotlight.start_at)}${officialSpotlight.location ? ` &middot; ${esc(officialSpotlight.location)}` : ''}</div>
+         <p>${esc(teaser(officialSpotlight.description, 'Ship-run programming, tighter timing, and the cleanest answer to "what is actually happening?"'))}</p>`
+      : `<div class="ss-highlight-empty">No official programming is posted in this slice yet.</div>`}
+  </article>
+  <article class="ss-highlight-card">
+    <div class="ss-highlight-label">${ic.users(12)} Community Pull</div>
+    ${communitySpotlight
+      ? `<a href="/events/${esc(communitySpotlight.id)}" class="ss-highlight-title">${esc(communitySpotlight.title)}</a>
+         <div class="ss-highlight-meta">${communitySpotlight.rsvp_count || 0} going${communitySpotlight.location ? ` &middot; ${esc(communitySpotlight.location)}` : ''}</div>
+         <p>${esc(teaser(communitySpotlight.description, 'This is the passenger-made plan with the strongest gravity on the board right now.'))}</p>`
+      : `<div class="ss-highlight-empty">Passenger-made plans have not picked up a swarm yet.</div>`}
+  </article>
+</section>`;
+
+  const intro = `<div class="ss-intro">
+  <p><strong>Deckspace Events</strong> is built to be scanned fast. Official programming stays in the mix with guest-made plans, so you can decide what is worth showing up for without bouncing between ship paper, hearsay, and five different wall posts.</p>
+  <p>Use the filters to narrow the mood, jump to a day when you already know the stretch you care about, and watch RSVP counts if you want to find where the crowd is drifting.</p>
+</div>
+${catPills}
+${dayJumps.length ? `<div class="ss-day-jumps-inline">${dayJumps.map((jump) => `<a href="#${jump.anchor}" class="ss-day-jump-pill">${esc(jump.label)} <span>${jump.count}</span></a>`).join('')}</div>` : ''}`;
+
   const dayModules = days.map(([date, evs], idx) => {
-    const dayInfo = DAY_HEADERS[idx] || { label: `Day ${idx + 1}`, sub: '' };
-    const rows = evs.map(ev => {
+    const dayInfo = DAY_HEADERS[idx] || { label: `Day ${idx + 1}`, sub: 'Still very much happening.' };
+    const officialDayCount = evs.filter((ev) => ev.event_type === 'official').length;
+    const guestDayCount = evs.length - officialDayCount;
+    const rows = evs.map((ev) => {
       const icon = CAT_ICONS[ev.category] || CAT_ICONS.other;
-      const time = fmtTime(ev.start_at);
-      return `<tr class="ss-row">
-  <td class="ss-time">${time}</td>
-  <td class="ss-icon">${icon()}</td>
-  <td class="ss-evtitle"><a href="/events/${esc(ev.id)}">${esc(ev.title)}</a></td>
-  <td class="ss-loc">${esc(ev.location || '')}</td>
-  <td class="ss-rsvp">${ev.rsvp_count > 0 ? `${ev.rsvp_count} going` : ''}</td>
-</tr>`;
+      const tone = ev.event_type === 'official' ? 'official' : 'guest';
+      const desc = teaser(ev.description, ev.event_type === 'official'
+        ? 'Official ship programming with a cleaner clock and a clearer plan.'
+        : 'Passenger-made plan. Public, social, and open to whoever decides to show.');
+      return `<article class="ss-event-card ss-event-card-${tone} ${eventCategoryClass(ev.category)}">
+  <div class="ss-event-time-block">
+    <span class="ss-event-time-main">${fmtTime(ev.start_at)}</span>
+    <span class="ss-event-time-sub">${esc(eventMomentLabel(ev.start_at))}</span>
+  </div>
+  <div class="ss-event-icon-block">${icon()}</div>
+  <div class="ss-event-copy">
+    <div class="ss-event-chip-row">
+      <span class="ss-event-chip ss-event-chip-${tone}">${ev.event_type === 'official' ? 'Official' : 'Passenger Plan'}</span>
+      <span class="ss-event-chip ss-event-chip-category">${esc(eventCategoryLabel(ev.category))}</span>
+      <span class="ss-event-chip ss-event-chip-rsvp">${ev.rsvp_count || 0} going</span>
+    </div>
+    <h2 class="ss-event-title"><a href="/events/${esc(ev.id)}">${esc(ev.title)}</a></h2>
+    <p class="ss-event-description">${esc(desc)}</p>
+    <div class="ss-event-meta-row">
+      <span>${ic.mapPin(11)} ${esc(ev.location || 'Location coming soon')}</span>
+      <span>${ic.clock(11)} ${esc(eventWindowLabel(ev))}</span>
+      <span>${ev.event_type === 'official' ? `${ic.ship(11)} Ship-run` : `${ic.users(11)} Guest-led`}</span>
+    </div>
+  </div>
+  <div class="ss-event-action">
+    <a href="/events/${esc(ev.id)}" class="ss-event-link">Open event</a>
+  </div>
+</article>`;
     }).join('');
 
-    return `<div class="ds-module ss-day-module">
+    return `<section class="ds-module ss-day-module" id="day-${date}">
   <div class="ds-module-header ss-day-header">
-    <span class="ss-day-label">${dayInfo.label}</span>
-    <span class="ss-day-sub">&mdash; ${dayInfo.sub}</span>
+    <div class="ss-day-heading">
+      <span class="ss-day-label">${dayInfo.label}</span>
+      <span class="ss-day-date">${esc(fmtShortDate(date))}</span>
+      <span class="ss-day-sub">${dayInfo.sub}</span>
+    </div>
+    <div class="ss-day-summary">
+      <span>${evs.length} total</span>
+      <span>${officialDayCount} official</span>
+      <span>${guestDayCount} guest</span>
+    </div>
   </div>
-  <div class="ds-module-body" style="padding:0">
-    <table class="ss-schedule" aria-label="${esc(dayInfo.label)} event schedule">
-      <thead><tr>
-        <th class="ss-th-time">Time</th>
-        <th class="ss-th-icon"></th>
-        <th class="ss-th-title">Event</th>
-        <th class="ss-th-loc">Location</th>
-        <th class="ss-th-rsvp">RSVPs</th>
-      </tr></thead>
-      <tbody>${rows}</tbody>
-    </table>
+  <div class="ds-module-body ss-day-body">
+    ${rows}
   </div>
-</div>`;
+</section>`;
   }).join('');
 
-  // No events fallback
   const noEventsMsg = days.length === 0
-    ? `<div class="ds-empty-state">No events scheduled yet. ${viewer ? '<a href="/events/create">Create the first one.</a>' : 'Check back soon.'}</div>`
+    ? `<div class="ds-empty-state ss-events-empty">No events are posted yet. ${viewer ? '<a href="/events/create">Create the first one.</a>' : 'Check back soon once the board fills in.'}</div>`
     : '';
 
-  // Random Incidents
-  const incidents = [
-    'Found on Deck: one single black Converse, owner unknown.',
-    'Flash Poll: best black eyeliner survival technique in ocean humidity.',
-    'Emergency Bulletin: someone changed their Top 8 and the ship is still recovering.',
-    'Tiny Set Alert: stairwell performance in 10 minutes. act casual.',
-    'Weather Report: emotionally overcast with isolated breakthroughs.',
-    'Photo Drop: new blurry photos added at the Crisis Center.',
-  ];
-  const incidentsModule = `<div class="ds-module">
-  <div class="ds-module-header">${ic.alertTri(12)} Random Incidents</div>
-  <div class="ds-module-body">
-    <ul class="ss-incidents">
-      ${incidents.map(i => `<li>${i}</li>`).join('')}
-    </ul>
-  </div>
-</div>`;
-
-  // Fake comments
-  const fakeComments = [
-    { user: 'xX_bleedingxheart_Xx', body: 'whoever scheduled stay in your cabin &amp; spiral is sick for that' },
-    { user: 'sidepartsurvivor',      body: 'battle of the side parts changed my life and my center of gravity' },
-    { user: 'portsideghost',         body: 'missed call confessional should legally count as therapy' },
-    { user: 'lowercaseforever',       body: 'i came here for the music and left with 4 new mutuals and one unresolved situation' },
-    { user: 'cringe_archivist',      body: 'the lyric notebook exhibition ruined me in the most healing possible way' },
-  ];
-  const commentsModule = `<div class="ds-module">
-  <div class="ds-module-header">${ic.msgSquare(12)} Comments</div>
-  <div class="ds-module-body" style="padding:0">
-    ${fakeComments.map(fc => `<div class="ss-fake-comment">
-  <span class="ss-fc-user">${fc.user}</span>:
-  <span class="ss-fc-body">&ldquo;${fc.body}&rdquo;</span>
-</div>`).join('')}
-  </div>
-</div>`;
-
-  const mainContent = `<div class="ss-main">
-  <div class="ss-banner">
-    <div class="ss-banner-title">Shattered Shores Cruise &mdash; Events</div>
-    <div class="ss-banner-sub">4 days at sea, 37 emotional incidents, 1 smaller ship, no escape.</div>
-  </div>
+  const mainContent = `<section class="ss-main">
+  ${hero}
   ${statusBar}
+  ${highlightCards}
   ${intro}
   ${noEventsMsg}
   ${dayModules}
-  ${incidentsModule}
-  ${commentsModule}
-</div>`;
+  ${days.length ? `<div class="ds-module ss-wrapup-module">
+    <div class="ds-module-header">${ic.anchor(12)} Why this page works</div>
+    <div class="ds-module-body ss-wrapup-copy">
+      Official programming stays in the same flow as guest-made plans, so the page feels like a living shipboard board instead of a separate "social" page and "real schedule" page fighting each other.
+    </div>
+  </div>` : ''}
+</section>`;
 
   return `<div class="ss-wrap">${leftRail}${mainContent}</div>`;
 }
@@ -582,26 +678,28 @@ ${catPills}`;
 function eventDetailPage({ event, comments, userRsvp, attendees, viewer, sailing, readOnly, isCreator, page, hasMore, cdnBase, csrfToken }) {
   const creator = event.users;
   const coverImg = event.cover_image_url
-    ? `<img src="${esc(absUrl(cdnBase, event.cover_image_url))}" alt="Cover image for ${esc(event.title)}" width="600" height="300" style="max-width:100%;max-height:200px;object-fit:cover;display:block;margin-bottom:8px">`
-    : '';
+    ? `<img src="${esc(absUrl(cdnBase, event.cover_image_url))}" alt="Cover image for ${esc(event.title)}" width="720" height="360" class="event-detail-cover-image">`
+    : `<div class="event-detail-cover-fallback ${eventCategoryClass(event.category)}">${(CAT_ICONS[event.category] || CAT_ICONS.other)(34)}</div>`;
 
   // RSVP state
   let rsvpHtml = '';
   if (viewer && !readOnly) {
     const going = userRsvp?.status === 'going';
     const interested = userRsvp?.status === 'interested';
-    rsvpHtml = `<form method="POST" action="/events/${esc(event.id)}/rsvp" style="display:inline-flex;gap:4px;align-items:center">
+    rsvpHtml = `<div class="event-action-row">
+    <form method="POST" action="/events/${esc(event.id)}/rsvp" class="event-inline-form">
       ${csrfField(csrfToken)}
       <input type="hidden" name="status" value="${going ? 'not_going' : 'going'}">
       <button type="submit" class="rsvp-btn${going ? ' going' : ''}">
         ${going ? `${ic.check(12)} Going` : '+ RSVP Going'}
       </button>
     </form>
-    ${!going ? `<form method="POST" action="/events/${esc(event.id)}/rsvp" style="display:inline;margin-left:4px">
+    ${!going ? `<form method="POST" action="/events/${esc(event.id)}/rsvp" class="event-inline-form">
       ${csrfField(csrfToken)}
       <input type="hidden" name="status" value="${interested ? 'not_going' : 'interested'}">
       <button type="submit" class="ds-btn ds-btn-sm">${interested ? `${ic.check(12)} Interested` : 'Interested'}</button>
     </form>` : ''}`;
+    rsvpHtml += `</div>`;
   }
 
   // Attendees
@@ -644,25 +742,47 @@ function eventDetailPage({ event, comments, userRsvp, attendees, viewer, sailing
     : '';
 
   const editLink = isCreator ? `<a href="/events/${esc(event.id)}/edit" class="ds-btn ds-btn-sm">Edit Event</a>` : '';
+  const hostName = creator?.display_name || 'Unknown';
+  const hostLink = creator?.username ? `<a href="/profile/${esc(creator.username)}">${esc(hostName)}</a>` : esc(hostName);
+  const factList = `<ul class="event-facts-list">
+    <li><span>When</span><strong>${esc(fmtDate(event.start_at, { time: true }))}${event.end_at ? ` to ${esc(fmtTime(event.end_at))}` : ''}</strong></li>
+    <li><span>Where</span><strong>${esc(event.location || 'Location will show up soon')}</strong></li>
+    <li><span>Host</span><strong>${hostLink}</strong></li>
+    <li><span>Type</span><strong>${esc(event.event_type === 'official' ? 'Official programming' : 'Passenger-made plan')}</strong></li>
+  </ul>`;
 
-  return `<div class="event-detail-header ds-module">
-  <div class="ds-module-header blue">${ic.calendar(12)} ${esc(event.event_type === 'official' ? 'Official Event' : 'Event')}</div>
-  <div class="ds-module-body">
-    ${coverImg}
-    <div class="event-detail-title">${esc(event.title)}</div>
-    <div class="event-detail-meta">
-      ${fmtDate(event.start_at, { time: true })}${event.end_at ? ` &mdash; ${fmtDate(event.end_at, { time: true })}` : ''}
-      ${event.location ? `<br><strong>Location:</strong> ${esc(event.location)}` : ''}
-      <br><strong>Host:</strong> <a href="/profile/${esc(creator?.username || '')}">${esc(creator?.display_name || 'Unknown')}</a>
-      ${event.category ? `<br><strong>Type:</strong> ${esc(event.category)}` : ''}
+  return `<div class="event-detail-shell">
+  <section class="event-detail-header ds-module">
+    <div class="ds-module-header blue">${ic.calendar(12)} ${esc(event.event_type === 'official' ? 'Official Event' : 'Open Event')}</div>
+    <div class="ds-module-body event-detail-body">
+      <div class="event-detail-cover">${coverImg}</div>
+      <div class="event-detail-content">
+        <div class="event-detail-chip-row">
+          <span class="ss-event-chip ss-event-chip-${event.event_type === 'official' ? 'official' : 'guest'}">${event.event_type === 'official' ? 'Official Programming' : 'Passenger Plan'}</span>
+          <span class="ss-event-chip ss-event-chip-category">${esc(eventCategoryLabel(event.category))}</span>
+          <span class="ss-event-chip ss-event-chip-rsvp">${event.rsvp_count} going</span>
+        </div>
+        <div class="event-detail-title">${esc(event.title)}</div>
+        <div class="event-detail-meta-grid">
+          <div class="event-detail-meta-card"><span>${ic.clock(12)} Time</span><strong>${esc(eventWindowLabel(event))}</strong></div>
+          <div class="event-detail-meta-card"><span>${ic.mapPin(12)} Location</span><strong>${esc(event.location || 'Location coming soon')}</strong></div>
+          <div class="event-detail-meta-card"><span>${ic.user(12)} Host</span><strong>${hostLink}</strong></div>
+          <div class="event-detail-meta-card"><span>${ic.info(12)} Mood</span><strong>${esc(eventMomentLabel(event.start_at))}</strong></div>
+        </div>
+        <div class="event-rsvp-count">${event.rsvp_count} going public on Deckspace</div>
+        <div class="event-rsvp-actions">${rsvpHtml} ${editLink}</div>
+        ${event.description
+          ? `<div class="event-description">${esc(event.description)}</div>`
+          : `<div class="event-description event-description-empty">No host note yet. Check the time, location, and RSVP pull, then decide if it is your scene.</div>`}
+      </div>
     </div>
-    <div class="event-rsvp-count">${event.rsvp_count} going</div>
-    <div class="event-rsvp-actions">${rsvpHtml} ${editLink}</div>
-    ${event.description ? `<div class="event-description">${esc(event.description)}</div>` : ''}
-  </div>
-</div>
+  </section>
 
-${module({ header: `${ic.users(12)} Who's Going`, body: `<div style="padding:6px">${attendeeHtml}</div>` })}
+  <aside class="event-detail-side">
+    ${module({ header: `${ic.users(12)} Who's Going`, body: `<div class="event-attendee-wrap">${attendeeHtml}</div>` })}
+    ${module({ header: `${ic.info(12)} Quick Facts`, body: factList })}
+  </aside>
+</div>
 
 ${module({
   header: `${ic.msgSquare(12)} Comments`,
