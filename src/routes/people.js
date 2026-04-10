@@ -56,7 +56,8 @@ people.get('/people', async (c) => {
     profile: u.profiles,
     viewerUser: viewer,
     friendStatus: friendStatuses[u.id] || null,
-    cdnBase
+    cdnBase,
+    csrfToken: c.get('csrfToken') || ''
   })).join('');
 
   const vibePills = `<div class="vibe-filter-strip">
@@ -92,8 +93,17 @@ people.get('/people', async (c) => {
     body: `<div class="people-list">${listHtml}</div>${pager}`
   })}`;
 
+  const pageTitle = vibeTag
+    ? `People by Vibe: ${vibeTag}`
+    : search
+    ? `People Search: ${search}`
+    : 'People on This Sailing';
+
   return c.html(layoutCtx(c, {
-    title: 'People',
+    title: pageTitle,
+    description: search || vibeTag
+      ? `Browse Deckspace passengers for this sailing${search ? ` matching ${search}` : ''}${vibeTag ? ` with the vibe ${vibeTag}` : ''}.`
+      : 'Browse Deckspace passengers on this sailing, discover shared vibes, and connect through public profiles.',
     user: viewer,
     sailing,
     activeNav: 'people',

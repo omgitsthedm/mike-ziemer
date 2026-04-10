@@ -19,6 +19,12 @@ import { ic } from './icons.js';
  * @param {string}  [opts.flash]       — flash message HTML
  * @param {boolean} [opts.readOnly]    — post-cruise archive mode
  * @param {string}  [opts.themeClass]  — profile theme CSS class
+ * @param {string}  [opts.description] — meta description
+ * @param {string}  [opts.canonicalUrl] — canonical absolute URL
+ * @param {string}  [opts.ogImageUrl]  — Open Graph image absolute URL
+ * @param {string}  [opts.currentUrl]  — current absolute request URL
+ * @param {string}  [opts.pageHeading] — page H1 text
+ * @param {boolean} [opts.showPageHeading] — whether to render layout H1
  */
 export function layout({
   title,
@@ -31,10 +37,23 @@ export function layout({
   readOnly = false,
   themeClass = '',
   csrfToken = '',
+  description = '',
+  canonicalUrl = '',
+  ogImageUrl = '',
+  currentUrl = '',
+  pageHeading = '',
+  showPageHeading = true,
 }) {
-  const pageTitle = title ? `${title} | Deckspace` : 'Deckspace';
+  const pageTitle = title
+    ? (/\bDeckspace\b/i.test(title) ? title : `${title} | Deckspace`)
+    : 'Deckspace';
   const themeId = user?.profiles?.theme_id || 'classic';
   const bodyClass = ['theme-' + themeId, themeClass].filter(Boolean).join(' ');
+  const origin = currentUrl ? new URL(currentUrl).origin : '';
+  const canonicalHref = canonicalUrl || currentUrl || '';
+  const socialImage = ogImageUrl || (origin ? `${origin}/images/deckspace-social.svg` : '/images/deckspace-social.svg');
+  const metaDescription = description || defaultMetaDescription(title, sailing);
+  const heading = pageHeading || title || 'Deckspace';
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -42,21 +61,38 @@ export function layout({
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#003399">
+  <meta name="description" content="${esc(metaDescription)}">
   ${csrfToken ? `<meta name="csrf-token" content="${esc(csrfToken)}">` : ''}
   <title>${esc(pageTitle)}</title>
+  ${canonicalHref ? `<link rel="canonical" href="${esc(canonicalHref)}">` : ''}
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Deckspace">
+  <meta property="og:title" content="${esc(pageTitle)}">
+  <meta property="og:description" content="${esc(metaDescription)}">
+  ${canonicalHref ? `<meta property="og:url" content="${esc(canonicalHref)}">` : ''}
+  <meta property="og:image" content="${esc(socialImage)}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="${esc(pageTitle)}">
+  <meta name="twitter:description" content="${esc(metaDescription)}">
+  <meta name="twitter:image" content="${esc(socialImage)}">
   <link rel="stylesheet" href="/css/deckspace.css">
   <link rel="icon" href="/favicon.ico" sizes="any">
 </head>
 <body class="${bodyClass}">
 
-${renderNav(user, activeNav, notifCount)}
+<a href="#main-content" class="skip-link">Skip to main content</a>
+${renderNav(user, activeNav, notifCount, csrfToken)}
 ${sailing ? renderSailingBar(sailing, readOnly) : ''}
 
+<main id="main-content" class="ds-main" tabindex="-1">
 <div id="ds-page">
+  ${showPageHeading ? `<h1 class="sr-only">${esc(heading)}</h1>` : ''}
   ${flash ? flash : ''}
   ${readOnly ? renderArchiveBanner(sailing) : ''}
   ${body}
 </div>
+</main>
+${renderFooter()}
 
 <script src="/js/app.js" defer></script>
 </body>
@@ -66,7 +102,7 @@ ${sailing ? renderSailingBar(sailing, readOnly) : ''}
 /* ============================================================
    TOP NAVIGATION
    ============================================================ */
-function renderNav(user, activeNav, notifCount) {
+function renderNav(user, activeNav, notifCount, csrfToken = '') {
   const NAV_ICONS = { home: ic.home, people: ic.users, events: ic.calendar, photos: ic.camera, voyage: ic.ship };
   const navLinks = user
     ? [
@@ -83,6 +119,52 @@ function renderNav(user, activeNav, notifCount) {
     return `<a href="${n.href}" class="${activeNav === n.key ? 'active' : ''}">${iconFn ? iconFn(13) : ''}${n.label}</a>`;
   }).join('');
 
+  const mobileLinks = user
+    ? [
+        {
+          href: '/notifications',
+          label: notifCount > 0 ? `${notifCount} Alerts` : 'Alerts',
+          icon: ic.bell(13),
+          className: notifCount > 0 ? 'nav-mobile-only nav-mobile-highlight' : 'nav-mobile-only',
+        },
+        {
+          href: `/profile/${esc(user.username)}`,
+          label: 'Profile',
+          icon: ic.user(13),
+          className: 'nav-mobile-only',
+        },
+        ...(user.role === 'admin' || user.role === 'moderator'
+          ? [{
+              href: '/admin',
+              label: 'Admin',
+              icon: ic.shield(13),
+              className: 'nav-mobile-only nav-mobile-admin',
+            }]
+          : []),
+        {
+          href: '/logout',
+          label: 'Log Out',
+          icon: ic.logOut(13),
+          className: 'nav-mobile-only',
+          isPost: true,
+        }
+      ]
+    : [{
+        href: '/login',
+        label: 'Sign In',
+        icon: ic.logIn(13),
+        className: 'nav-mobile-only nav-mobile-signin',
+      }];
+
+  const mobileExtras = mobileLinks.length
+    ? `<div class="nav-mobile-divider" aria-hidden="true"></div>${mobileLinks.map(link => link.isPost
+        ? `<form method="POST" action="${link.href}" class="nav-mobile-form">
+            ${csrfField(csrfToken)}
+            <button type="submit" class="${link.className} nav-mobile-button">${link.icon}${link.label}</button>
+          </form>`
+        : `<a href="${link.href}" class="${link.className}">${link.icon}${link.label}</a>`).join('')}`
+    : '';
+
   const rightSide = user
     ? `<div id="ds-nav-right">
         <span class="nav-user-name">Hi, <strong>${esc(user.display_name)}</strong></span>
@@ -91,7 +173,10 @@ function renderNav(user, activeNav, notifCount) {
           : `<a href="/notifications" class="nav-link-subtle">${ic.bell(12)} Alerts</a>`}
         <a href="/profile/${esc(user.username)}" class="nav-link-subtle">${ic.user(12)} Profile</a>
         ${user.role === 'admin' || user.role === 'moderator' ? `<a href="/admin" class="nav-link-admin">${ic.shield(12)} Admin</a>` : ''}
-        <a href="/logout" class="nav-link-subtle">${ic.logOut(12)} Out</a>
+        <form method="POST" action="/logout" class="nav-inline-form">
+          ${csrfField(csrfToken)}
+          <button type="submit" class="nav-link-subtle nav-link-button">${ic.logOut(12)} Out</button>
+        </form>
       </div>`
     : `<div id="ds-nav-right">
         <a href="/login" class="nav-link-signin">Sign In</a>
@@ -101,7 +186,7 @@ function renderNav(user, activeNav, notifCount) {
   <div id="ds-nav-inner">
     <a href="/" id="ds-logo"><span class="logo-deck">Deck</span><span class="logo-space">space</span></a>
     <button id="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">${ic.menu(18)}</button>
-    <div id="ds-nav-links">${links}</div>
+    <div id="ds-nav-links">${links}${mobileExtras}</div>
     ${rightSide}
   </div>
 </nav>`;
@@ -171,8 +256,32 @@ export function layoutCtx(c, opts) {
   return layout({
     notifCount: c.get('notifCount') || 0,
     csrfToken:  c.get('csrfToken')  || '',
+    currentUrl: c.req.url,
     ...opts
   });
+}
+
+function defaultMetaDescription(title, sailing) {
+  if (sailing?.name && sailing?.ship_name) {
+    return `Deckspace is the public-by-design cruise intranet for ${sailing.name} on ${sailing.ship_name}. Meet passengers, follow events, share photos, and keep a short post-cruise scrapbook.`;
+  }
+  if (title) {
+    return `${title} on Deckspace, the public-by-design cruise intranet for meeting passengers, following events, sharing photos, and keeping a short voyage scrapbook.`;
+  }
+  return 'Deckspace is the public-by-design cruise intranet for meeting passengers, following events, sharing photos, and keeping a short voyage scrapbook.';
+}
+
+function renderFooter() {
+  return `<footer class="ds-footer">
+  <div class="ds-footer-inner">
+    <div class="ds-footer-copy">Deckspace is just for this sailing. After the trip, the scrapbook sticks around a little longer, then the lights go out.</div>
+    <div class="ds-footer-links">
+      <a href="/about">About</a>
+      <a href="/contact">Contact</a>
+      <a href="/privacy">Privacy</a>
+    </div>
+  </div>
+</footer>`;
 }
 
 /* ============================================================
@@ -219,4 +328,3 @@ export function fmtDate(dateStr, { time = false } = {}) {
   if (time) { opts.hour = 'numeric'; opts.minute = '2-digit'; }
   return d.toLocaleDateString('en-US', opts);
 }
-

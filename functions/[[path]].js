@@ -27,6 +27,7 @@ import adminRoutes         from '../src/routes/admin.js';
 import voyageRoutes        from '../src/routes/voyage.js';
 import reactionsRoutes     from '../src/routes/reactions.js';
 import setupRoutes         from '../src/routes/setup.js';
+import siteRoutes          from '../src/routes/site.js';
 
 const app = new Hono();
 
@@ -74,7 +75,7 @@ app.use('*', async (c, next) => {
   if (c.req.method !== 'POST') return next();
   // Skip CSRF on auth routes (login/register use turnstile) and file uploads
   const path = new URL(c.req.url).pathname;
-  const skipPaths = ['/login', '/register', '/onboarding', '/logout', '/setup'];
+  const skipPaths = ['/login', '/register', '/setup'];
   if (skipPaths.includes(path)) return next();
 
   const sessionHash = c.get('sessionTokenHash');
@@ -107,10 +108,12 @@ app.use('*', async (c, next) => {
    ============================================================ */
 app.use('*', async (c, next) => {
   await next();
+  const contentType = c.res.headers.get('Content-Type') || '';
   c.res.headers.set('X-Content-Type-Options', 'nosniff');
   c.res.headers.set('X-Frame-Options', 'SAMEORIGIN');
   c.res.headers.set('Referrer-Policy', 'same-origin');
   c.res.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  c.res.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   // CSP — tight; allow Turnstile and our CDN only
   const cspParts = [
     "default-src 'self'",
@@ -125,6 +128,13 @@ app.use('*', async (c, next) => {
     "form-action 'self'"
   ];
   c.res.headers.set('Content-Security-Policy', cspParts.join('; '));
+  if (!c.res.headers.has('Cache-Control')) {
+    if (contentType.includes('text/html')) {
+      c.res.headers.set('Cache-Control', 'private, no-store');
+    } else if (contentType.includes('application/xml') || contentType.includes('text/plain')) {
+      c.res.headers.set('Cache-Control', 'public, max-age=3600');
+    }
+  }
 });
 
 /* ============================================================
@@ -142,6 +152,7 @@ app.route('/', adminRoutes);
 app.route('/', voyageRoutes);
 app.route('/', reactionsRoutes);
 app.route('/', setupRoutes);
+app.route('/', siteRoutes);
 
 /* ============================================================
    REPORT FORM (available to all authenticated users)
@@ -159,6 +170,7 @@ app.get('/report', loadSession, async (c) => {
     header: 'Report Content',
     body: `<div class="ds-module-body">
   <form method="POST" action="/report" class="ds-form">
+    <input type="hidden" name="_csrf" value="${esc(c.get('csrfToken') || '')}">
     <input type="hidden" name="target_type" value="${esc(type)}">
     <input type="hidden" name="target_id" value="${esc(id)}">
     <div class="ds-form-row">

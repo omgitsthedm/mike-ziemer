@@ -14,7 +14,7 @@ import { Hono } from 'hono';
 import { getDb, getRecentPhotos, getSailing, createNotification, q } from '../lib/db.js';
 import { requireAuth, resolveSession, isSailingReadOnly } from '../lib/auth.js';
 import { processPhotoUpload, cdnUrl } from '../lib/media.js';
-import { layout, layoutCtx, esc, relTime, fmtDate } from '../templates/layout.js';
+import { layout, layoutCtx, esc, relTime, fmtDate, csrfField } from '../templates/layout.js';
 import { ic } from '../templates/icons.js';
 import { module, photoThumb, commentEntry, paginator } from '../templates/components.js';
 
@@ -57,10 +57,11 @@ photos.get('/photos', async (c) => {
     : '';
 
   const gridHtml = (photoList || []).length
-    ? `<div class="photo-grid">${(photoList || []).map(p => photoThumb({ photo: p, cdnBase })).join('')}</div>`
+    ? `<div class="photo-grid">${(photoList || []).map((p, index) => photoThumb({ photo: p, cdnBase, eager: index < 6 })).join('')}</div>`
     : `<div class="ds-empty-state">No photos yet. ${viewer ? `<a href="/photos/upload">Upload some!</a>` : ''}</div>`;
 
   const pager = paginator(page, hasMore, '/photos', userFilter ? `&user=${encodeURIComponent(userFilter)}` : '');
+  const title = userFilter ? `Photos by ${userFilter}` : 'Shared Cruise Photos';
 
   const body = `${uploadBtn}${module({
     header: userFilter ? `${ic.camera(12)} Photos by ${esc(userFilter)}` : `${ic.camera(12)} Recent Photos`,
@@ -69,7 +70,10 @@ photos.get('/photos', async (c) => {
   })}`;
 
   return c.html(layoutCtx(c, {
-    title: 'Photos',
+    title,
+    description: userFilter
+      ? `Browse public Deckspace photos shared by ${userFilter} on this sailing.`
+      : 'Browse recent Deckspace photos from the sailing, linked events, and public passenger uploads.',
     user: viewer,
     sailing,
     activeNav: 'photos',
@@ -106,6 +110,7 @@ photos.get('/photos/upload', requireAuth, async (c) => {
     <div class="ds-module-body">
       <p class="text-small text-muted mb-8">Max 8 MB per photo. JPEG, PNG, GIF, WebP supported.</p>
       <form method="POST" action="/photos/upload" enctype="multipart/form-data" class="ds-form" data-retry="true">
+        ${csrfField(c.get('csrfToken') || '')}
         <div class="ds-form-row">
           <label for="ph-file">Photo *</label>
           <input id="ph-file" name="photo" type="file" accept="image/*" required data-preview="ph-preview">
@@ -131,7 +136,14 @@ photos.get('/photos/upload', requireAuth, async (c) => {
   </div>
 </div>`;
 
-  return c.html(layoutCtx(c, { title: 'Upload Photo', user, sailing, activeNav: 'photos', body }));
+  return c.html(layoutCtx(c, {
+    title: 'Upload a Cruise Photo',
+    description: 'Upload a photo to Deckspace, add a caption, and optionally link it to an event on the sailing.',
+    user,
+    sailing,
+    activeNav: 'photos',
+    body
+  }));
 });
 
 /* ============================================================
@@ -147,7 +159,7 @@ photos.post('/photos/upload', requireAuth, async (c) => {
 
   if (!bucket) {
     return c.html(layoutCtx(c, {
-      title: 'Upload Error',
+      title: 'Photo Upload Error',
       user,
       sailing,
       body: `<div class="ds-flash error">Media storage is not configured. Please try again later.</div><a href="/photos" class="ds-btn">Back to Photos</a>`
@@ -183,7 +195,7 @@ photos.post('/photos/upload', requireAuth, async (c) => {
     return c.redirect('/photos/' + newPhoto.id);
   } catch (err) {
     return c.html(layoutCtx(c, {
-      title: 'Upload Error',
+      title: 'Photo Upload Error',
       user,
       sailing,
       body: `<div class="ds-flash error">${esc(err.message || 'Upload failed.')}</div><a href="/photos/upload" class="ds-btn">Try Again</a>`
@@ -207,7 +219,7 @@ photos.get('/photos/:id', async (c) => {
     .single();
 
   if (!photo || photo.moderation_status !== 'visible') {
-    return c.html(layoutCtx(c, { title: 'Not Found', user: viewer, sailing, body: '<div class="ds-empty-state">Photo not found.</div>' }), 404);
+    return c.html(layoutCtx(c, { title: 'Photo Not Found', user: viewer, sailing, body: '<div class="ds-empty-state">Photo not found.</div>' }), 404);
   }
 
   const { data: comments } = await db.from('photo_comments')
@@ -244,6 +256,7 @@ photos.get('/photos/:id', async (c) => {
   const commentForm = viewer && !readOnly
     ? `<div class="comment-form">
         <form method="POST" action="/photos/${esc(photo.id)}/comment" data-retry="true">
+          ${csrfField(csrf)}
           <div class="ds-form-row">
             <textarea name="body" class="ds-textarea" placeholder="Comment on this photo..." required maxlength="500"></textarea>
           </div>
@@ -257,6 +270,7 @@ photos.get('/photos/:id', async (c) => {
   const isOwner = viewer?.id === photo.user_id;
   const deleteBtn = isOwner || ['admin','moderator'].includes(viewer?.role || '')
     ? `<form method="POST" action="/photos/${esc(photo.id)}/delete" style="display:inline">
+        ${csrfField(csrf)}
         <button type="submit" class="ds-btn ds-btn-danger ds-btn-sm" data-confirm="Delete this photo?">Delete Photo</button>
        </form>`
     : '';
@@ -269,7 +283,7 @@ photos.get('/photos/:id', async (c) => {
   <div class="ds-module-header blue">${ic.camera(12)} Photo</div>
   <div class="photo-view-img">
     ${mediumUrl
-      ? `<img src="${esc(mediumUrl)}" alt="${esc(photo.caption || '')}" loading="lazy">`
+      ? `<img src="${esc(mediumUrl)}" alt="${esc(photo.caption || `Photo uploaded by ${photo.users?.display_name || 'a passenger'}`)}">`
       : `<div class="ds-empty-state photo-view-unavailable">Image unavailable</div>`}
   </div>
   <div class="ds-module-body">
@@ -287,7 +301,16 @@ ${module({
   body: `<div class="comment-list">${commentListHtml}</div>${commentForm}`
 })}`;
 
-  return c.html(layoutCtx(c, { title: photo.caption || 'Photo', user: viewer, sailing, activeNav: 'photos', body }));
+  return c.html(layoutCtx(c, {
+    title: photo.caption ? `Photo: ${photo.caption.slice(0, 50)}` : `Photo by ${photo.users?.display_name || 'Passenger'}`,
+    description: photo.caption
+      ? `${photo.caption} on Deckspace, shared publicly during this sailing.`
+      : `A public Deckspace photo shared by ${photo.users?.display_name || 'a passenger'} during this sailing.`,
+    user: viewer,
+    sailing,
+    activeNav: 'photos',
+    body
+  }));
 });
 
 /* ============================================================

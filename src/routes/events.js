@@ -15,7 +15,7 @@
 import { Hono } from 'hono';
 import { getDb, getEvents, getEventById, getEventComments, getUserRsvp, getSailing, createNotification, q } from '../lib/db.js';
 import { requireAuth, resolveSession, isSailingReadOnly } from '../lib/auth.js';
-import { layout, layoutCtx, esc, fmtDate, relTime } from '../templates/layout.js';
+import { layout, layoutCtx, esc, fmtDate, relTime, csrfField } from '../templates/layout.js';
 import { module, eventCard, commentEntry, paginator, absUrl } from '../templates/components.js';
 import { ic } from '../templates/icons.js';
 
@@ -55,11 +55,22 @@ events.get('/events', async (c) => {
     dayMap.get(d).push(ev);
   }
   const days = [...dayMap.entries()];
+  const userFilter = (c.req.query('user') || '').trim();
+  const title = category
+    ? `Events: ${category}`
+    : userFilter
+    ? `Events by ${userFilter}`
+    : 'Cruise Events';
 
   const body = eventsSchedulePage({ viewer, sailing, days, activeCategory: category });
 
   return c.html(layoutCtx(c, {
-    title: 'Events',
+    title,
+    description: category
+      ? `Browse public ${category} events on Deckspace for this sailing.`
+      : userFilter
+      ? `Browse Deckspace events connected to ${userFilter} on this sailing.`
+      : 'Browse public Deckspace events for this sailing, including official programming, passenger plans, and RSVP counts.',
     user: viewer,
     sailing,
     activeNav: 'events',
@@ -79,10 +90,11 @@ events.get('/events/create', requireAuth, async (c) => {
   if (readOnly) return c.redirect('/events');
 
   return c.html(layoutCtx(c, {
-    title: 'Create Event',
+    title: 'Create a Deckspace Event',
+    description: 'Create a public Deckspace event for this sailing so other passengers can find it, RSVP, and join in.',
     user,
     sailing,
-    body: createEventForm({}),
+    body: createEventForm({ csrfToken: c.get('csrfToken') || '' }),
   }));
 });
 
@@ -107,10 +119,11 @@ events.post('/events/create', requireAuth, async (c) => {
 
   if (errs.length) {
     return c.html(layoutCtx(c, {
-      title: 'Create Event',
+      title: 'Create a Deckspace Event',
+      description: 'Create a public Deckspace event for this sailing so other passengers can find it, RSVP, and join in.',
       user,
       sailing,
-      body: createEventForm({ error: errs.join(' '), values: { title, desc, location, startAt, endAt, category } })
+      body: createEventForm({ error: errs.join(' '), values: { title, desc, location, startAt, endAt, category }, csrfToken: c.get('csrfToken') || '' })
     }), 400);
   }
 
@@ -130,8 +143,8 @@ events.post('/events/create', requireAuth, async (c) => {
 
   if (insertErr || !newEvent) {
     return c.html(layoutCtx(c, {
-      title: 'Create Event', user, sailing,
-      body: createEventForm({ error: 'Could not create event. Please try again.', values: { title, desc, location, startAt, endAt, category } })
+      title: 'Create a Deckspace Event', description: 'Create a public Deckspace event for this sailing so other passengers can find it, RSVP, and join in.', user, sailing,
+      body: createEventForm({ error: 'Could not create event. Please try again.', values: { title, desc, location, startAt, endAt, category }, csrfToken: c.get('csrfToken') || '' })
     }), 500);
   }
 
@@ -152,11 +165,11 @@ events.get('/events/:id', async (c) => {
   try {
     event = await getEventById(db, c.req.param('id'));
   } catch (_) {
-    return c.html(layoutCtx(c, { title: 'Not Found', user: viewer, sailing, body: '<div class="ds-empty-state">Event not found.</div>' }), 404);
+    return c.html(layoutCtx(c, { title: 'Event Not Found', user: viewer, sailing, body: '<div class="ds-empty-state">Event not found.</div>' }), 404);
   }
 
   if (event.moderation_status !== 'visible') {
-    return c.html(layoutCtx(c, { title: 'Unavailable', user: viewer, sailing, body: '<div class="ds-empty-state">This event is not available.</div>' }), 410);
+    return c.html(layoutCtx(c, { title: 'Event Unavailable', user: viewer, sailing, body: '<div class="ds-empty-state">This event is not available.</div>' }), 410);
   }
 
   const [comments, userRsvp, attendees] = await Promise.all([
@@ -177,7 +190,10 @@ events.get('/events/:id', async (c) => {
   const body = eventDetailPage({ event, comments, userRsvp, attendees, viewer, sailing, readOnly, isCreator, page, hasMore: comments.length === 30, cdnBase, csrfToken: csrf });
 
   return c.html(layoutCtx(c, {
-    title: event.title,
+    title: `${event.title} | Cruise Event`,
+    description: event.description
+      ? `${event.description.slice(0, 150)}`
+      : `View details for ${event.title} on Deckspace, including time, location, RSVPs, and public comments.`,
     user: viewer,
     sailing,
     activeNav: 'events',
@@ -282,13 +298,14 @@ events.get('/events/:id/edit', requireAuth, async (c) => {
   if (!canEdit) return c.text('Forbidden', 403);
 
   return c.html(layoutCtx(c, {
-    title: 'Edit Event',
+    title: `Edit Event: ${event.title}`,
+    description: `Update details for the event ${event.title} on Deckspace.`,
     user,
     sailing,
     body: createEventForm({ values: {
       title: event.title, desc: event.description, location: event.location,
       startAt: event.start_at, endAt: event.end_at, category: event.category
-    }, eventId: event.id })
+    }, eventId: event.id, csrfToken: c.get('csrfToken') || '' })
   }));
 });
 
@@ -378,12 +395,13 @@ function eventsSchedulePage({ viewer, sailing, days, activeCategory = '' }) {
   <div class="ds-module ss-rail-module">
     <div class="ds-module-header">${ic.anchor(12)} Now Boarding</div>
     <div class="ds-module-body ss-nowboarding">
-      <table class="ss-info-table">
-        <tr><td class="ss-info-key">Theme:</td><td>Emo / Rock / Scene</td></tr>
-        <tr><td class="ss-info-key">Produced By:</td><td>Whet Travel</td></tr>
-        <tr><td class="ss-info-key">Status:</td><td class="ss-status-val">emotionally unstable</td></tr>
-        <tr><td class="ss-info-key">Dress Code:</td><td>black, white, striped, dramatic</td></tr>
-        <tr><td class="ss-info-key">Vibe Level:</td><td>late-night top-deck honesty</td></tr>
+      <table class="ss-info-table" aria-label="Cruise snapshot">
+        <caption class="sr-only">Shattered Shores cruise snapshot</caption>
+        <tr><th scope="row" class="ss-info-key">Theme:</th><td>Emo / Rock / Scene</td></tr>
+        <tr><th scope="row" class="ss-info-key">Produced By:</th><td>Whet Travel</td></tr>
+        <tr><th scope="row" class="ss-info-key">Status:</th><td class="ss-status-val">emotionally unstable</td></tr>
+        <tr><th scope="row" class="ss-info-key">Dress Code:</th><td>black, white, striped, dramatic</td></tr>
+        <tr><th scope="row" class="ss-info-key">Vibe Level:</th><td>late-night top-deck honesty</td></tr>
       </table>
     </div>
   </div>
@@ -407,12 +425,13 @@ function eventsSchedulePage({ viewer, sailing, days, activeCategory = '' }) {
   <div class="ds-module ss-rail-module">
     <div class="ds-module-header">${ic.users(12)} Who&rsquo;s Here</div>
     <div class="ds-module-body">
-      <table class="ss-online-table">
-        <tr><td class="ss-online-num">148</td><td>guests online now</td></tr>
-        <tr><td class="ss-online-num">23</td><td>currently overthinking</td></tr>
-        <tr><td class="ss-online-num">11</td><td>reorganizing their Top 8</td></tr>
-        <tr><td class="ss-online-num">6</td><td>pretending they &ldquo;don&rsquo;t really dance&rdquo;</td></tr>
-        <tr><td class="ss-online-num">1</td><td>definitely in a stairwell crying in a cool way</td></tr>
+      <table class="ss-online-table" aria-label="Who is here right now">
+        <caption class="sr-only">Live passenger mood counts</caption>
+        <tr><th scope="row" class="ss-online-num">148</th><td>guests online now</td></tr>
+        <tr><th scope="row" class="ss-online-num">23</th><td>currently overthinking</td></tr>
+        <tr><th scope="row" class="ss-online-num">11</th><td>reorganizing their Top 8</td></tr>
+        <tr><th scope="row" class="ss-online-num">6</th><td>pretending they &ldquo;don&rsquo;t really dance&rdquo;</td></tr>
+        <tr><th scope="row" class="ss-online-num">1</th><td>definitely in a stairwell crying in a cool way</td></tr>
       </table>
     </div>
   </div>
@@ -420,13 +439,14 @@ function eventsSchedulePage({ viewer, sailing, days, activeCategory = '' }) {
   <div class="ds-module ss-rail-module">
     <div class="ds-module-header">${ic.info(12)} Event Legend</div>
     <div class="ds-module-body">
-      <table class="ss-legend-table">
-        <tr><td>${ic.music(13)}</td><td>Live Set</td></tr>
-        <tr><td>${ic.heart(13)}</td><td>Social Damage</td></tr>
-        <tr><td>${ic.msgSquare(13)}</td><td>Late Night</td></tr>
-        <tr><td>${ic.mic(13)}</td><td>Interactive</td></tr>
-        <tr><td>${ic.alertTri(13)}</td><td>Emotional Hazard</td></tr>
-        <tr><td>${ic.anchor(13)}</td><td>Deck / Unscheduled</td></tr>
+      <table class="ss-legend-table" aria-label="Event legend">
+        <caption class="sr-only">Event legend for icons and labels</caption>
+        <tr><th scope="row">${ic.music(13)}</th><td>Live Set</td></tr>
+        <tr><th scope="row">${ic.heart(13)}</th><td>Social Damage</td></tr>
+        <tr><th scope="row">${ic.msgSquare(13)}</th><td>Late Night</td></tr>
+        <tr><th scope="row">${ic.mic(13)}</th><td>Interactive</td></tr>
+        <tr><th scope="row">${ic.alertTri(13)}</th><td>Emotional Hazard</td></tr>
+        <tr><th scope="row">${ic.anchor(13)}</th><td>Deck / Unscheduled</td></tr>
       </table>
     </div>
   </div>
@@ -485,7 +505,7 @@ ${catPills}`;
     <span class="ss-day-sub">&mdash; ${dayInfo.sub}</span>
   </div>
   <div class="ds-module-body" style="padding:0">
-    <table class="ss-schedule">
+    <table class="ss-schedule" aria-label="${esc(dayInfo.label)} event schedule">
       <thead><tr>
         <th class="ss-th-time">Time</th>
         <th class="ss-th-icon"></th>
@@ -562,7 +582,7 @@ ${catPills}`;
 function eventDetailPage({ event, comments, userRsvp, attendees, viewer, sailing, readOnly, isCreator, page, hasMore, cdnBase, csrfToken }) {
   const creator = event.users;
   const coverImg = event.cover_image_url
-    ? `<img src="${esc(absUrl(cdnBase, event.cover_image_url))}" alt="" style="max-width:100%;max-height:200px;object-fit:cover;display:block;margin-bottom:8px" loading="lazy">`
+    ? `<img src="${esc(absUrl(cdnBase, event.cover_image_url))}" alt="Cover image for ${esc(event.title)}" width="600" height="300" style="max-width:100%;max-height:200px;object-fit:cover;display:block;margin-bottom:8px">`
     : '';
 
   // RSVP state
@@ -571,12 +591,14 @@ function eventDetailPage({ event, comments, userRsvp, attendees, viewer, sailing
     const going = userRsvp?.status === 'going';
     const interested = userRsvp?.status === 'interested';
     rsvpHtml = `<form method="POST" action="/events/${esc(event.id)}/rsvp" style="display:inline-flex;gap:4px;align-items:center">
+      ${csrfField(csrfToken)}
       <input type="hidden" name="status" value="${going ? 'not_going' : 'going'}">
       <button type="submit" class="rsvp-btn${going ? ' going' : ''}">
         ${going ? `${ic.check(12)} Going` : '+ RSVP Going'}
       </button>
     </form>
     ${!going ? `<form method="POST" action="/events/${esc(event.id)}/rsvp" style="display:inline;margin-left:4px">
+      ${csrfField(csrfToken)}
       <input type="hidden" name="status" value="${interested ? 'not_going' : 'interested'}">
       <button type="submit" class="ds-btn ds-btn-sm">${interested ? `${ic.check(12)} Interested` : 'Interested'}</button>
     </form>` : ''}`;
@@ -588,7 +610,7 @@ function eventDetailPage({ event, comments, userRsvp, attendees, viewer, sailing
         const thumbUrl = absUrl(cdnBase, a.users?.profiles?.avatar_thumb_url);
         return `<a href="/profile/${esc(a.users?.username || '')}" title="${esc(a.users?.display_name || '')}">
           ${thumbUrl
-            ? `<img src="${esc(thumbUrl)}" width="32" height="32" loading="lazy" style="border:1px solid #ccc">`
+            ? `<img src="${esc(thumbUrl)}" width="32" height="32" alt="${esc(a.users?.display_name || 'Passenger')}" loading="lazy" style="border:1px solid #ccc">`
             : `<span style="display:inline-block;width:32px;height:32px;background:#e8e8e8;border:1px solid #ccc;text-align:center;line-height:32px;font-size:10px">${esc((a.users?.display_name || '?').charAt(0))}</span>`}
         </a>`;
       }).join(' ')
@@ -610,6 +632,7 @@ function eventDetailPage({ event, comments, userRsvp, attendees, viewer, sailing
   const commentForm = viewer && !readOnly
     ? `<div class="comment-form">
         <form method="POST" action="/events/${esc(event.id)}/comment" data-retry="true">
+          ${csrfField(csrfToken)}
           <div class="ds-form-row">
             <textarea name="body" class="ds-textarea" placeholder="Leave a comment..." required maxlength="1000"></textarea>
           </div>
@@ -647,7 +670,7 @@ ${module({
 })}`;
 }
 
-function createEventForm({ error, values = {}, eventId }) {
+function createEventForm({ error, values = {}, eventId, csrfToken = '' }) {
   const action = eventId ? `/events/${esc(eventId)}/edit` : '/events/create';
   const btnText = eventId ? 'Save Changes' : 'Create Event';
   const categories = ['karaoke','trivia','dinner','deck','excursion','drinks','poker','theme','other'];
@@ -661,6 +684,7 @@ function createEventForm({ error, values = {}, eventId }) {
     <div class="ds-module-header">${ic.calendar(12)} ${eventId ? 'Edit Event' : 'Create a New Event'}</div>
     <div class="ds-module-body">
       <form method="POST" action="${action}" class="ds-form">
+        ${csrfField(csrfToken)}
         <div class="ds-form-row">
           <label for="ev-title">Title *</label>
           <input id="ev-title" name="title" type="text" class="ds-input" value="${esc(values.title || '')}" required maxlength="200" placeholder="e.g. Karaoke Night at the Crow Bar">

@@ -115,10 +115,61 @@ async function isFirstRun(db, sailingId) {
   return (count || 0) === 0;
 }
 
+function isLocalHost(url) {
+  const host = new URL(url).hostname;
+  return host === 'localhost' || host === '127.0.0.1';
+}
+
+function resolveSetupAccess(c, submittedKey = '') {
+  const setupSecret = (c.env.SETUP_SECRET || '').toString().trim();
+  if (isLocalHost(c.req.url)) {
+    return { ok: true, key: submittedKey || '' };
+  }
+  if (!setupSecret) {
+    return { ok: false, reason: 'missing_secret', key: '' };
+  }
+  const currentKey = (submittedKey || c.req.query('setup_key') || '').toString().trim();
+  if (currentKey !== setupSecret) {
+    return { ok: false, reason: 'bad_key', key: currentKey };
+  }
+  return { ok: true, key: currentKey };
+}
+
+function setupGuardBody(reason, key = '') {
+  const message = reason === 'missing_secret'
+    ? 'Setup is locked until SETUP_SECRET is configured in the Cloudflare Pages environment for this sailing.'
+    : 'Setup is locked. Add the correct setup key to continue.';
+
+  return `<div style="max-width:420px;margin:40px auto">
+  <div class="ds-module">
+    <div class="ds-module-header">${ic.lock(12)} Setup Locked</div>
+    <div class="ds-module-body">
+      <p style="font-size:12px;line-height:1.5;margin-bottom:10px">${message}</p>
+      ${reason === 'bad_key' ? `<form method="GET" action="/setup" class="ds-form">
+        <div class="ds-form-row">
+          <label for="setup-key">Setup Key</label>
+          <input id="setup-key" name="setup_key" type="password" class="ds-input" value="${esc(key)}" autocomplete="off" required>
+        </div>
+        <div class="ds-form-row mt-8">
+          <button type="submit" class="ds-btn ds-btn-primary">Unlock Setup</button>
+        </div>
+      </form>` : ''}
+    </div>
+  </div>
+</div>`;
+}
+
 setup.get('/setup', async (c) => {
   try {
     const db = getDb(c.env);
     if (!(await isFirstRun(db, c.env.SAILING_ID))) return c.redirect('/login');
+    const access = resolveSetupAccess(c);
+    if (!access.ok) {
+      return c.html(layoutCtx(c, {
+        title: 'Setup Locked',
+        body: setupGuardBody(access.reason, access.key)
+      }), access.reason === 'missing_secret' ? 503 : 403);
+    }
 
   const body = `<div style="max-width:400px;margin:40px auto">
   <div class="ds-module">
@@ -130,6 +181,7 @@ setup.get('/setup', async (c) => {
         15 demo passengers will be added automatically.
       </p>
       <form method="POST" action="/setup" class="ds-form">
+        ${access.key ? `<input type="hidden" name="setup_key" value="${esc(access.key)}">` : ''}
         <div class="ds-form-row">
           <label for="s-name">Your Name *</label>
           <input id="s-name" name="display_name" type="text" class="ds-input" required maxlength="50" placeholder="e.g. Captain Mike">
@@ -172,6 +224,13 @@ setup.post('/setup', async (c) => {
   if (!(await isFirstRun(db, c.env.SAILING_ID))) return c.redirect('/login');
 
   const form = await c.req.formData();
+  const access = resolveSetupAccess(c, (form.get('setup_key') || '').toString());
+  if (!access.ok) {
+    return c.html(layoutCtx(c, {
+      title: 'Setup Locked',
+      body: setupGuardBody(access.reason, access.key)
+    }), access.reason === 'missing_secret' ? 503 : 403);
+  }
   const displayName = (form.get('display_name') || '').toString().trim().slice(0, 50);
   const username    = (form.get('username') || '').toString().trim().toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 30);
   const password    = (form.get('password') || '').toString();

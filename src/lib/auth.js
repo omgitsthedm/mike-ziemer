@@ -155,8 +155,8 @@ export async function destroySession(env, request) {
    TURNSTILE VERIFICATION
    ============================================================ */
 export async function verifyTurnstile(env, token, ip) {
-  if (!env.TURNSTILE_SECRET_KEY) return true; // Skip when unconfigured
-  if (!token) return false;
+  if (!env.TURNSTILE_SECRET_KEY) return { ok: true, reason: 'disabled' }; // Skip when unconfigured
+  if (!token) return { ok: false, reason: 'missing_token' };
   try {
     const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
       method: 'POST',
@@ -168,9 +168,11 @@ export async function verifyTurnstile(env, token, ip) {
       })
     });
     const data = await res.json();
-    return data.success === true;
+    return data.success === true
+      ? { ok: true, reason: 'verified' }
+      : { ok: false, reason: 'challenge_failed' };
   } catch {
-    return true; // Fail open if Turnstile API is unreachable
+    return { ok: false, reason: 'verification_unavailable' }; // Fail closed if Turnstile API is unreachable
   }
 }
 

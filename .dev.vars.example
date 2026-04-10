@@ -17,6 +17,9 @@ TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
 # UUID of the sailing row in your Supabase sailings table
 SAILING_ID=replace-with-uuid-from-sailings-table
 
+# Required to unlock /setup outside localhost for first-run bootstrap
+SETUP_SECRET=change-this-to-a-long-random-string
+
 # Public R2 bucket URL (no trailing slash)
 R2_PUBLIC_URL=https://pub-xxxx.r2.dev
 

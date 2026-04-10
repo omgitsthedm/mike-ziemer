@@ -55,9 +55,12 @@ home.get('/', async (c) => {
   if (!c.env.SUPABASE_URL || !c.env.SUPABASE_SERVICE_KEY) {
     return c.html(layout({
       title: 'Deckspace — A Place for Friends on the High Seas',
+      description: 'Deckspace is the cruise social site for meeting passengers, checking what is happening tonight, sharing photos, and keeping a short post-cruise scrapbook.',
       body:  landingPage({ sailing: DEMO_SAILING, cdnBase: '', newPeople: [], weather: null, tonightEvents: [], siteKey: c.env.TURNSTILE_SITE_KEY || '' }),
       notifCount: 0,
       csrfToken:  '',
+      currentUrl: c.req.url,
+      showPageHeading: false,
     }));
   }
 
@@ -95,7 +98,9 @@ home.get('/', async (c) => {
 
     return c.html(layoutCtx(c, {
       title: 'Deckspace — A Place for Friends on the High Seas',
+      description: `Join Deckspace for ${sailing?.name || 'your sailing'} on ${sailing?.ship_name || 'your ship'} to meet passengers, follow tonight's events, share photos, and keep the ship scrapbook alive a little longer after the trip.`,
       body: landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents, siteKey: c.env.TURNSTILE_SITE_KEY || '' }),
+      showPageHeading: false,
     }));
   }
 
@@ -163,6 +168,7 @@ home.get('/', async (c) => {
 
   return c.html(layoutCtx(c, {
     title: 'Home',
+    description: `Check tonight's events, social activity, photos, and who's online right now for ${sailing?.name || 'this sailing'} on Deckspace.`,
     user,
     sailing,
     activeNav: 'home',
@@ -272,7 +278,7 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
     ? recentPeople.slice(0, 4).map(p => {
         const thumbUrl = absUrl(cdnBase, p.profiles?.avatar_thumb_url);
         const img = thumbUrl
-          ? `<img src="${esc(thumbUrl)}" width="44" height="44" loading="lazy">`
+          ? `<img src="${esc(thumbUrl)}" width="44" height="44" alt="${esc(p.display_name)}" loading="lazy">`
           : `<div class="home-member-thumb-placeholder">${esc((p.display_name || '?').charAt(0))}</div>`;
         return `<div class="home-member-item">
   <a href="/profile/${esc(p.username)}">${img}</a>
@@ -311,7 +317,7 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
         const thumb = absUrl(cdnBase, u.profiles?.avatar_thumb_url);
         return `<a href="/profile/${esc(u.username)}" title="${esc(u.display_name)}">
           ${thumb
-            ? `<img src="${esc(thumb)}" width="28" height="28" loading="lazy">`
+            ? `<img src="${esc(thumb)}" width="28" height="28" alt="${esc(u.display_name)}" loading="lazy">`
             : `<span class="online-face-placeholder">${esc((u.display_name||'?').charAt(0))}</span>`}
         </a>`;
       }).join('')}</div>
@@ -386,26 +392,38 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [],
   const venueHtml = `<div class="ds-module">
     <div class="ds-module-header">${ic.clock(12)} What&rsquo;s Open &amp; When <span class="landing-events-more">Ship Time (ET)</span></div>
     <div class="ds-module-body">
-      <table class="landing-venue-table">
+      <table class="landing-venue-table" aria-label="Ship venue hours">
+        <caption class="sr-only">Venue hours on the sailing</caption>
+        <thead class="sr-only">
+          <tr><th scope="col">Venue</th><th scope="col">Hours</th></tr>
+        </thead>
+        <tbody>
         ${DEMO_VENUES.map(v => `<tr>
           <td class="landing-venue-name">${esc(v.name)}</td>
           <td class="landing-venue-hours">${esc(v.hours)}</td>
         </tr>`).join('')}
+        </tbody>
       </table>
       <div class="landing-demo-note">Hours vary by sailing — check daily newsletter for updates</div>
     </div>
   </div>`;
 
   // Cool New People grid: up to 8, 60×60 square photos
+  const duplicateCounts = newPeople.reduce((acc, person) => {
+    acc[person.display_name] = (acc[person.display_name] || 0) + 1;
+    return acc;
+  }, {});
+
   const peopleHtml = newPeople.length
     ? newPeople.map(p => {
         const thumbUrl = absUrl(cdnBase, p.profiles?.avatar_thumb_url);
+        const label = duplicateCounts[p.display_name] > 1 ? `${p.display_name} (@${p.username})` : p.display_name;
         const img = thumbUrl
-          ? `<img src="${esc(thumbUrl)}" width="60" height="60" alt="${esc(p.display_name)}">`
+          ? `<img src="${esc(thumbUrl)}" width="60" height="60" alt="${esc(label)}" loading="lazy">`
           : `<div class="landing-person-placeholder">${esc((p.display_name || '?').charAt(0))}</div>`;
         return `<div class="landing-person-item">
   <a href="/profile/${esc(p.username)}">${img}</a>
-  <a href="/profile/${esc(p.username)}" class="landing-person-name">${esc(p.display_name)}</a>
+  <a href="/profile/${esc(p.username)}" class="landing-person-name">${esc(label)}</a>
 </div>`;
       }).join('')
     : `<div style="font-size:11px;color:#666;padding:8px 0">No members yet &mdash; be the first!</div>`;
@@ -417,10 +435,10 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [],
     <h1 class="landing-hero-title">A Place for Friends<br>on the High Seas</h1>
     <p class="landing-hero-sub">${esc(sailName)} &mdash; Your cruise social network</p>
     <p class="landing-hero-copy">
-      It&rsquo;s like having your own cool page &mdash; but just for your ship!
+      It&rsquo;s like having your own cool page &mdash; but just for your ship.
       Meet the people on this cruise, see what&rsquo;s happening tonight, share photos
       from every port, and write on each other&rsquo;s pages.
-      When the trip ends, it all stays saved forever.
+      When the trip ends, the whole thing hangs around like a scrapbook for a little while.
       <strong>Your people are already here!</strong>
     </p>
   </div>
@@ -448,7 +466,7 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [],
       <span class="landing-howto-num" aria-hidden="true">${ic.bookOpen(14)}</span>
       <div>
         <strong>Save the memories</strong>
-        <span>Every photo and post stays saved forever &mdash; even after you get home.</span>
+        <span>Photos and posts hang around like a little scrapbook after you get home.</span>
       </div>
     </div>
   </div>
@@ -477,24 +495,24 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [],
         <strong>Been here before?</strong> Type your username and password below and you&rsquo;re in!
       </div>
       <form method="POST" action="/login" class="landing-login-form" data-retry="true">
-        <table class="landing-login-table">
-          <tr>
-            <td class="landing-login-label"><label for="l-username">Username:</label></td>
-            <td class="landing-login-input"><input id="l-username" name="username" type="text" class="ds-input" autocomplete="username" autofocus required></td>
-          </tr>
-          <tr>
-            <td class="landing-login-label"><label for="l-password">Password:</label></td>
-            <td class="landing-login-input"><input id="l-password" name="password" type="password" class="ds-input" autocomplete="current-password" required></td>
-          </tr>
-          <tr>
-            <td></td>
-            <td style="padding-top:6px">
+        <div class="landing-login-table">
+          <div class="landing-login-row">
+            <div class="landing-login-label"><label for="l-username">Username:</label></div>
+            <div class="landing-login-input"><input id="l-username" name="username" type="text" class="ds-input" autocomplete="username" autofocus required></div>
+          </div>
+          <div class="landing-login-row">
+            <div class="landing-login-label"><label for="l-password">Password:</label></div>
+            <div class="landing-login-input"><input id="l-password" name="password" type="password" class="ds-input" autocomplete="current-password" required></div>
+          </div>
+          <div class="landing-login-row">
+            <div></div>
+            <div class="landing-login-input" style="padding-top:6px">
               ${siteKey ? `<div class="cf-turnstile" data-sitekey="${esc(siteKey)}" data-theme="light" style="margin-bottom:6px"></div>
               <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>` : ''}
               <button type="submit" class="ds-btn ds-btn-primary landing-login-btn" data-loading-text="Signing in...">Log In &rarr;</button>
-            </td>
-          </tr>
-        </table>
+            </div>
+          </div>
+        </div>
       </form>
       <div class="login-help-text">
         <strong>Forgot your login?</strong> No worries! Head to the Guest Services desk and they can look you up.
@@ -515,12 +533,18 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [],
     <div class="ds-module-header">${ic.ferry(12)} ${esc(shipName)} &mdash; Voyage</div>
     <div class="ds-module-body">
       <div class="landing-voyage-tagline">${esc(sailName)}</div>
-      <table class="landing-itin-table">
+      <table class="landing-itin-table" aria-label="Voyage itinerary">
+        <caption class="sr-only">Voyage itinerary for the sailing</caption>
+        <thead class="sr-only">
+          <tr><th scope="col">Day</th><th scope="col">Port</th><th scope="col">Notes</th></tr>
+        </thead>
+        <tbody>
         ${DEMO_ITINERARY.map(d => `<tr class="${d.sea ? 'landing-itin-sea' : ''}">
           <td class="landing-itin-date">${esc(d.date)}</td>
           <td class="landing-itin-port">${esc(d.port)}</td>
           <td class="landing-itin-note">${esc(d.note)}</td>
         </tr>`).join('')}
+        </tbody>
       </table>
       <div class="landing-tz">${ic.clock(10)} All times: Eastern Time (ET, UTC&minus;5)</div>
     </div>

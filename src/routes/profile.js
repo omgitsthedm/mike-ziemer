@@ -14,7 +14,7 @@ import { Hono } from 'hono';
 import { getDb, getUserByUsername, getProfileByUserId, getProfilePage, getWallPosts, getSailing, createNotification, logAudit, q } from '../lib/db.js';
 import { requireAuth, resolveSession, isSailingReadOnly } from '../lib/auth.js';
 import { processPhotoUpload, cdnUrl } from '../lib/media.js';
-import { layout, layoutCtx, esc, relTime, fmtDate } from '../templates/layout.js';
+import { layout, layoutCtx, esc, relTime, fmtDate, csrfField } from '../templates/layout.js';
 import { ic } from '../templates/icons.js';
 import {
   module, profilePhotoBlock, contactBox, detailsTable, songModule,
@@ -37,10 +37,11 @@ profile.get('/profile/edit', requireAuth, async (c) => {
   if (readOnly) return c.redirect('/profile/' + user.username);
 
   return c.html(layoutCtx(c, {
-    title: 'Edit Profile',
+    title: 'Edit Your Deckspace Profile',
+    description: 'Update your Deckspace profile details, vibe tags, status, profile song, and public sailing identity.',
     user,
     sailing,
-    body: editProfileForm({ user, profile: prof, siteKey: c.env.TURNSTILE_SITE_KEY })
+    body: editProfileForm({ user, profile: prof, siteKey: c.env.TURNSTILE_SITE_KEY, csrfToken: c.get('csrfToken') || '' })
   }));
 });
 
@@ -148,7 +149,7 @@ profile.get('/profile/:username', async (c) => {
   try {
     target = await getUserByUsername(db, c.env.SAILING_ID, c.req.param('username'));
   } catch (_) {
-    return c.html(layoutCtx(c, { title: 'Not Found', user: viewer, sailing, body: '<div class="ds-empty-state">Profile not found.</div>' }), 404);
+    return c.html(layoutCtx(c, { title: 'Profile Not Found', user: viewer, sailing, body: '<div class="ds-empty-state">Profile not found.</div>' }), 404);
   }
 
   const { topFriends, friendCount, friendStatus } = await getProfilePage(db, target.id, viewer?.id);
@@ -176,7 +177,10 @@ profile.get('/profile/:username', async (c) => {
   });
 
   return c.html(layoutCtx(c, {
-    title: target.display_name + "'s Profile",
+    title: `${target.display_name}'s Deckspace Profile (@${target.username})`,
+    description: profile?.about_me
+      ? `${target.display_name}'s Deckspace profile on this sailing. ${profile.about_me.slice(0, 140)}`
+      : `View ${target.display_name}'s Deckspace profile, public wall, vibes, and sailing activity.`,
     user: viewer,
     sailing,
     activeNav: isOwn ? 'profile' : '',
@@ -259,7 +263,7 @@ function profilePage({ target, profile, viewer, topFriends, friendCount, friendS
   // Build left column
   const leftCol = [
     profilePhotoBlock({ user: target, profile, isOwn, isOnline, cdnBase }),
-    contactBox({ targetUser: target, viewerUser: viewer, friendStatus }),
+    contactBox({ targetUser: target, viewerUser: viewer, friendStatus, csrfToken }),
     mediaLinksModule(target, profile, cdnBase),
     detailsTable({ profile, user: target }),
     songModule(profile),
@@ -316,7 +320,7 @@ function editTopFriendsLink() {
 </div>`;
 }
 
-function editProfileForm({ user, profile, siteKey }) {
+function editProfileForm({ user, profile, siteKey, csrfToken = '' }) {
   const themes = ['classic', 'ocean', 'sunset', 'night', 'retro-pink'];
   const themeOptions = themes.map(t =>
     `<option value="${t}" ${(profile?.theme_id || 'classic') === t ? 'selected' : ''}>${t.charAt(0).toUpperCase() + t.slice(1).replace('-', ' ')}</option>`
@@ -327,6 +331,7 @@ function editProfileForm({ user, profile, siteKey }) {
     <div class="ds-module-header">${ic.settings(12)} Edit My Profile</div>
     <div class="ds-module-body">
       <form method="POST" action="/profile/edit" class="ds-form">
+        ${csrfField(csrfToken)}
         <div class="ds-form-row">
           <label for="ed-name">Display Name</label>
           <input id="ed-name" name="display_name" type="text" class="ds-input" value="${esc(user.display_name)}" required maxlength="50">
@@ -385,6 +390,7 @@ function editProfileForm({ user, profile, siteKey }) {
     <div class="ds-module-header">${ic.camera(12)} Profile Photo</div>
     <div class="ds-module-body">
       <form method="POST" action="/profile/avatar" enctype="multipart/form-data" class="ds-form">
+        ${csrfField(csrfToken)}
         <div class="ds-form-row">
           <label for="avatar-file">Upload a new photo</label>
           <input id="avatar-file" name="avatar" type="file" accept="image/*" data-preview="avatar-preview">

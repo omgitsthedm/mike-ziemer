@@ -300,13 +300,19 @@
   function initNotifRead() {
     var page = document.getElementById('notifications-page');
     if (!page) return;
+    var meta = document.querySelector('meta[name="csrf-token"]');
+    var token = meta ? meta.getAttribute('content') : '';
     fetch('/notifications/mark-read', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-    }).catch(function () { /* silent — non-critical */ });
-    // Update nav badge
-    var badge = document.querySelector('.nav-notif-badge');
-    if (badge) badge.remove();
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: token ? new URLSearchParams({ _csrf: token }) : undefined
+    })
+      .then(function (res) {
+        if (!res.ok) return;
+        var badge = document.querySelector('.nav-notif-badge');
+        if (badge) badge.remove();
+      })
+      .catch(function () { /* silent — non-critical */ });
   }
 
   /* ============================================================

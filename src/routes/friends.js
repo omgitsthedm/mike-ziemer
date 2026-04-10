@@ -13,7 +13,7 @@
 import { Hono } from 'hono';
 import { getDb, getFriendRequests, getFriends, getSailing, createNotification, q } from '../lib/db.js';
 import { requireAuth } from '../lib/auth.js';
-import { layout, layoutCtx, esc, relTime } from '../templates/layout.js';
+import { layout, layoutCtx, esc, relTime, csrfField } from '../templates/layout.js';
 import { module, avatar, absUrl } from '../templates/components.js';
 
 const friends = new Hono();
@@ -28,6 +28,7 @@ friends.get('/friends', async (c) => {
   const db      = getDb(c.env);
   const sailing = await getSailing(db, c.env.SAILING_ID).catch(() => null);
   const cdnBase = c.env.R2_PUBLIC_URL || '';
+  const csrf    = c.get('csrfToken') || '';
 
   const [incoming, outgoing, friendsList] = await Promise.all([
     getFriendRequests(db, user.id),
@@ -44,7 +45,7 @@ friends.get('/friends', async (c) => {
         const u = f.users;
         const thumbUrl = absUrl(cdnBase, u?.profiles?.avatar_thumb_url);
         const img = thumbUrl
-          ? `<img src="${esc(thumbUrl)}" width="40" height="40" loading="lazy" style="border:1px solid #ccc">`
+          ? `<img src="${esc(thumbUrl)}" width="40" height="40" alt="${esc(u?.display_name || 'Passenger')}" loading="lazy" style="border:1px solid #ccc">`
           : `<span style="display:inline-block;width:40px;height:40px;background:#e8e8e8;border:1px solid #ccc;text-align:center;line-height:40px">${esc((u?.display_name || '?').charAt(0))}</span>`;
         return `<div class="person-row">
   <a href="/profile/${esc(u?.username || '')}">${img}</a>
@@ -54,9 +55,11 @@ friends.get('/friends', async (c) => {
   </div>
   <div class="person-action" style="display:flex;gap:4px">
     <form method="POST" action="/friends/${esc(f.id)}/accept">
+      ${csrfField(csrf)}
       <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm">Accept</button>
     </form>
     <form method="POST" action="/friends/${esc(f.id)}/decline">
+      ${csrfField(csrf)}
       <button type="submit" class="ds-btn ds-btn-sm">Decline</button>
     </form>
   </div>
@@ -74,6 +77,7 @@ friends.get('/friends', async (c) => {
   </div>
   <div class="person-action">
     <form method="POST" action="/friends/${esc(f.id)}/remove">
+      ${csrfField(csrf)}
       <button type="submit" class="ds-btn ds-btn-sm" data-confirm="Cancel this request?">Cancel</button>
     </form>
   </div>
@@ -86,7 +90,7 @@ friends.get('/friends', async (c) => {
         const u = (f.users || f.users_addressee);
         const thumbUrl = absUrl(cdnBase, u?.profiles?.avatar_thumb_url);
         const img = thumbUrl
-          ? `<img src="${esc(thumbUrl)}" width="40" height="40" loading="lazy" style="border:1px solid #ccc">`
+          ? `<img src="${esc(thumbUrl)}" width="40" height="40" alt="${esc(u?.display_name || 'Passenger')}" loading="lazy" style="border:1px solid #ccc">`
           : `<span style="display:inline-block;width:40px;height:40px;background:#e8e8e8;border:1px solid #ccc;text-align:center;line-height:40px">${esc((u?.display_name || '?').charAt(0))}</span>`;
         return `<div class="person-row">
   <a href="/profile/${esc(u?.username || '')}">${img}</a>
@@ -95,6 +99,7 @@ friends.get('/friends', async (c) => {
   </div>
   <div class="person-action">
     <form method="POST" action="/friends/${esc(f.id)}/remove">
+      ${csrfField(csrf)}
       <button type="submit" class="ds-btn ds-btn-sm ds-btn-danger" data-confirm="Remove this friend?" style="font-size:10px">Remove</button>
     </form>
   </div>
@@ -109,7 +114,8 @@ friends.get('/friends', async (c) => {
   ].join('');
 
   return c.html(layoutCtx(c, {
-    title: 'Friends',
+    title: 'Friends & Requests',
+    description: 'Manage your Deckspace friends, incoming requests, outgoing requests, and public Friend Space selections for this sailing.',
     user,
     sailing,
     body,
@@ -124,6 +130,7 @@ friends.get('/friends/manage-top', async (c) => {
   const db      = getDb(c.env);
   const sailing = await getSailing(db, c.env.SAILING_ID).catch(() => null);
   const cdnBase = c.env.R2_PUBLIC_URL || '';
+  const csrf    = c.get('csrfToken') || '';
 
   const [topFriends, allFriends] = await Promise.all([
     q(db.from('top_friends')
@@ -164,6 +171,7 @@ friends.get('/friends/manage-top', async (c) => {
     <div class="ds-module-body">
       <p class="text-small text-muted mb-8">Select up to 8 friends to display in your Friend Space.</p>
       <form method="POST" action="/profile/top-friends" class="ds-form">
+        ${csrfField(csrf)}
         <div class="ds-form-row">
           <label class="text-bold">Current Top Friends</label>
           ${currentTopHtml}
@@ -181,7 +189,13 @@ friends.get('/friends/manage-top', async (c) => {
   </div>
 </div>`;
 
-  return c.html(layoutCtx(c, { title: 'Manage Top Friends', user, sailing, body }));
+  return c.html(layoutCtx(c, {
+    title: 'Manage Top Friends',
+    description: 'Choose which friends appear in your Deckspace Friend Space and Top 8-style profile section.',
+    user,
+    sailing,
+    body
+  }));
 });
 
 /* ============================================================

@@ -18,6 +18,15 @@ export function absUrl(cdnBase, key) {
   return key.startsWith('http') ? key : `${cdnBase || ''}/${key}`;
 }
 
+function densitySrcset(url) {
+  if (!url) return '';
+  if (url.includes('size=')) {
+    const retinaUrl = url.replace(/size=(\d+)/, (_, size) => `size=${Math.min(Number(size) * 2, 512)}`);
+    return `${esc(url)} 1x, ${esc(retinaUrl)} 2x`;
+  }
+  return `${esc(url)} 1x, ${esc(url)} 2x`;
+}
+
 export function module({ header, headerRight = '', body, headerStyle = '', id = '' }) {
   return `<div class="ds-module"${id ? ` id="${esc(id)}"` : ''}>
   <div class="ds-module-header${headerStyle ? ' ' + headerStyle : ''}">
@@ -34,7 +43,7 @@ export function module({ header, headerRight = '', body, headerStyle = '', id = 
 export function avatar(url, displayName, size = 'thumb', extra = '') {
   const dim = size === 'thumb' ? 40 : (size === 'large' ? 160 : 60);
   if (url) {
-    return `<img src="${esc(url)}" alt="${esc(displayName)}" width="${dim}" height="${dim}" loading="lazy"${extra ? ' ' + extra : ''}>`;
+    return `<img src="${esc(url)}" srcset="${densitySrcset(url)}" alt="${esc(displayName)}" width="${dim}" height="${dim}" loading="${size === 'large' ? 'eager' : 'lazy'}"${extra ? ' ' + extra : ''}>`;
   }
   return `<div class="no-photo-xs" style="width:${dim}px;height:${dim}px" aria-label="${esc(displayName)}">?</div>`;
 }
@@ -45,7 +54,7 @@ export function avatar(url, displayName, size = 'thumb', extra = '') {
 export function profilePhotoBlock({ user, profile, isOwn, isOnline, cdnBase }) {
   const avatarUrl = profile?.avatar_url ? absUrl(cdnBase, profile.avatar_url) : null;
   const img = avatarUrl
-    ? `<img class="avatar" src="${esc(avatarUrl)}" alt="${esc(user.display_name)}" width="160" height="160" loading="lazy">`
+    ? `<img class="avatar" src="${esc(avatarUrl)}" srcset="${densitySrcset(avatarUrl)}" alt="Profile photo of ${esc(user.display_name)}" width="160" height="160">`
     : `<div class="no-photo" aria-label="No photo">No Photo</div>`;
 
   const onlineHtml = isOnline
@@ -75,12 +84,13 @@ export function profilePhotoBlock({ user, profile, isOwn, isOnline, cdnBase }) {
 /* ============================================================
    CONTACT/ACTION BOX (left rail)
    ============================================================ */
-export function contactBox({ targetUser, viewerUser, friendStatus }) {
+export function contactBox({ targetUser, viewerUser, friendStatus, csrfToken = '' }) {
   if (!viewerUser || viewerUser.id === targetUser.id) return '';
 
   let friendAction = '';
   if (!friendStatus) {
     friendAction = `<form method="POST" action="/friends/${esc(targetUser.id)}/request" data-retry="true">
+      ${csrfField(csrfToken)}
       <button type="submit" class="contact-btn primary">${ic.userPlus(13)} Add Friend</button>
     </form>`;
   } else if (friendStatus.status === 'pending') {
@@ -88,6 +98,7 @@ export function contactBox({ targetUser, viewerUser, friendStatus }) {
       friendAction = `<span class="contact-btn muted">${ic.userCheck(13)} Request Sent</span>`;
     } else {
       friendAction = `<form method="POST" action="/friends/${esc(friendStatus.id)}/accept" data-retry="true">
+        ${csrfField(csrfToken)}
         <button type="submit" class="contact-btn primary">${ic.userCheck(13)} Accept Friend</button>
       </form>`;
     }
@@ -102,6 +113,7 @@ export function contactBox({ targetUser, viewerUser, friendStatus }) {
     <a href="#wall-post-form" class="contact-btn">${ic.pencil(13)} Write on Wall</a>
     <a href="/report?type=user&id=${esc(targetUser.id)}" class="contact-btn subtle">${ic.flag(12)} Report</a>
     <form method="POST" action="/friends/${esc(targetUser.id)}/block" data-confirm="Block this user?" data-retry="true">
+      ${csrfField(csrfToken)}
       <button type="submit" class="contact-btn danger">${ic.xmark(12)} Block</button>
     </form>
   </div>
@@ -120,12 +132,12 @@ export function detailsTable({ profile, user }) {
   if (!rows.length) return '';
 
   const trs = rows.map(([label, val]) =>
-    `<tr><td class="label">${label}:</td><td class="value">${val}</td></tr>`
+    `<tr><th scope="row" class="label">${label}:</th><td class="value">${val}</td></tr>`
   ).join('');
 
   return module({
     header: `${ic.list(12)} Details`,
-    body: `<table class="details-table">${trs}</table>`
+    body: `<table class="details-table" aria-label="Profile details"><tbody>${trs}</tbody></table>`
   });
 }
 
@@ -179,7 +191,7 @@ export function friendSpaceModule({ topFriends, friendCount, cdnBase }) {
       ? absUrl(cdnBase, friend.profiles.avatar_thumb_url)
       : null;
     const imgHtml = thumbUrl
-      ? `<img src="${esc(thumbUrl)}" alt="${esc(friend.display_name)}" width="60" height="60" loading="lazy">`
+      ? `<img src="${esc(thumbUrl)}" srcset="${densitySrcset(thumbUrl)}" alt="${esc(friend.display_name)}" width="60" height="60" loading="lazy">`
       : `<div class="no-photo-thumb">${esc((friend?.display_name || '?').charAt(0))}</div>`;
     return `<div class="friend-grid-item">
   <a href="/profile/${esc(friend?.username || '')}">${imgHtml}</a>
@@ -199,7 +211,7 @@ export function friendSpaceModule({ topFriends, friendCount, cdnBase }) {
    ============================================================ */
 export function wallModule({ posts, profileUser, viewerUser, readOnly, page, hasMore, csrfToken = '' }) {
   const canPost = viewerUser && !readOnly && viewerUser.id !== profileUser.id;
-  const postForm = canPost ? wallPostForm(profileUser.id) : '';
+  const postForm = canPost ? wallPostForm(profileUser.id, csrfToken) : '';
   const redirectTo = `/profile/${esc(profileUser.username)}`;
 
   const postList = posts && posts.length
@@ -228,9 +240,10 @@ export function wallModule({ posts, profileUser, viewerUser, readOnly, page, has
   });
 }
 
-function wallPostForm(profileUserId) {
+function wallPostForm(profileUserId, csrfToken = '') {
   return `<div class="comment-form" id="wall-post-form">
   <form method="POST" action="/wall/${esc(profileUserId)}" data-retry="true">
+    ${csrfField(csrfToken)}
     <div class="ds-form-row">
       <label for="wall-body" class="sr-only">Write on wall</label>
       <textarea id="wall-body" name="body" class="ds-textarea" placeholder="Write something on their wall..." required maxlength="2000"></textarea>
@@ -250,11 +263,12 @@ export function commentEntry({ authorUser, body, time, id, viewerUser, deleteAct
     ? absUrl(cdnBase, authorUser.profiles.avatar_thumb_url)
     : null;
   const imgHtml = thumbUrl
-    ? `<img src="${esc(thumbUrl)}" alt="${esc(authorUser?.display_name || '')}" width="40" height="40" loading="lazy">`
+    ? `<img src="${esc(thumbUrl)}" srcset="${densitySrcset(thumbUrl)}" alt="${esc(authorUser?.display_name || '')}" width="40" height="40" loading="lazy">`
     : `<div class="no-photo-xs">${esc((authorUser?.display_name || '?').charAt(0))}</div>`;
 
   const deleteHtml = canDelete
     ? `<form method="POST" action="${esc(deleteAction)}" class="inline-form">
+        ${csrfField(csrfToken || '')}
         <button type="submit" class="comment-delete-btn" data-confirm="Delete this?" title="Delete">${ic.trash(11)}</button>
        </form>`
     : '';
@@ -292,7 +306,7 @@ function timeOfDayIcon(dateStr) {
 
 export function eventCard({ event, cdnBase }) {
   const thumbHtml = event.cover_image_url
-    ? `<img src="${esc(absUrl(cdnBase, event.cover_image_url))}" alt="" width="50" height="50" loading="lazy">`
+    ? `<img src="${esc(absUrl(cdnBase, event.cover_image_url))}" alt="Cover image for ${esc(event.title)}" width="50" height="50" loading="lazy">`
     : `<div class="event-cat-icon-block">${categoryIcon(event.category)}</div>`;
 
   const typeBadge = event.event_type === 'official'
@@ -335,7 +349,7 @@ function categoryIcon(cat) {
 /* ============================================================
    PHOTO THUMBNAIL
    ============================================================ */
-export function photoThumb({ photo, cdnBase }) {
+export function photoThumb({ photo, cdnBase, eager = false }) {
   const key = photo.thumb_key || photo.storage_key;
   const url = key
     ? (key.startsWith('http') ? key : absUrl(cdnBase, key))
@@ -344,7 +358,7 @@ export function photoThumb({ photo, cdnBase }) {
   if (!url) return '';
   return `<div class="photo-thumb-item">
   <a href="/photos/${esc(photo.id)}">
-    <img data-src="${esc(url)}" src="/images/placeholder.gif" alt="${esc(photo.caption || '')}" loading="lazy">
+    <img src="${esc(url)}" alt="${esc(photo.caption || `Photo shared on Deckspace`)}" width="300" height="200" loading="${eager ? 'eager' : 'lazy'}">
     ${photo.caption ? `<div class="photo-caption-overlay">${esc(photo.caption.slice(0, 40))}</div>` : ''}
   </a>
 </div>`;
@@ -353,12 +367,12 @@ export function photoThumb({ photo, cdnBase }) {
 /* ============================================================
    PERSON ROW (people browse)
    ============================================================ */
-export function personRow({ user, profile, viewerUser, friendStatus, cdnBase }) {
+export function personRow({ user, profile, viewerUser, friendStatus, cdnBase, csrfToken = '' }) {
   const thumbUrl = profile?.avatar_thumb_url
     ? absUrl(cdnBase, profile.avatar_thumb_url)
     : null;
   const imgHtml = thumbUrl
-    ? `<img class="person-thumb" src="${esc(thumbUrl)}" alt="${esc(user.display_name)}" width="44" height="44" loading="lazy">`
+    ? `<img class="person-thumb" src="${esc(thumbUrl)}" srcset="${densitySrcset(thumbUrl)}" alt="${esc(user.display_name)}" width="44" height="44" loading="lazy">`
     : `<div class="person-thumb-placeholder">${esc((user.display_name || '?').charAt(0))}</div>`;
 
   const tags = (profile?.vibe_tags || []).slice(0, 3).map(t =>
@@ -369,6 +383,7 @@ export function personRow({ user, profile, viewerUser, friendStatus, cdnBase }) 
   if (viewerUser && viewerUser.id !== user.id) {
     if (!friendStatus) {
       actionHtml = `<form method="POST" action="/friends/${esc(user.id)}/request">
+        ${csrfField(csrfToken)}
         <button type="submit" class="ds-btn ds-btn-sm ds-btn-primary">+ Add</button>
       </form>`;
     } else if (friendStatus.status === 'accepted') {
@@ -488,4 +503,3 @@ export function reactionBar({ targetType, targetId, counts = {}, userReact = nul
     </form>`).join('')
   }</div>`;
 }
-

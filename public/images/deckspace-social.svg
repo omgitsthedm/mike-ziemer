@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">Deckspace social preview</title>
+  <desc id="desc">Deckspace cruise intranet preview card.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f3f91"/>
+      <stop offset="100%" stop-color="#1f6ed1"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect x="58" y="58" width="1084" height="514" rx="18" fill="#f7fbff" stroke="#88aee6" stroke-width="4"/>
+  <rect x="58" y="58" width="1084" height="66" rx="18" fill="#1144aa"/>
+  <circle cx="105" cy="91" r="9" fill="#ffcc33"/>
+  <circle cx="136" cy="91" r="9" fill="#ffffff"/>
+  <circle cx="167" cy="91" r="9" fill="#ff6600"/>
+  <text x="210" y="101" font-family="Arial, Helvetica, sans-serif" font-size="36" font-style="italic" font-weight="700" fill="#ffffff">Deck<tspan fill="#ffcc33">space</tspan></text>
+  <text x="94" y="192" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="700" fill="#1752B0">Public-by-design cruise intranet</text>
+  <text x="94" y="250" font-family="Arial, Helvetica, sans-serif" font-size="78" font-weight="700" fill="#17335b">Your cruise.</text>
+  <text x="94" y="332" font-family="Arial, Helvetica, sans-serif" font-size="78" font-weight="700" fill="#17335b">Your crew.</text>
+  <text x="94" y="414" font-family="Arial, Helvetica, sans-serif" font-size="78" font-weight="700" fill="#17335b">Your page.</text>
+  <text x="94" y="487" font-family="Arial, Helvetica, sans-serif" font-size="28" fill="#4c607d">Events, profiles, photos, voyage updates, and a short post-cruise scrapbook.</text>
+  <rect x="756" y="164" width="300" height="76" rx="8" fill="#ffefe3" stroke="#ff6600" stroke-width="3"/>
+  <text x="782" y="211" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="700" fill="#a14000">Tonight on board</text>
+  <rect x="756" y="268" width="300" height="208" rx="10" fill="#ffffff" stroke="#bfd0ee" stroke-width="3"/>
+  <text x="782" y="318" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700" fill="#17335b">Ship Desk</text>
+  <text x="782" y="359" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#4c607d">4 events tonight</text>
+  <text x="782" y="397" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#4c607d">12 passengers online</text>
+  <text x="782" y="435" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#4c607d">Public wall posts and RSVPs</text>
+  <circle cx="796" cy="521" r="14" fill="#ff6600"/>
+  <circle cx="840" cy="521" r="14" fill="#1752B0"/>
+  <circle cx="884" cy="521" r="14" fill="#6699cc"/>
+  <text x="920" y="529" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#4c607d">Temporary by design</text>
+</svg>

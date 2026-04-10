@@ -5,7 +5,7 @@
  * POST /login          — process login
  * GET  /register       — register form
  * POST /register       — process registration
- * GET  /logout         — destroy session + redirect
+ * POST /logout         — destroy session + redirect
  */
 
 import { Hono } from 'hono';
@@ -15,10 +15,16 @@ import {
   destroySession, verifyTurnstile, verifyPassword, hashPassword,
   isSailingAccessible, resolveSession, isRateLimited
 } from '../lib/auth.js';
-import { layout, layoutCtx, esc } from '../templates/layout.js';
+import { layout, layoutCtx, esc, csrfField } from '../templates/layout.js';
 import { ic } from '../templates/icons.js';
 
 const auth = new Hono();
+
+function turnstileErrorMessage(result) {
+  return result?.reason === 'verification_unavailable'
+    ? 'Verification is temporarily unavailable. Please wait a moment and try again.'
+    : 'Please complete the verification challenge.';
+}
 
 /* ============================================================
    LOGIN
@@ -32,7 +38,8 @@ auth.get('/login', async (c) => {
     ? 'Account created! Sign in with your new username and password.'
     : null;
   return c.html(layoutCtx(c, {
-    title: 'Sign In',
+    title: 'Sign In to Deckspace',
+    description: 'Sign in to Deckspace to view your sailing community, browse passenger profiles, check events, post on walls, and share photos during the voyage.',
     body: loginForm({ next, siteKey: c.env.TURNSTILE_SITE_KEY, flash }),
   }));
 });
@@ -48,7 +55,8 @@ auth.post('/login', async (c) => {
   const ip = c.req.header('cf-connecting-ip') || '';
 
   const showLogin = (error, status = 400) => c.html(layoutCtx(c, {
-    title: 'Sign In',
+    title: 'Sign In to Deckspace',
+    description: 'Sign in to Deckspace to view your sailing community, browse passenger profiles, check events, post on walls, and share photos during the voyage.',
     body: loginForm({ next, siteKey: c.env.TURNSTILE_SITE_KEY, error }),
   }), status);
 
@@ -59,8 +67,8 @@ auth.post('/login', async (c) => {
     }
 
     // Turnstile check
-    const turnstileOk = await verifyTurnstile(c.env, turnstileToken, ip);
-    if (!turnstileOk) return showLogin('Please complete the verification challenge.');
+    const turnstile = await verifyTurnstile(c.env, turnstileToken, ip);
+    if (!turnstile.ok) return showLogin(turnstileErrorMessage(turnstile), turnstile.reason === 'verification_unavailable' ? 503 : 400);
 
     // Fetch user — maybeSingle so missing user returns null instead of throwing
     const { data: user } = await db.from('users')
@@ -105,7 +113,8 @@ auth.get('/register', async (c) => {
   if (existingUser) return c.redirect('/');
 
   return c.html(layoutCtx(c, {
-    title: 'Create Account',
+    title: 'Create Your Deckspace Account',
+    description: 'Create a Deckspace account for your sailing to meet passengers, RSVP to events, share photos, and join the public-by-design onboard community.',
     body: registerForm({ siteKey: c.env.TURNSTILE_SITE_KEY }),
   }));
 });
@@ -123,7 +132,8 @@ auth.post('/register', async (c) => {
   const password2   = (form.get('password2') || '').toString();
 
   const showRegister = (error, status = 400) => c.html(layoutCtx(c, {
-    title: 'Create Account',
+    title: 'Create Your Deckspace Account',
+    description: 'Create a Deckspace account for your sailing to meet passengers, RSVP to events, share photos, and join the public-by-design onboard community.',
     body: registerForm({ siteKey: c.env.TURNSTILE_SITE_KEY, error, values: { displayName, username, email } }),
   }), status);
 
@@ -134,8 +144,8 @@ auth.post('/register', async (c) => {
     }
 
     const turnstileToken = (form.get('cf-turnstile-response') || '').toString();
-    const turnstileOk = await verifyTurnstile(c.env, turnstileToken, ip);
-    if (!turnstileOk) return showRegister('Please complete the verification challenge.');
+    const turnstile = await verifyTurnstile(c.env, turnstileToken, ip);
+    if (!turnstile.ok) return showRegister(turnstileErrorMessage(turnstile), turnstile.reason === 'verification_unavailable' ? 503 : 400);
 
     const errs = [];
     if (!displayName || displayName.length < 2) errs.push('Display name must be at least 2 characters.');
@@ -204,9 +214,10 @@ auth.get('/onboarding', async (c) => {
   if (!user) return c.redirect('/login');
 
   return c.html(layoutCtx(c, {
-    title: 'Set Up Your Profile',
+    title: 'Set Up Your Deckspace Profile',
+    description: 'Finish your Deckspace profile with your vibe, hometown, interests, and public profile details for the sailing.',
     user,
-    body: onboardingForm(),
+    body: onboardingForm(c.get('csrfToken') || ''),
   }));
 });
 
@@ -245,7 +256,7 @@ auth.post('/onboarding', async (c) => {
 /* ============================================================
    LOGOUT
    ============================================================ */
-auth.get('/logout', async (c) => {
+auth.post('/logout', async (c) => {
   await destroySession(c.env, c.req.raw);
   const res = c.redirect('/login');
   clearSessionCookie(res);
@@ -304,7 +315,7 @@ function registerForm({ siteKey, error, values = {} }) {
   return `<div class="reg-wrap">
   <div class="reg-left">
     <div class="reg-privacy-badge">
-      Only people on your ship can see your profile. Free forever. No ads, no spam, no junk!
+      Open to everyone on your sailing. No ads, no hidden backchannels, no junk.
     </div>
     <div class="ds-module">
       <div class="ds-module-header">Join the Fun &mdash; It&rsquo;s Free!</div>
@@ -340,7 +351,7 @@ function registerForm({ siteKey, error, values = {} }) {
           </div>
         </form>
         <p class="text-small text-muted mt-8 text-center">
-          Already have an account? <a href="/login">Sign in here</a>
+          Already have an account? <a href="/login">Sign in to Deckspace</a>
         </p>
       </div>
     </div>
@@ -359,10 +370,10 @@ function registerForm({ siteKey, error, values = {} }) {
           <li>${ic.calendar(11)} <strong>Plan your nights</strong> &mdash; Check out what&rsquo;s happening tonight and RSVP to events.</li>
           <li>${ic.camera(11)} <strong>Share photos</strong> &mdash; Post pics from every port and see what everyone else is up to.</li>
           <li>${ic.mail(11)} <strong>Wall posts</strong> &mdash; Write on anyone&rsquo;s page, just like the old MySpace days!</li>
-          <li>${ic.bookOpen(11)} <strong>Yours forever</strong> &mdash; Even after the trip ends, everything stays saved as your scrapbook.</li>
+          <li>${ic.bookOpen(11)} <strong>Short scrapbook</strong> &mdash; After the trip, Deckspace cools into a short read-only archive before it closes.</li>
         </ul>
         <div class="reg-why-footer">
-          Free. Private. Just your ship. No ads. No spam. No weirdos.
+          Free. Public to your sailing. No ads. No hidden backchannels. No nonsense.
         </div>
       </div>
     </div>
@@ -375,7 +386,7 @@ function registerForm({ siteKey, error, values = {} }) {
 </div>`;
 }
 
-function onboardingForm() {
+function onboardingForm(csrfToken = '') {
   return `<div style="max-width:540px;margin:0 auto">
   <div class="ds-module">
     <div class="ds-module-header">Set Up Your Profile</div>
@@ -385,6 +396,7 @@ function onboardingForm() {
         Everything here is optional &mdash; just fill in what you want. You can always change it later.
       </div>
       <form method="POST" action="/onboarding" class="ds-form">
+        ${csrfField(csrfToken)}
         <div class="ds-form-row">
           <label for="ob-about">About Me <span class="reg-optional">(optional)</span></label>
           <textarea id="ob-about" name="about_me" class="ds-textarea" rows="4" maxlength="3000"

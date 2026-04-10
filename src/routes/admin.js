@@ -17,7 +17,7 @@
 import { Hono } from 'hono';
 import { getDb, getReports, getSailing, q, logAudit } from '../lib/db.js';
 import { requireAuth, requireAdmin, hashPassword } from '../lib/auth.js';
-import { layout, layoutCtx, esc, relTime, fmtDate } from '../templates/layout.js';
+import { layout, layoutCtx, esc, relTime, fmtDate, csrfField } from '../templates/layout.js';
 import { module, paginator } from '../templates/components.js';
 
 const admin = new Hono();
@@ -32,7 +32,7 @@ admin.get('/admin', async (c) => {
   const db      = getDb(c.env);
   const sailing = await getSailing(db, c.env.SAILING_ID).catch(() => null);
 
-  const [pendingReports, recentActions, activeUsers, totalEvents, totalPhotos] = await Promise.all([
+  const [pendingReports, recentActions, activeUsers, totalEvents, totalPhotos, voyageDays, bulletinJson, weatherJson] = await Promise.all([
     db.from('reports').select('id', { count: 'exact', head: true }).eq('status', 'pending').then(({ count }) => count || 0),
     q(db.from('moderation_actions')
         .select('id, action_type, target_type, target_id, created_at, notes, users!moderation_actions_admin_user_id_fkey(username, display_name)')
@@ -41,25 +41,31 @@ admin.get('/admin', async (c) => {
     db.from('users').select('id', { count: 'exact', head: true }).eq('sailing_id', c.env.SAILING_ID).eq('account_status', 'active').then(({ count }) => count || 0),
     db.from('events').select('id', { count: 'exact', head: true }).eq('sailing_id', c.env.SAILING_ID).then(({ count }) => count || 0),
     db.from('photos').select('id', { count: 'exact', head: true }).eq('sailing_id', c.env.SAILING_ID).then(({ count }) => count || 0),
+    db.from('voyage_days').select('id', { count: 'exact', head: true }).eq('sailing_id', c.env.SAILING_ID).then(({ count }) => count || 0),
+    c.env.KV?.get(`sailing:${c.env.SAILING_ID}:bulletin`).catch(() => null),
+    c.env.KV?.get(`sailing:${c.env.SAILING_ID}:weather`).catch(() => null),
   ]);
 
-  const statsHtml = `<div style="display:flex;gap:12px;flex-wrap:wrap;padding:6px">
+  const bulletin = bulletinJson ? JSON.parse(bulletinJson) : null;
+  const weather = weatherJson ? JSON.parse(weatherJson) : null;
+
+  const statsHtml = `<div class="admin-stat-grid">
     ${[
       ['Active Users', activeUsers],
       ['Events', totalEvents],
       ['Photos', totalPhotos],
       ['Pending Reports', pendingReports],
     ].map(([label, count]) =>
-      `<div style="background:#f0f5ff;border:1px solid #aabbdd;padding:8px 12px;min-width:100px;text-align:center">
-        <div style="font-size:22px;font-weight:bold;color:#003399">${count}</div>
-        <div style="font-size:10px;color:#666">${esc(label)}</div>
+      `<div class="admin-stat-card">
+        <div class="admin-stat-value">${count}</div>
+        <div class="admin-stat-label">${esc(label)}</div>
       </div>`
     ).join('')}
   </div>`;
 
   const actionsHtml = recentActions.length
     ? recentActions.map(a =>
-        `<div style="padding:4px 6px;border-bottom:1px solid #eee;font-size:11px">
+        `<div class="admin-action-item">
           <strong>${esc(a.users?.display_name || '?')}</strong>
           ${esc(a.action_type)} on ${esc(a.target_type)}
           <span class="text-muted">${relTime(a.created_at)}</span>
@@ -68,11 +74,7 @@ admin.get('/admin', async (c) => {
       ).join('')
     : `<div class="ds-empty-state">No recent actions.</div>`;
 
-  // Current bulletin
-  const bulletinJson = await c.env.KV?.get(`sailing:${c.env.SAILING_ID}:bulletin`).catch(() => null);
-  const bulletin = bulletinJson ? JSON.parse(bulletinJson) : null;
-
-  const navLinks = `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+  const navLinks = `<div class="admin-quick-links">
     <a href="/admin/reports" class="ds-btn ds-btn-primary ds-btn-sm">Reports Queue (${pendingReports})</a>
     <a href="/admin/users" class="ds-btn ds-btn-sm">User Lookup</a>
     <a href="/admin/bulletin" class="ds-btn ds-btn-sm">Bulletin Board</a>
@@ -81,10 +83,44 @@ admin.get('/admin', async (c) => {
     <a href="/admin/demo" class="ds-btn ds-btn-sm" style="border-color:#cc9900;color:#886600">Demo Setup</a>
   </div>`;
 
-  const body = `${navLinks}
+  const liveStatusHtml = `<div class="admin-live-status">
+    <div class="admin-live-row">
+      <span class="admin-live-label">Sailing</span>
+      <strong>${esc(sailing?.name || 'Current sailing')}</strong>
+      <span>${esc(sailing?.ship_name || 'Deckspace')}</span>
+    </div>
+    <div class="admin-live-row">
+      <span class="admin-live-label">Bulletin</span>
+      <strong>${bulletin ? 'Live on home page' : 'Not posted yet'}</strong>
+      <span>${bulletin ? `${esc(bulletin.author)} • ${relTime(bulletin.created_at)}` : 'Post one from Bulletin Board'}</span>
+    </div>
+    <div class="admin-live-row">
+      <span class="admin-live-label">Weather</span>
+      <strong>${weather ? `${weather.temp_f}°F • ${esc(weather.conditions)}` : 'Demo fallback showing'}</strong>
+      <span>${weather ? `${esc(weather.location || 'At Sea')} • ${esc(weather.wave_ft || '')} ft waves` : 'Update from Weather admin'}</span>
+    </div>
+    <div class="admin-live-row">
+      <span class="admin-live-label">Voyage</span>
+      <strong>${voyageDays} day${voyageDays === 1 ? '' : 's'} published</strong>
+      <span>${voyageDays ? 'Schedule is visible to guests' : 'Add itinerary before demo'}</span>
+    </div>
+  </div>`;
+
+  const playbookHtml = `<ol class="admin-playbook">
+    <li>Post the ship bulletin first so the home page feels alive.</li>
+    <li>Set weather and voyage details so the intranet reads as current.</li>
+    <li>Use Demo Setup only when you need to refresh presentation data.</li>
+    <li>Check Reports Queue before the client demo so moderation looks calm.</li>
+  </ol>`;
+
+  const body = `<div class="admin-dashboard">
+${navLinks}
+${module({ header: 'Live Sailing Status', body: liveStatusHtml })}
 ${module({ header: 'Community Stats', body: statsHtml })}
-${bulletin ? module({ header: 'Current Bulletin', body: `<div class="ds-module-body"><p style="font-size:12px">${esc(bulletin.text)}</p><p class="text-small text-muted">Posted by ${esc(bulletin.author)} &mdash; ${relTime(bulletin.created_at)}</p></div>` }) : ''}
-${module({ header: 'Recent Moderation Actions', body: actionsHtml })}`;
+${module({ header: 'Staff Playbook', body: playbookHtml })}
+${bulletin ? module({ header: 'Current Bulletin', body: `<p class="admin-bulletin-copy">${esc(bulletin.text)}</p><p class="text-small text-muted">Posted by ${esc(bulletin.author)} &mdash; ${relTime(bulletin.created_at)}</p>` }) : ''}
+${module({ header: 'Recent Moderation Actions', body: actionsHtml })}
+</div>`;
 
   return c.html(layoutCtx(c, { title: 'Admin', user, sailing, body }));
 });
@@ -98,6 +134,7 @@ admin.get('/admin/reports', async (c) => {
   const sailing = await getSailing(db, c.env.SAILING_ID).catch(() => null);
   const status  = c.req.query('status') || 'pending';
   const page    = parseInt(c.req.query('page') || '1', 10);
+  const csrf    = c.get('csrfToken') || '';
 
   const reports = await getReports(db, { status, page });
 
@@ -115,6 +152,7 @@ admin.get('/admin/reports', async (c) => {
   <div class="report-reason">${esc(r.reason)}</div>
   <div class="report-actions">
     <form method="POST" action="/admin/reports/${esc(r.id)}/resolve" style="display:inline-flex;gap:4px;flex-wrap:wrap">
+      ${csrfField(csrf)}
       <select name="action" class="ds-select" style="width:auto;font-size:11px;padding:2px 4px">
         <option value="remove">Remove Content</option>
         <option value="warn">Warn + Dismiss</option>
@@ -193,6 +231,7 @@ admin.get('/admin/users', async (c) => {
   const db      = getDb(c.env);
   const sailing = await getSailing(db, c.env.SAILING_ID).catch(() => null);
   const search  = (c.req.query('q') || '').trim();
+  const csrf    = c.get('csrfToken') || '';
 
   let users = [];
   if (search) {
@@ -214,9 +253,10 @@ admin.get('/admin/users', async (c) => {
     <td style="padding:4px;font-size:11px">${relTime(u.last_active_at)}</td>
     <td style="padding:4px">
       ${u.account_status === 'active'
-        ? `<form method="POST" action="/admin/users/${esc(u.id)}/suspend" style="display:inline"><button type="submit" class="ds-btn ds-btn-sm" style="font-size:10px">Suspend</button></form>`
-        : `<form method="POST" action="/admin/users/${esc(u.id)}/unsuspend" style="display:inline"><button type="submit" class="ds-btn ds-btn-sm" style="font-size:10px">Unsuspend</button></form>`}
+        ? `<form method="POST" action="/admin/users/${esc(u.id)}/suspend" style="display:inline">${csrfField(csrf)}<button type="submit" class="ds-btn ds-btn-sm" style="font-size:10px">Suspend</button></form>`
+        : `<form method="POST" action="/admin/users/${esc(u.id)}/unsuspend" style="display:inline">${csrfField(csrf)}<button type="submit" class="ds-btn ds-btn-sm" style="font-size:10px">Unsuspend</button></form>`}
       <form method="POST" action="/admin/users/${esc(u.id)}/ban" style="display:inline">
+        ${csrfField(csrf)}
         <button type="submit" class="ds-btn ds-btn-danger ds-btn-sm" style="font-size:10px" data-confirm="Permanently ban this user?">Ban</button>
       </form>
     </td>
@@ -482,6 +522,7 @@ admin.get('/admin/weather', async (c) => {
   const user    = c.get('user');
   const db      = getDb(c.env);
   const sailing = await getSailing(db, c.env.SAILING_ID).catch(() => null);
+  const csrf    = c.get('csrfToken') || '';
 
   const weatherJson = await c.env.KV?.get(`sailing:${c.env.SAILING_ID}:weather`).catch(() => null);
   const w = weatherJson ? JSON.parse(weatherJson) : null;
@@ -493,12 +534,14 @@ admin.get('/admin/weather', async (c) => {
         ${esc(w.wave_ft)} ft waves &mdash; ${esc(w.location || '')}
         <span class="text-muted" style="margin-left:6px">icon: ${esc(w.icon)}</span>
         <form method="POST" action="/admin/weather/clear" style="margin-top:6px;display:inline">
+          ${csrfField(csrf)}
           <button type="submit" class="ds-btn ds-btn-sm" data-confirm="Clear weather? Demo fallback will show.">Clear</button>
         </form>
       </div>`
     : `<div class="ds-empty-state text-small" style="margin-bottom:10px">No weather set &mdash; demo fallback (84&deg;F, Partly Cloudy) is showing.</div>`;
 
   const formHtml = `<form method="POST" action="/admin/weather" class="ds-form">
+    ${csrfField(csrf)}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 10px">
       <div class="ds-form-row">
         <label>Temperature &deg;F</label>
@@ -579,6 +622,7 @@ admin.get('/admin/demo', async (c) => {
   const user    = c.get('user');
   const db      = getDb(c.env);
   const sailing = await getSailing(db, c.env.SAILING_ID).catch(() => null);
+  const csrf    = c.get('csrfToken') || '';
 
   const [wxJson, bulletinJson] = await Promise.all([
     c.env.KV?.get(`sailing:${c.env.SAILING_ID}:weather`).catch(() => null),
@@ -605,6 +649,7 @@ admin.get('/admin/demo', async (c) => {
       Safe to re-run &mdash; skips users that already exist.
     </p>
     <form method="POST" action="/admin/demo/seed">
+      ${csrfField(csrf)}
       <button type="submit" class="ds-btn ds-btn-orange">Seed Demo Data &raquo;</button>
     </form>
     <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
