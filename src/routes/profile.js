@@ -265,24 +265,30 @@ function profilePage({ target, profile, viewer, topFriends, friendCount, friendS
   const headline = profile?.status_text
     || profile?.social_intent
     || (isOwn ? 'Your page is officially open for business.' : `${displayName}'s page is officially open for business.`);
-  const brandPanel = `<div class="profile-brand-panel">
-    <div class="profile-brand-logo-wrap">
-      <img src="/images/deckspace-logo.png" alt="DeckSpace" class="profile-brand-logo" width="220" height="220">
+  const shipCardCopy = compactLine(
+    profile?.social_intent
+      || profile?.about_me
+      || 'A public shipboard page for wall notes, plans, and the scrapbook trail you leave behind.',
+    116
+  );
+  const brandPanel = `<aside class="profile-ship-card" aria-label="Profile snapshot">
+    <img src="/images/deckspace-logo.png" alt="DeckSpace" class="profile-ship-card-logo" width="108" height="108">
+    <div class="profile-ship-card-copy">
+      <div class="profile-ship-card-label">On Deck</div>
+      <p>${esc(shipCardCopy)}</p>
+      <dl class="profile-ship-card-facts">
+        <div><dt>Wall</dt><dd>${wallPosts.length}</dd></div>
+        <div><dt>Top Space</dt><dd>${topFriends.length}/8</dd></div>
+        <div><dt>Views</dt><dd>${profile?.profile_views || 0}</dd></div>
+      </dl>
     </div>
-    <div class="profile-brand-chips">
-      <span class="profile-brand-chip">${safeFriendCount} friend${safeFriendCount === 1 ? '' : 's'}</span>
-      <span class="profile-brand-chip">${topFriends.length}/8 top slots</span>
-      <span class="profile-brand-chip">${wallPosts.length} wall post${wallPosts.length === 1 ? '' : 's'}</span>
-      <span class="profile-brand-chip">${profile?.profile_views || 0} views</span>
-    </div>
-    <p class="profile-brand-note">A public DeckSpace page for wall notes, plans, shipboard friends, and the scrapbook trail you leave behind.</p>
-  </div>`;
+  </aside>`;
 
   const masthead = `<section class="profile-masthead">
     <div class="profile-masthead-main">
       <div class="profile-masthead-kicker">${ic.star(12)} ${isOwn ? 'Your DeckSpace Page' : 'DeckSpace Profile'}</div>
       <h2 class="profile-masthead-title">${esc(displayName)} <span>@${esc(target.username)}</span></h2>
-      <p class="profile-masthead-sub">“${esc(headline)}”</p>
+      <p class="profile-masthead-sub">${esc(headline)}</p>
       <div class="profile-meta-pills">
         <span class="profile-meta-pill">${isOnline ? 'Online now' : `Active ${relTime(target.last_active_at || target.created_at)}`}</span>
         ${profile?.hometown ? `<span class="profile-meta-pill">${esc(profile.hometown)}</span>` : ''}
@@ -294,23 +300,11 @@ function profilePage({ target, profile, viewer, topFriends, friendCount, friendS
         <a href="/friends" class="profile-masthead-link">${ic.users(12)} Friend Space</a>
         <a href="${isOwn ? '/profile/edit' : '#wall-post-form'}" class="profile-masthead-link">${isOwn ? `${ic.settings(12)} Edit Page` : `${ic.pencil(12)} Write on Wall`}</a>
       </div>
-      <div class="profile-stat-strip">
-        <div class="profile-stat-card">
-          <strong>${safeFriendCount}</strong>
-          <span>friends in orbit</span>
-        </div>
-        <div class="profile-stat-card">
-          <strong>${topFriends.length}</strong>
-          <span>top space slots filled</span>
-        </div>
-        <div class="profile-stat-card">
-          <strong>${wallPosts.length}</strong>
-          <span>wall notes loaded</span>
-        </div>
-        <div class="profile-stat-card">
-          <strong>${profile?.profile_views || 0}</strong>
-          <span>profile views</span>
-        </div>
+      <div class="profile-stat-row" aria-label="Profile stats">
+        <span class="profile-stat-pill"><strong>${safeFriendCount}</strong> friends</span>
+        <span class="profile-stat-pill"><strong>${topFriends.length}</strong> top space</span>
+        <span class="profile-stat-pill"><strong>${wallPosts.length}</strong> wall notes</span>
+        <span class="profile-stat-pill"><strong>${profile?.profile_views || 0}</strong> views</span>
       </div>
     </div>
     ${brandPanel}
@@ -462,13 +456,13 @@ function compactLine(value, max = 60) {
 
 function profilePassportModule({ user, profile, isOwn }) {
   const facts = [
-    profile?.hometown ? `<article class="profile-passport-card"><div class="profile-passport-icon">${ic.mapPin(14)}</div><span>Hometown</span><strong>${esc(profile.hometown)}</strong></article>` : '',
-    user?.created_at ? `<article class="profile-passport-card"><div class="profile-passport-icon">${ic.calendar(14)}</div><span>Member Since</span><strong>${fmtDate(user.created_at)}</strong></article>` : '',
-    `<article class="profile-passport-card wide"><div class="profile-passport-icon">${ic.shipWheel(14)}</div><span>Profile URL</span><strong><a href="/profile/${esc(user.username)}">/profile/${esc(user.username)}</a></strong></article>`,
+    profile?.hometown ? `<div class="profile-passport-item"><dt>${ic.mapPin(12)} Hometown</dt><dd>${esc(profile.hometown)}</dd></div>` : '',
+    user?.created_at ? `<div class="profile-passport-item"><dt>${ic.calendar(12)} Member Since</dt><dd>${fmtDate(user.created_at)}</dd></div>` : '',
+    `<div class="profile-passport-item"><dt>${ic.shipWheel(12)} Profile URL</dt><dd><a href="/profile/${esc(user.username)}">/profile/${esc(user.username)}</a></dd></div>`,
   ].filter(Boolean).join('');
 
   const vibeChips = (profile?.vibe_tags || []).length
-    ? `<div class="profile-passport-tags">${(profile.vibe_tags || []).map((tag) => `<span class="vibe-tag">${esc(tag)}</span>`).join('')}</div>`
+    ? `<div class="profile-passport-tag-wrap"><div class="profile-passport-mini-label">Vibe Stickers</div><div class="profile-passport-tags">${(profile.vibe_tags || []).map((tag) => `<span class="vibe-tag">${esc(tag)}</span>`).join('')}</div></div>`
     : `<div class="profile-passport-empty">${isOwn ? 'Add a few vibe tags so your page looks alive.' : 'No vibe stickers on this page yet.'}</div>`;
 
   const songBlock = profile?.song_title
@@ -482,7 +476,7 @@ function profilePassportModule({ user, profile, isOwn }) {
   return `<div class="ds-module">
     <div class="ds-module-header">${ic.star(12)} Passport</div>
     <div class="ds-module-body profile-passport-body">
-      <div class="profile-passport-grid">${facts}</div>
+      <dl class="profile-passport-list">${facts}</dl>
       ${songBlock}
       ${vibeChips}
     </div>

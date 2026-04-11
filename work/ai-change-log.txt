@@ -6,3 +6,4 @@
 2026-04-10 18:25:45 | modified: src/routes/profile.js, src/templates/components.js, public/css/deckspace.css | reason: cut duplicate profile identity blocks and condense profile rail into a visual passport card
 2026-04-10 18:30:00 | modified: src/routes/profile.js, public/css/deckspace.css | reason: add actual visual payload to profile hero and convert passport into icon cards instead of text rows
 2026-04-10 19:22:20 | modified: src/routes/profile.js, public/css/deckspace.css, public/images/deckspace-logo.png | reason: audit-driven profile reduction to remove duplicate identity systems and replace text-heavy hero with logo-based brand panel
+2026-04-10 19:45:00 | modified: src/routes/profile.js, public/css/deckspace.css | reason: simplify profile masthead and passport to remove dashboard-like empty stat boxes and restore a tighter MySpace-style profile composition
