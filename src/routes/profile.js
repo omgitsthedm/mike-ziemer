@@ -260,6 +260,79 @@ profile.post('/wall/:postId/delete', requireAuth, async (c) => {
    PROFILE PAGE TEMPLATE
    ============================================================ */
 function profilePage({ target, profile, viewer, topFriends, friendCount, friendStatus, wallPosts, isOwn, isOnline, readOnly, page, hasMoreWall, cdnBase, sailing, csrfToken }) {
+  const themeClass = profile?.theme_id ? ` theme-${profile.theme_id}` : '';
+  const headline = profile?.status_text
+    || profile?.social_intent
+    || (isOwn ? 'Your page is officially open for business.' : `${target.display_name}'s page is officially open for business.`);
+  const cruiseVibe = profile?.social_intent || 'Floating somewhere between mischief, caffeine, and making plans.';
+  const storyCards = [
+    {
+      label: 'Cruise Vibe',
+      value: cruiseVibe,
+      note: profile?.vibe_tags?.length ? `${profile.vibe_tags.length} vibe tag${profile.vibe_tags.length === 1 ? '' : 's'} on deck` : 'Needs a few more stickers and labels',
+    },
+    {
+      label: 'Hometown Signal',
+      value: profile?.hometown || 'Currently claiming the ship as home base.',
+      note: userMemberSince(target),
+    },
+    {
+      label: 'Now Playing',
+      value: profile?.song_title
+        ? `${profile.song_title}${profile?.song_artist ? ` — ${profile.song_artist}` : ''}`
+        : 'No profile song set yet.',
+      note: profile?.who_id_like_to_meet
+        ? `Looking to meet: ${profile.who_id_like_to_meet.slice(0, 60)}${profile.who_id_like_to_meet.length > 60 ? '…' : ''}`
+        : 'Wall is open for drive-by notes and introductions',
+    },
+  ];
+
+  const masthead = `<section class="profile-masthead">
+    <div class="profile-masthead-main">
+      <div class="profile-masthead-kicker">${ic.star(12)} ${isOwn ? 'Your Deckspace Page' : 'Deckspace Profile'}</div>
+      <h2 class="profile-masthead-title">${esc(target.display_name)} <span>@${esc(target.username)}</span></h2>
+      <p class="profile-masthead-sub">“${esc(headline)}”</p>
+      <div class="profile-meta-pills">
+        <span class="profile-meta-pill">${isOnline ? 'Online now' : `Active ${relTime(target.last_active_at || target.created_at)}`}</span>
+        <span class="profile-meta-pill">${friendCount} friend${friendCount === 1 ? '' : 's'}</span>
+        <span class="profile-meta-pill">${topFriends.length} in the Top Space</span>
+        <span class="profile-meta-pill">${profile?.profile_views || 0} profile view${(profile?.profile_views || 0) === 1 ? '' : 's'}</span>
+      </div>
+      <div class="profile-masthead-links">
+        <a href="/photos?user=${esc(target.username)}" class="profile-masthead-link">${ic.camera(12)} Photo Roll</a>
+        <a href="/events?user=${esc(target.username)}" class="profile-masthead-link">${ic.calendar(12)} Plans</a>
+        <a href="/friends" class="profile-masthead-link">${ic.users(12)} Friend Space</a>
+        <a href="${isOwn ? '/profile/edit' : '#wall-post-form'}" class="profile-masthead-link">${isOwn ? `${ic.settings(12)} Edit Page` : `${ic.pencil(12)} Write on Wall`}</a>
+      </div>
+    </div>
+    <div class="profile-stat-strip">
+      <div class="profile-stat-card">
+        <strong>${friendCount}</strong>
+        <span>friends in orbit</span>
+      </div>
+      <div class="profile-stat-card">
+        <strong>${wallPosts.length}</strong>
+        <span>wall notes loaded</span>
+      </div>
+      <div class="profile-stat-card">
+        <strong>${profile?.vibe_tags?.length || 0}</strong>
+        <span>vibe stickers</span>
+      </div>
+      <div class="profile-stat-card">
+        <strong>${profile?.song_title ? '1' : '0'}</strong>
+        <span>profile songs queued</span>
+      </div>
+    </div>
+  </section>`;
+
+  const storyStrip = `<section class="profile-story-strip">
+    ${storyCards.map((card) => `<article class="profile-story-card">
+      <div class="profile-story-label">${esc(card.label)}</div>
+      <div class="profile-story-value">${esc(card.value)}</div>
+      <div class="profile-story-note">${esc(card.note)}</div>
+    </article>`).join('')}
+  </section>`;
+
   // Build left column
   const leftCol = [
     profilePhotoBlock({ user: target, profile, isOwn, isOnline, cdnBase }),
@@ -289,22 +362,27 @@ function profilePage({ target, profile, viewer, topFriends, friendCount, friendS
 
   const rightCol = [aboutMe, whoMeet, friendSpace, wall].join('');
 
-  return `<div class="profile-wrap">
+  return `<div class="profile-page${themeClass}">
+  ${masthead}
+  ${storyStrip}
+  <div class="profile-wrap">
   <div class="profile-left">${leftCol}</div>
   <div class="profile-right">${rightCol}</div>
+</div>
 </div>`;
 }
 
 function mediaLinksModule(user, profile, cdnBase) {
   const links = [
-    `<a href="/photos?user=${esc(user.username)}">View My Photos</a>`,
-    `<a href="/events?user=${esc(user.username)}">My Events</a>`,
+    `<a href="/photos?user=${esc(user.username)}" class="profile-link-row">${ic.camera(12)} View My Photos</a>`,
+    `<a href="/events?user=${esc(user.username)}" class="profile-link-row">${ic.calendar(12)} My Events</a>`,
+    `<a href="/friends" class="profile-link-row">${ic.users(12)} Friend Space</a>`,
   ];
   return `<div class="ds-module">
   <div class="ds-module-header">${ic.list(12)} Links</div>
-  <div class="ds-module-body" style="padding:5px 6px">
-    ${links.map(l => `<div>${l}</div>`).join('')}
-    <div class="profile-url-field" style="border-top:0;padding:4px 0 0">
+  <div class="ds-module-body profile-links-body">
+    <div class="profile-link-stack">${links.join('')}</div>
+    <div class="profile-url-field profile-url-inline">
       URL: <a href="/profile/${esc(user.username)}">/profile/${esc(user.username)}</a>
     </div>
   </div>
@@ -412,3 +490,8 @@ function editProfileForm({ user, profile, siteKey, csrfToken = '' }) {
 }
 
 export default profile;
+
+function userMemberSince(user) {
+  if (!user?.created_at) return 'Fresh to the ship';
+  return `Member since ${fmtDate(user.created_at)}`;
+}

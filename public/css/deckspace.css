@@ -320,10 +320,154 @@ ul {
 /* ============================================================
    PROFILE LAYOUT — Two-column, OG MySpace anatomy
    ============================================================ */
+.profile-page {
+  display: grid;
+  gap: 10px;
+}
+
+.profile-masthead {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(260px, 0.95fr);
+  gap: 10px;
+  padding: 12px;
+  background:
+    radial-gradient(circle at top right, rgba(255, 154, 72, 0.16), transparent 30%),
+    linear-gradient(180deg, #f2f6ff 0%, #e7efff 100%);
+  border: 1px solid #b8cae7;
+}
+.profile-masthead-kicker {
+  font-size: 10px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.55px;
+  color: var(--ds-blue-mid);
+  margin-bottom: 5px;
+}
+.profile-masthead-title {
+  margin: 0 0 6px;
+  font-size: 28px;
+  line-height: 1;
+  color: var(--ds-navy);
+}
+.profile-masthead-title span {
+  font-size: 14px;
+  color: #5f7190;
+  font-weight: normal;
+}
+.profile-masthead-sub {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #34445d;
+  max-width: 52ch;
+}
+.profile-meta-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.profile-meta-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 8px;
+  background: rgba(255,255,255,0.88);
+  border: 1px solid #cad7eb;
+  color: #54657f;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.45px;
+}
+.profile-masthead-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.profile-masthead-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 30px;
+  padding: 0 10px;
+  background: #fff;
+  border: 1px solid #bfd0ee;
+  color: var(--ds-link);
+  font-size: 11px;
+  font-weight: bold;
+  text-decoration: none;
+}
+.profile-masthead-link:hover {
+  background: #fffdf4;
+  border-color: #d3b35d;
+  color: var(--ds-navy);
+}
+.profile-stat-strip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  align-content: start;
+}
+.profile-stat-card {
+  min-height: 76px;
+  padding: 10px;
+  border: 1px solid #c9d7ed;
+  background: rgba(255,255,255,0.92);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.profile-stat-card strong {
+  display: block;
+  font-size: 22px;
+  line-height: 1.05;
+  color: var(--ds-navy);
+}
+.profile-stat-card span {
+  display: block;
+  margin-top: 4px;
+  font-size: 10px;
+  color: #66768f;
+  text-transform: uppercase;
+  letter-spacing: 0.45px;
+}
+.profile-story-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.profile-story-card {
+  min-height: 116px;
+  padding: 10px 11px;
+  background: linear-gradient(180deg, #fff, #fbfdff);
+  border: 1px solid #cbd8ec;
+}
+.profile-story-label {
+  font-size: 9px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.55px;
+  color: var(--ds-orange-dk);
+  margin-bottom: 5px;
+}
+.profile-story-value {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ds-navy);
+  font-weight: bold;
+}
+.profile-story-note {
+  margin-top: 6px;
+  font-size: 10px;
+  line-height: 1.45;
+  color: #66758d;
+}
+
 .profile-wrap {
   display: grid;
-  grid-template-columns: 200px 1fr;
-  gap: 6px;
+  grid-template-columns: 212px 1fr;
+  gap: 8px;
   align-items: start;
 }
 
@@ -340,20 +484,23 @@ ul {
    PROFILE PHOTO BLOCK
    ============================================================ */
 .profile-photo-block {
-  background: var(--ds-white);
-  border: 1px solid var(--ds-border);
-  padding: 5px;
+  background:
+    linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  border: 1px solid #cad8ed;
+  padding: 8px 7px;
   text-align: center;
-  margin-bottom: 5px;
+  margin-bottom: 6px;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.8);
 }
 
 .profile-photo-block img.avatar {
   width: 160px;
   height: 160px;
   object-fit: cover;
-  border: 1px solid var(--ds-border-dk);
+  border: 2px solid #8ca8d7;
   display: block;
-  margin: 0 auto 4px;
+  margin: 0 auto 6px;
+  background: #eef3fb;
 }
 .pixel-avatar {
   display: block;
@@ -375,9 +522,9 @@ ul {
 }
 
 .profile-display-name {
-  font-size: 14px;
+  font-size: 17px;
   font-weight: bold;
-  color: #000;
+  color: var(--ds-navy);
   display: block;
   margin-bottom: 2px;
 }
@@ -413,7 +560,7 @@ ul {
   padding: 5px 6px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
 }
 
 .contact-btn {
@@ -458,17 +605,17 @@ ul {
   font-size: 11px;
 }
 .details-table td {
-  padding: 2px 3px;
+  padding: 4px 5px;
   vertical-align: top;
   border-bottom: 1px solid #eeeeee;
 }
-.details-table td.label {
+.details-table .label {
   font-weight: bold;
   color: #555;
   white-space: nowrap;
   width: 40%;
 }
-.details-table td.value {
+.details-table .value {
   color: #333;
   word-break: break-word;
 }
@@ -484,6 +631,32 @@ ul {
   word-break: break-all;
 }
 .profile-url-field a { color: var(--ds-link); font-size: 10px; }
+.profile-links-body {
+  padding: 5px 6px;
+}
+.profile-link-stack {
+  display: grid;
+  gap: 4px;
+}
+.profile-link-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 24px;
+  color: var(--ds-link);
+  font-size: 11px;
+  font-weight: bold;
+  text-decoration: none;
+}
+.profile-link-row:hover {
+  color: var(--ds-navy);
+  text-decoration: underline;
+}
+.profile-url-inline {
+  border-top: 1px dashed #d4deec;
+  margin-top: 6px;
+  padding: 6px 0 0;
+}
 
 .song-player {
   padding: 5px 6px;
@@ -552,11 +725,14 @@ ul {
 .friend-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 4px;
+  gap: 6px;
   padding: 6px;
 }
 .friend-grid-item {
   text-align: center;
+  padding: 6px 4px 4px;
+  background: #fbfdff;
+  border: 1px solid #dde6f2;
 }
 .friend-grid-item img {
   width: 60px;
@@ -611,7 +787,7 @@ ul {
 .comment-entry {
   display: flex;
   gap: 6px;
-  padding: 6px;
+  padding: 8px 8px 7px;
   border-bottom: 1px solid #eeeeee;
 }
 .comment-entry:last-child {
@@ -652,9 +828,9 @@ ul {
 .comment-author:hover { text-decoration: underline; }
 .comment-text {
   font-size: 12px;
-  margin-top: 2px;
+  margin-top: 3px;
   word-break: break-word;
-  line-height: 1.35;
+  line-height: 1.45;
 }
 .comment-time {
   font-size: 10px;
@@ -670,13 +846,13 @@ ul {
 
 /* Comment post form */
 .comment-form {
-  padding: 6px;
+  padding: 8px;
   border-top: 1px solid var(--ds-border);
-  background: #fafafa;
+  background: linear-gradient(180deg, #fcfcfc 0%, #f3f6fb 100%);
 }
 .comment-form textarea {
   width: 100%;
-  height: 50px;
+  min-height: 58px;
   border: 1px solid var(--ds-border-dk);
   font-size: 12px;
   font-family: Arial, Helvetica, sans-serif;
@@ -3135,6 +3311,13 @@ a.ds-btn-orange:hover {
   .profile-wrap {
     grid-template-columns: 1fr;
   }
+  .profile-masthead,
+  .profile-story-strip {
+    grid-template-columns: 1fr;
+  }
+  .profile-stat-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 
   /* Profile photo block goes inline */
   .profile-photo-block {
@@ -3269,7 +3452,8 @@ a.ds-btn-orange:hover {
   .home-command-stats,
   .voyage-command-stats,
   .photo-board-stats,
-  .admin-stat-grid {
+  .admin-stat-grid,
+  .profile-stat-strip {
     grid-template-columns: 1fr;
   }
   #ds-nav-links a {
@@ -3452,6 +3636,10 @@ a.ds-btn-orange:hover {
   .profile-wrap {
     grid-template-columns: 160px 1fr;
     gap: 8px;
+  }
+  .profile-masthead,
+  .profile-story-strip {
+    grid-template-columns: 1fr;
   }
 
   /* Home grid: narrow sidebar */
