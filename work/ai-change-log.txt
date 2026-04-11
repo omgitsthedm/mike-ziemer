@@ -4,3 +4,4 @@
 2026-04-10 17:59:28 | modified: public/css/deckspace.css, src/routes/profile.js | reason: overhaul Deckspace profile page with nostalgic marquee, story cards, stronger hierarchy, and cleaner wall/friend presentation
 2026-04-10 18:20:06 | modified: public/css/deckspace.css, src/routes/profile.js | reason: fix broken profile stats null rendering and reduce wall-of-text feel with panelized right column
 2026-04-10 18:25:45 | modified: src/routes/profile.js, src/templates/components.js, public/css/deckspace.css | reason: cut duplicate profile identity blocks and condense profile rail into a visual passport card
+2026-04-10 18:30:00 | modified: src/routes/profile.js, public/css/deckspace.css | reason: add actual visual payload to profile hero and convert passport into icon cards instead of text rows
