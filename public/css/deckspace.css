@@ -178,6 +178,7 @@ input[type="button"] {
 #ds-logo {
   display: inline-flex;
   align-items: center;
+  gap: 7px;
   color: #ffffff;
   text-decoration: none;
   padding: 3px 8px 3px 0;
@@ -189,10 +190,27 @@ input[type="button"] {
   text-decoration: none;
 }
 .ds-brand-wordmark {
-  width: 18px !important;
-  height: 18px !important;
-  max-width: none;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
   filter: drop-shadow(0 1px 1px rgba(0, 21, 60, 0.3));
+}
+.ds-brand-lockup {
+  display: grid;
+  gap: 1px;
+  line-height: 1;
+}
+.ds-brand-name {
+  font-size: 16px;
+  font-weight: bold;
+  letter-spacing: -0.35px;
+  color: #ffffff;
+}
+.ds-brand-tag {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #a9c4ff;
 }
 
 #ds-nav-links {
@@ -329,14 +347,19 @@ input[type="button"] {
   gap: 6px;
   align-items: start;
 }
+.ds-footer-brand-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 .ds-footer-logo-link {
   display: inline-flex;
   align-items: center;
+  flex-shrink: 0;
 }
 .ds-footer-logo {
-  width: 24px !important;
-  height: 24px !important;
-  max-width: none;
+  width: 22px;
+  height: 22px;
 }
 .ds-footer-copy {
   max-width: 620px;
@@ -2718,34 +2741,19 @@ a.ds-btn-orange:hover {
     linear-gradient(180deg, rgba(243,247,255,0.96), rgba(232,240,255,0.98));
   border: 1px solid #b4c7e8;
 }
-.home-command-brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
-}
-.home-command-logo {
-  width: 18px !important;
-  height: 18px !important;
-  max-width: none;
-  flex-shrink: 0;
-}
-.home-command-brand-copy {
-  display: grid;
-  gap: 2px;
-}
 .home-command-kicker {
   font-size: 10px;
   font-weight: bold;
   color: var(--ds-blue-mid);
   letter-spacing: 0.5px;
   text-transform: uppercase;
-  margin-bottom: 5px;
+  margin-bottom: 3px;
 }
 .home-command-brandline {
   font-size: 11px;
   color: #61718a;
   letter-spacing: 0.2px;
+  margin-bottom: 8px;
 }
 .home-command-title {
   margin: 0 0 6px;
@@ -3313,9 +3321,8 @@ a.ds-btn-orange:hover {
   justify-items: center;
 }
 .landing-brand-logo {
-  width: 72px !important;
-  height: 72px !important;
-  max-width: none;
+  width: 112px;
+  height: auto;
 }
 .landing-logo-sub {
   font-size: 11px;
@@ -3612,8 +3619,14 @@ a.ds-btn-orange:hover {
     padding-right: 4px;
   }
   .ds-brand-wordmark {
-    width: 16px !important;
-    height: 16px !important;
+    width: 20px;
+    height: 20px;
+  }
+  .ds-brand-name {
+    font-size: 13px;
+  }
+  .ds-brand-tag {
+    font-size: 8px;
   }
 
   #ds-page {
@@ -3691,14 +3704,6 @@ a.ds-btn-orange:hover {
   .photo-board-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .home-command-brand {
-    align-items: flex-start;
-  }
-  .home-command-logo {
-    width: 16px !important;
-    height: 16px !important;
-  }
-
   /* Photo grid: 3 cols on mobile */
   .photo-grid {
     grid-template-columns: repeat(3, 1fr);
@@ -5025,8 +5030,14 @@ a.ds-btn-orange:hover {
     padding: 5px 14px 5px 0;
   }
   .ds-brand-wordmark {
-    width: 20px !important;
-    height: 20px !important;
+    width: 28px;
+    height: 28px;
+  }
+  .ds-brand-name {
+    font-size: 18px;
+  }
+  .ds-brand-tag {
+    font-size: 9px;
   }
 
   #ds-nav-links a {
@@ -5269,8 +5280,8 @@ a.ds-btn-orange:hover {
   }
 
   .landing-brand-logo {
-    width: 84px !important;
-    height: 84px !important;
+    width: 132px;
+    height: auto;
   }
 
   .landing-logo-sub {

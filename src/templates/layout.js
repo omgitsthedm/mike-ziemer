@@ -186,8 +186,11 @@ function renderNav(user, activeNav, notifCount, csrfToken = '') {
   return `<nav id="ds-nav" role="navigation" aria-label="Main navigation">
   <div id="ds-nav-inner">
     <a href="/" id="ds-logo" aria-label="Deckspace home">
-      <img src="/images/deckspace-mark.png" alt="Deckspace" class="ds-brand-wordmark" width="18" height="18" style="width:18px;height:18px">
-      <span class="sr-only">Deckspace</span>
+      <img src="/images/deckspace-mark.png" alt="" class="ds-brand-wordmark" width="28" height="28">
+      <span class="ds-brand-lockup">
+        <span class="ds-brand-name">DeckSpace</span>
+        <span class="ds-brand-tag">Cruise Social</span>
+      </span>
     </a>
     <button id="nav-toggle" type="button" aria-label="Toggle navigation" aria-controls="ds-nav-links" aria-expanded="false">${ic.menu(18)}</button>
     <div id="ds-nav-links">${links}${mobileExtras}</div>
@@ -279,11 +282,13 @@ function renderFooter() {
   return `<footer class="ds-footer">
   <div class="ds-footer-inner">
     <div class="ds-footer-brand">
-      <a href="/" class="ds-footer-logo-link" aria-label="Deckspace home">
-        <img src="/images/deckspace-mark.png" alt="Deckspace" class="ds-footer-logo" width="24" height="24" style="width:24px;height:24px">
-      </a>
-      <div class="ds-footer-copy">
-        Deckspace is just for this sailing. After the trip, the scrapbook sticks around a little longer, then the lights go out.
+      <div class="ds-footer-brand-row">
+        <a href="/" class="ds-footer-logo-link" aria-label="Deckspace home">
+          <img src="/images/deckspace-mark.png" alt="" class="ds-footer-logo" width="24" height="24">
+        </a>
+        <div class="ds-footer-copy">
+          Deckspace is just for this sailing. After the trip, the scrapbook sticks around a little longer, then the lights go out.
+        </div>
       </div>
       <a href="https://littlefightnyc.com" class="ds-footer-credit" target="_blank" rel="noreferrer">Designed and Built by Little Fight NYC</a>
     </div>

@@ -17,3 +17,4 @@
 2026-04-11 00:31:00 | modified: src/templates/layout.js, src/routes/home.js, public/css/deckspace.css | reason: reduce oversized brand placements by switching shared shell surfaces to the cropped mark and shrinking homepage logo treatments
 2026-04-11 00:35:00 | modified: public/css/deckspace.css | reason: cut logo sizes far more aggressively in header, hero, and footer after the previous brand scale remained visually oversized
 2026-04-11 00:40:00 | modified: src/templates/layout.js, src/routes/home.js, public/css/deckspace.css | reason: hard-constrain brand image dimensions in markup and CSS so cached or conflicting styles cannot inflate the logo surfaces again
+2026-04-11 00:47:00 | modified: src/templates/layout.js, src/routes/home.js, public/css/deckspace.css | reason: replace ad hoc logo sizing with a proper brand hierarchy: readable header lockup, single public landing logo moment, and inline footer brand row
