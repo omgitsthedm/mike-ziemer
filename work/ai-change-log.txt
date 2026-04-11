@@ -1,2 +1,3 @@
 [2026-04-10 12:10 MST] Modified src/routes/events.js and public/css/deckspace.css for a full events hub overhaul: modernized schedule hierarchy, new event cards, rebuilt detail layout, and responsive utility improvements.
 [2026-04-10 17:41 MST] Refined src/routes/events.js and public/css/deckspace.css to reduce overwhelm on the events page: added browse modes, simplified copy, compact spotlight strip, and collapsible day drawers for easier navigation.
+2026-04-10 17:52:25 | modified: public/css/deckspace.css, src/routes/home.js, src/routes/photos.js, src/routes/voyage.js, src/routes/admin.js | reason: unify home/photos/voyage/admin refresh with cohesive nostalgic-modern layouts and navigation improvements

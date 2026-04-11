@@ -33,36 +33,66 @@ voyage.get('/voyage', async (c) => {
   const days    = await getVoyageDays(db, c.env.SAILING_ID);
 
   const today = new Date().toISOString().slice(0, 10);
+  const todayIndex = days.findIndex((day) => day.day_date === today);
+  const nextPort = days.find((day) => day.day_type === 'port' && day.day_date >= today) || days.find((day) => day.day_type === 'port') || null;
+  const seaDays = days.filter((day) => day.day_type === 'sea').length;
+  const portDays = days.filter((day) => day.day_type === 'port').length;
+  const openAnchor = todayIndex >= 0 ? `voyage-${today}` : (days[0] ? `voyage-${days[0].day_date}` : '');
 
   const scheduleHtml = days.length
-    ? days.map(day => {
+    ? days.map((day, index) => {
         const isToday = day.day_date === today;
         const typeLbl = DAY_TYPE_LABEL[day.day_type] || day.day_type;
         const typeIcon = DAY_TYPE_ICON[day.day_type] ? DAY_TYPE_ICON[day.day_type]() : '';
         const timeHtml = (day.arrive_time || day.depart_time)
           ? `<div class="voyage-times">
-              ${day.arrive_time ? `${ic.anchor(11)} Arrive ${day.arrive_time}` : ''}
-              ${day.arrive_time && day.depart_time ? ' &mdash; ' : ''}
-              ${day.depart_time ? `Depart ${day.depart_time} ${ic.ship(11)}` : ''}
-            </div>` : '';
-        return `<div class="voyage-day${isToday ? ' voyage-today' : ''}">
-  <div class="voyage-day-date">${isToday ? '<strong>TODAY &mdash; </strong>' : ''}${fmtDate(day.day_date)}</div>
-  <div class="voyage-day-port">${typeIcon} <strong>${esc(day.port_name)}</strong> <span class="voyage-day-type">${esc(typeLbl)}</span></div>
-  ${timeHtml}
-  ${day.notes ? `<div class="voyage-day-notes">${esc(day.notes)}</div>` : ''}
-</div>`;
+              ${day.arrive_time ? `<span>${ic.anchor(11)} In ${day.arrive_time}</span>` : ''}
+              ${day.depart_time ? `<span>${ic.ship(11)} Out ${day.depart_time}</span>` : ''}
+            </div>` : '<div class="voyage-times"><span>No clock pressure today.</span></div>';
+        return `<details class="voyage-day${isToday ? ' voyage-today' : ''}" id="voyage-${day.day_date}"${openAnchor === `voyage-${day.day_date}` ? ' open' : ''}>
+  <summary class="voyage-day-summary">
+    <div class="voyage-day-step">${index + 1}</div>
+    <div class="voyage-day-head">
+      <div class="voyage-day-date">${isToday ? '<strong>TODAY</strong> &middot; ' : ''}${fmtDate(day.day_date)}</div>
+      <div class="voyage-day-port">${typeIcon} <strong>${esc(day.port_name)}</strong> <span class="voyage-day-type">${esc(typeLbl)}</span></div>
+    </div>
+    <div class="voyage-day-toggle">${day.arrive_time || day.depart_time ? 'Times' : 'Details'}</div>
+  </summary>
+  <div class="voyage-day-body">
+    ${timeHtml}
+    ${day.notes ? `<div class="voyage-day-notes">${esc(day.notes)}</div>` : `<div class="voyage-day-notes">No extra notes for this stop. Let the day reveal itself.</div>`}
+  </div>
+</details>`;
       }).join('')
     : `<div class="ds-empty-state">
         The voyage schedule hasn't been published yet. Check back soon!
       </div>`;
 
   const sailingInfo = sailing
-    ? `<div class="voyage-header">
-        <div class="voyage-ship">${ic.ship(16)} ${esc(sailing.ship_name)}</div>
-        <div class="voyage-name">${esc(sailing.name)}</div>
-      </div>` : '';
+    ? `<section class="voyage-command">
+        <div class="voyage-command-copy">
+          <div class="voyage-ship">${ic.ship(16)} ${esc(sailing.ship_name)}</div>
+          <div class="voyage-name">${esc(sailing.name)}</div>
+          <p class="voyage-command-sub">Sea days, port windows, and the moments when everyone suddenly needs to know exactly what the ship is doing.</p>
+        </div>
+        <div class="voyage-command-stats">
+          <div class="voyage-command-stat"><strong>${days.length}</strong><span>days on deck</span></div>
+          <div class="voyage-command-stat"><strong>${portDays}</strong><span>port calls</span></div>
+          <div class="voyage-command-stat"><strong>${seaDays}</strong><span>sea days</span></div>
+          <div class="voyage-command-stat"><strong>${nextPort ? esc(nextPort.port_name) : 'TBD'}</strong><span>next port</span></div>
+        </div>
+      </section>` : '';
 
-  const body = `${sailingInfo}
+  const voyageStrip = days.length
+    ? `<div class="voyage-strip">
+        ${days.map((day, index) => `<a href="#voyage-${day.day_date}" class="voyage-strip-stop${day.day_date === today ? ' active' : ''}">
+          <span>Day ${index + 1}</span>
+          <strong>${esc(day.port_name)}</strong>
+        </a>`).join('')}
+      </div>`
+    : '';
+
+  const body = `${sailingInfo}${voyageStrip}
 ${module({
   header: `${ic.shipWheel(12)} Voyage Schedule`,
   body: `<div class="voyage-schedule">${scheduleHtml}</div>`

@@ -19,6 +19,7 @@ import { ic } from '../templates/icons.js';
 import { module, photoThumb, commentEntry, paginator } from '../templates/components.js';
 
 const photos = new Hono();
+const PHOTO_VIEWS = ['all', 'events', 'captions'];
 
 /* ============================================================
    PHOTOS LANDING
@@ -30,11 +31,13 @@ photos.get('/photos', async (c) => {
   const cdnBase = c.env.R2_PUBLIC_URL || '';
   const page    = parseInt(c.req.query('page') || '1', 10);
   const userFilter = c.req.query('user') || null;
+  const rawView = (c.req.query('view') || '').toLowerCase().trim();
+  const view = PHOTO_VIEWS.includes(rawView) ? rawView : 'all';
   const limit   = 24;
   const offset  = (page - 1) * limit;
 
   let photoQuery = db.from('photos')
-    .select('id, thumb_key, storage_key, caption, created_at, user_id, event_id, users!photos_user_id_fkey(username, display_name)')
+    .select('id, thumb_key, storage_key, caption, created_at, user_id, event_id, users!photos_user_id_fkey(username, display_name), events!photos_event_id_fkey(id, title)')
     .eq('sailing_id', c.env.SAILING_ID)
     .eq('moderation_status', 'visible')
     .order('created_at', { ascending: false })
@@ -48,23 +51,56 @@ photos.get('/photos', async (c) => {
       photoQuery = photoQuery.eq('user_id', targetUser.id);
     }
   }
+  if (view === 'events') photoQuery = photoQuery.not('event_id', 'is', null);
+  if (view === 'captions') photoQuery = photoQuery.not('caption', 'is', null);
 
-  const { data: photoList } = await photoQuery;
+  const [{ data: photoList }, totalPhotosRes, linkedPhotosRes] = await Promise.all([
+    photoQuery,
+    db.from('photos').select('id', { count: 'exact', head: true }).eq('sailing_id', c.env.SAILING_ID).eq('moderation_status', 'visible'),
+    db.from('photos').select('id', { count: 'exact', head: true }).eq('sailing_id', c.env.SAILING_ID).eq('moderation_status', 'visible').not('event_id', 'is', null),
+  ]);
   const hasMore = (photoList || []).length === limit;
+  const totalPhotos = totalPhotosRes.count || 0;
+  const linkedPhotos = linkedPhotosRes.count || 0;
+  const captionedPhotos = (photoList || []).filter((p) => p.caption).length;
+  const featured = (photoList || []).slice(0, 3);
 
   const uploadBtn = viewer && !isSailingReadOnly(sailing)
-    ? `<div style="margin-bottom:8px"><a href="/photos/upload" class="ds-btn ds-btn-orange">+ Upload Photos</a></div>`
+    ? `<a href="/photos/upload" class="ds-btn ds-btn-orange photo-board-upload">+ Upload Photos</a>`
     : '';
 
   const gridHtml = (photoList || []).length
-    ? `<div class="photo-grid">${(photoList || []).map((p, index) => photoThumb({ photo: p, cdnBase, eager: index < 6 })).join('')}</div>`
+    ? `<div class="photo-board-grid">${(photoList || []).map((p, index) => photoBoardCard({ photo: p, cdnBase, eager: index < 6 })).join('')}</div>`
     : `<div class="ds-empty-state">No photos yet. ${viewer ? `<a href="/photos/upload">Upload some!</a>` : ''}</div>`;
 
   const pager = paginator(page, hasMore, '/photos', userFilter ? `&user=${encodeURIComponent(userFilter)}` : '');
   const title = userFilter ? `Photos by ${userFilter}` : 'Shared Cruise Photos';
+  const boardHeader = userFilter ? `Photos by ${esc(userFilter)}` : 'The Cruise Scrapbook';
+  const spotlight = featured.length
+    ? `<section class="photo-board-spotlights">
+        ${featured.map((p) => photoSpotlightCard({ photo: p, cdnBase })).join('')}
+      </section>`
+    : '';
+  const viewPills = `<div class="photo-board-pills">
+    ${PHOTO_VIEWS.map((pill) => `<a href="${photoQueryHref({ userFilter, view: pill })}" class="photo-board-pill${view === pill ? ' active' : ''}">${esc(photoViewLabel(pill))}</a>`).join('')}
+  </div>`;
+  const summary = `<section class="photo-board-shell">
+    <div class="photo-board-copy">
+      <div class="photo-board-kicker">${ic.camera(13)} Deckspace Photo Board</div>
+      <h2 class="photo-board-title">${boardHeader}</h2>
+      <p class="photo-board-sub">${esc(photoViewDescription(view, userFilter))}</p>
+      ${viewPills}
+    </div>
+    <div class="photo-board-stats">
+      <div class="photo-board-stat"><strong>${totalPhotos}</strong><span>public drops</span></div>
+      <div class="photo-board-stat"><strong>${linkedPhotos}</strong><span>linked to events</span></div>
+      <div class="photo-board-stat"><strong>${captionedPhotos}</strong><span>captioned on this page</span></div>
+      <div class="photo-board-stat action">${uploadBtn || '<span>Browse the ship roll</span>'}</div>
+    </div>
+  </section>`;
 
-  const body = `${uploadBtn}${module({
-    header: userFilter ? `${ic.camera(12)} Photos by ${esc(userFilter)}` : `${ic.camera(12)} Recent Photos`,
+  const body = `${summary}${spotlight}${module({
+    header: userFilter ? `${ic.camera(12)} ${esc(userFilter)}'s Photo Roll` : `${ic.camera(12)} Photo Roll`,
     headerRight: `<a href="/photos">All Photos</a>`,
     body: `${gridHtml}${pager}`
   })}`;
@@ -287,19 +323,24 @@ photos.get('/photos/:id', async (c) => {
 
   const body = `<div class="ds-module">
   <div class="ds-module-header blue">${ic.camera(12)} Photo</div>
-  <div class="photo-view-img">
-    ${mediumUrl
-      ? `<img src="${esc(mediumUrl)}" alt="${esc(photo.caption || `Photo uploaded by ${photo.users?.display_name || 'a passenger'}`)}" width="800" height="600">`
-      : `<div class="ds-empty-state photo-view-unavailable">Image unavailable</div>`}
-  </div>
-  <div class="ds-module-body">
-    ${photo.caption ? `<div class="photo-view-caption">${esc(photo.caption)}</div>` : ''}
-    <div class="text-small text-muted">
-      Uploaded by <a href="/profile/${esc(photo.users?.username || '')}">${esc(photo.users?.display_name || 'Unknown')}</a>
-      ${relTime(photo.created_at)}
-      ${photo.events ? `&mdash; <a href="/events/${esc(photo.events.id)}">${esc(photo.events.title)}</a>` : ''}
+  <div class="photo-view-shell">
+    <div class="photo-view-img">
+      ${mediumUrl
+        ? `<img src="${esc(mediumUrl)}" alt="${esc(photo.caption || `Photo uploaded by ${photo.users?.display_name || 'a passenger'}`)}" width="800" height="600">`
+        : `<div class="ds-empty-state photo-view-unavailable">Image unavailable</div>`}
     </div>
-    <div class="photo-view-actions">${deleteBtn}${reportLink}</div>
+    <div class="photo-view-side">
+      <div class="photo-view-meta-card">
+        <div class="photo-view-overline">${ic.camera(11)} Shared ${relTime(photo.created_at)}</div>
+        <div class="photo-view-caption">${esc(photo.caption || 'A little shipboard evidence with no caption attached.')}</div>
+        <div class="photo-view-facts">
+          <div><span>By</span><strong><a href="/profile/${esc(photo.users?.username || '')}">${esc(photo.users?.display_name || 'Unknown')}</a></strong></div>
+          <div><span>When</span><strong>${fmtDate(photo.created_at, { time: true })}</strong></div>
+          <div><span>Event</span><strong>${photo.events ? `<a href="/events/${esc(photo.events.id)}">${esc(photo.events.title)}</a>` : 'Open ship moment'}</strong></div>
+        </div>
+        <div class="photo-view-actions">${deleteBtn}${reportLink}</div>
+      </div>
+    </div>
   </div>
 </div>
 ${module({
@@ -389,3 +430,66 @@ photos.post('/photos/:id/delete', requireAuth, async (c) => {
 });
 
 export default photos;
+
+function photoQueryHref({ userFilter = null, view = 'all' }) {
+  const params = new URLSearchParams();
+  if (userFilter) params.set('user', userFilter);
+  if (view && view !== 'all') params.set('view', view);
+  const qs = params.toString();
+  return qs ? `/photos?${qs}` : '/photos';
+}
+
+function photoViewLabel(view) {
+  const labels = {
+    all: 'All Drops',
+    events: 'Event Shots',
+    captions: 'Captioned',
+  };
+  return labels[view] || 'All Drops';
+}
+
+function photoViewDescription(view, userFilter) {
+  if (userFilter) return `A cleaner view of the public photos shared by ${userFilter}.`;
+  if (view === 'events') return 'Just the photos tied directly to events and planned moments.';
+  if (view === 'captions') return 'Photos with captions so people can tell what the moment actually was.';
+  return 'The ship roll, cleaned up into something you can browse without drowning in thumbnails.';
+}
+
+function photoCardImageUrl(photo, cdnBase) {
+  const key = photo.thumb_key || photo.storage_key;
+  if (!key) return null;
+  return key.startsWith('http') ? key : `${cdnBase}/${key}`;
+}
+
+function photoBoardCard({ photo, cdnBase, eager = false }) {
+  const url = photoCardImageUrl(photo, cdnBase);
+  if (!url) return '';
+  return `<article class="photo-board-card">
+  <a href="/photos/${esc(photo.id)}" class="photo-board-media">
+    <img src="${esc(url)}" alt="${esc(photo.caption || `Photo shared by ${photo.users?.display_name || 'a passenger'}`)}" width="320" height="320" loading="${eager ? 'eager' : 'lazy'}">
+  </a>
+  <div class="photo-board-meta">
+    <div class="photo-board-tags">
+      <span>${photo.events ? 'Event-linked' : 'Open moment'}</span>
+      <span>${relTime(photo.created_at)}</span>
+    </div>
+    <a href="/photos/${esc(photo.id)}" class="photo-board-card-title">${esc((photo.caption || 'Untitled photo drop').slice(0, 70))}</a>
+    <div class="photo-board-card-byline">by ${esc(photo.users?.display_name || 'Unknown')}${photo.events ? ` &middot; <a href="/events/${esc(photo.events.id)}">${esc(photo.events.title)}</a>` : ''}</div>
+  </div>
+</article>`;
+}
+
+function photoSpotlightCard({ photo, cdnBase }) {
+  const url = photoCardImageUrl(photo, cdnBase);
+  if (!url) return '';
+  return `<article class="photo-spotlight-card">
+  <a href="/photos/${esc(photo.id)}" class="photo-spotlight-image">
+    <img src="${esc(url)}" alt="${esc(photo.caption || `Photo shared by ${photo.users?.display_name || 'a passenger'}`)}" width="480" height="320" loading="lazy">
+  </a>
+  <div class="photo-spotlight-copy">
+    <div class="photo-spotlight-tag">${photo.events ? 'Linked to event' : 'Fresh off the ship roll'}</div>
+    <a href="/photos/${esc(photo.id)}" class="photo-spotlight-title">${esc((photo.caption || 'No caption, just proof it happened').slice(0, 80))}</a>
+    <div class="photo-spotlight-meta">${esc(photo.users?.display_name || 'Unknown')}${photo.events ? ` &middot; ${esc(photo.events.title)}` : ''}</div>
+  </div>
+</article>`;
+}

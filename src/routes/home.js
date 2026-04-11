@@ -230,13 +230,58 @@ function weatherWidget(weather) {
    HOME PAGE TEMPLATE
    ============================================================ */
 function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEvents, recentPeople, recentPhotos, recentActivity, onlineUsers, bulletin }) {
-  // Tonight's events module
+  const firstName = (user?.display_name || 'friend').split(/\s+/)[0];
+  const nextEvent = tonightEvents[0] || upcomingEvents[0] || null;
+  const activePeopleCount = Math.max(onlineUsers.length, recentPeople.length);
+  const photoCount = recentPhotos.length;
+  const activityCount = recentActivity.length;
+
+  const commandDeck = `<section class="home-command-deck">
+  <div class="home-command-copy">
+    <div class="home-command-kicker">${ic.shipWheel(13)} Welcome back, ${esc(firstName)}</div>
+    <h2 class="home-command-title">Everything happening on ${esc(sailing?.ship_name || 'the ship')}, without the scramble.</h2>
+    <p class="home-command-sub">Deckspace is your one-stop board for tonight's plans, wall chatter, photo drops, and the people who are actually around right now.</p>
+    <div class="home-command-links">
+      <a href="/events">${ic.calendar(12)} Find tonight's move</a>
+      <a href="/photos/upload">${ic.camera(12)} Drop a photo</a>
+      <a href="/people">${ic.users(12)} Meet your people</a>
+      <a href="/voyage">${ic.ship(12)} Check the itinerary</a>
+    </div>
+  </div>
+  <div class="home-command-stats">
+    <div class="home-command-stat"><strong>${tonightEvents.length}</strong><span>happening tonight</span></div>
+    <div class="home-command-stat"><strong>${activePeopleCount}</strong><span>faces in the mix</span></div>
+    <div class="home-command-stat"><strong>${photoCount}</strong><span>fresh scrapbook drops</span></div>
+    <div class="home-command-stat"><strong>${activityCount}</strong><span>new wall moments</span></div>
+  </div>
+</section>`;
+
+  const plannerStrip = `<section class="home-spotlight-strip">
+  <article class="home-spotlight-card">
+    <div class="home-spotlight-label">${ic.clock(12)} Next Pull</div>
+    ${nextEvent
+      ? `<a href="/events/${esc(nextEvent.id)}" class="home-spotlight-title">${esc(nextEvent.title)}</a>
+         <div class="home-spotlight-meta">${fmtDate(nextEvent.start_at, { time: true })}${nextEvent.location ? ` &middot; ${esc(nextEvent.location)}` : ''}</div>`
+      : `<div class="home-spotlight-empty">The board is quiet for a second. That probably won't last.</div>`}
+  </article>
+  <article class="home-spotlight-card">
+    <div class="home-spotlight-label">${ic.users(12)} Crowd Radar</div>
+    <div class="home-spotlight-title">${onlineUsers.length ? `${onlineUsers.length} people active now` : 'Quiet right now'}</div>
+    <div class="home-spotlight-meta">${onlineUsers.length ? 'Tap into profiles, wall posts, and tonight plans while everyone is still online.' : 'Good time to claim the vibe before everyone else logs on.'}</div>
+  </article>
+  <article class="home-spotlight-card">
+    <div class="home-spotlight-label">${ic.camera(12)} Scrapbook Pulse</div>
+    <div class="home-spotlight-title">${recentPhotos.length ? `${recentPhotos.length} recent photos` : 'No new drops yet'}</div>
+    <div class="home-spotlight-meta">${recentPhotos.length ? 'Fresh shots are already hitting the photo board.' : 'The camera roll has not gone public yet.'}</div>
+  </article>
+</section>`;
+
   const tonightHtml = tonightEvents.length
     ? tonightEvents.map(e => eventCard({ event: e, cdnBase })).join('')
     : `<div class="ds-empty-state">No events tonight yet. <a href="/events/create">Add one!</a></div>`;
 
   const tonightModule = module({
-    header: `${ic.calendar(12)} Tonight's Events`,
+    header: `${ic.calendar(12)} Tonight's Pull`,
     headerRight: `<a href="/events">All Events</a>`,
     body: `<div class="event-list">${tonightHtml}</div>`
   });
@@ -247,7 +292,7 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
     : `<div class="ds-empty-state">No upcoming events yet.</div>`;
 
   const upcomingModule = module({
-    header: `${ic.clock(12)} Upcoming`,
+    header: `${ic.clock(12)} Coming Up`,
     headerRight: `<a href="/events">Browse All</a>`,
     body: `<div class="event-list">${upcomingHtml}</div>`
   });
@@ -269,13 +314,13 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
     : `<div class="ds-empty-state">No activity yet. <a href="/people">Find some friends!</a></div>`;
 
   const activityModule = module({
-    header: `${ic.msgSquare(12)} Social Activity`,
+    header: `${ic.msgSquare(12)} Wall Chatter`,
     body: activityHtml
   });
 
   // New members module
   const peopleHtml = recentPeople.length
-    ? recentPeople.slice(0, 4).map(p => {
+    ? recentPeople.slice(0, 6).map(p => {
         const thumbUrl = absUrl(cdnBase, p.profiles?.avatar_thumb_url);
         const img = thumbUrl && !isLegacyAvatarUrl(thumbUrl)
           ? `<img src="${esc(thumbUrl)}" width="44" height="44" alt="${esc(p.display_name)}" loading="lazy">`
@@ -288,7 +333,7 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
     : `<div class="ds-empty-state">No members yet.</div>`;
 
   const peopleModule = module({
-    header: `${ic.users(12)} New Members`,
+    header: `${ic.users(12)} Fresh Faces`,
     headerRight: `<a href="/people">Browse All</a>`,
     body: `<div class="home-member-grid">${peopleHtml}</div>`
   });
@@ -299,7 +344,7 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
     : `<div class="ds-empty-state">No photos yet. <a href="/photos">Upload some!</a></div>`;
 
   const photosModule = module({
-    header: `${ic.camera(12)} Recent Photos`,
+    header: `${ic.camera(12)} Scrapbook Drops`,
     headerRight: `<a href="/photos">All Photos</a>`,
     body: photosHtml
   });
@@ -325,27 +370,26 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
     : `<div class="ds-empty-state">No one active right now.</div>`;
 
   const onlineModule = module({
-    header: `${ic.user(12)} Online Now`,
+    header: `${ic.user(12)} Online Right Now`,
     headerRight: `<a href="/people">Browse All</a>`,
     body: onlineHtml
   });
 
   // Sailing info notice (first-time feel)
-  const sailingNotice = sailing ? `<div class="ds-flash info" style="margin-bottom:8px">
-    ${ic.shipWheel(13)} <strong>Welcome to ${esc(sailing.name)} on ${esc(sailing.ship_name)}!</strong>
-    Set up your profile and start meeting everyone on the ship.
+  const sailingNotice = sailing ? `<div class="home-sailing-note">
+    ${ic.shipWheel(13)} <strong>${esc(sailing.name)}</strong> on ${esc(sailing.ship_name)} is live. Build your page, join plans, and leave a paper trail worth keeping.
   </div>` : '';
 
   const wx = weatherWidget(weather);
 
-  return `${bulletinHtml}${sailingNotice}
-<div class="home-grid">
-  <div>
+  return `${bulletinHtml}${commandDeck}${plannerStrip}${sailingNotice}
+<div class="home-grid home-grid-shell">
+  <div class="home-column-main">
     ${tonightModule}
     ${activityModule}
     ${photosModule}
   </div>
-  <div>
+  <div class="home-column-side">
     ${wx}
     ${upcomingModule}
     ${onlineModule}

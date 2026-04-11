@@ -83,6 +83,19 @@ admin.get('/admin', async (c) => {
     <a href="/admin/demo" class="ds-btn ds-btn-sm" style="border-color:#cc9900;color:#886600">Demo Setup</a>
   </div>`;
 
+  const bridgeHtml = `<section class="admin-bridge">
+    <div class="admin-bridge-copy">
+      <div class="admin-bridge-kicker">Bridge Board</div>
+      <h2 class="admin-bridge-title">${esc(sailing?.name || 'Current sailing')} is live.</h2>
+      <p class="admin-bridge-sub">This is the staff control room for guest-facing polish: bulletin, weather, moderation, demo reset, and the pieces that make the ship feel active.</p>
+    </div>
+    <div class="admin-bridge-flags">
+      <div class="admin-bridge-flag${pendingReports ? ' hot' : ''}"><strong>${pendingReports}</strong><span>${pendingReports ? 'items need review' : 'reports under control'}</span></div>
+      <div class="admin-bridge-flag"><strong>${activeUsers}</strong><span>active guest accounts</span></div>
+      <div class="admin-bridge-flag"><strong>${totalEvents + totalPhotos}</strong><span>live guest-facing moments</span></div>
+    </div>
+  </section>`;
+
   const liveStatusHtml = `<div class="admin-live-status">
     <div class="admin-live-row">
       <span class="admin-live-label">Sailing</span>
@@ -113,8 +126,29 @@ admin.get('/admin', async (c) => {
     <li>Check Reports Queue before the client demo so moderation looks calm.</li>
   </ol>`;
 
+  const actionDeckHtml = `<div class="admin-action-deck">
+    <a href="/admin/bulletin" class="admin-action-card">
+      <strong>Update Bulletin</strong>
+      <span>Push the headline guests see on home.</span>
+    </a>
+    <a href="/admin/weather" class="admin-action-card">
+      <strong>Refresh Weather</strong>
+      <span>Make the sailing feel current.</span>
+    </a>
+    <a href="/admin/voyage" class="admin-action-card">
+      <strong>Tune Voyage</strong>
+      <span>Check port names, timing, and notes.</span>
+    </a>
+    <a href="/admin/reports" class="admin-action-card">
+      <strong>Review Reports</strong>
+      <span>Keep the public spaces calm.</span>
+    </a>
+  </div>`;
+
   const body = `<div class="admin-dashboard">
+${bridgeHtml}
 ${navLinks}
+${module({ header: 'Fast Actions', body: actionDeckHtml })}
 ${module({ header: 'Live Sailing Status', body: liveStatusHtml })}
 ${module({ header: 'Community Stats', body: statsHtml })}
 ${module({ header: 'Staff Playbook', body: playbookHtml })}
