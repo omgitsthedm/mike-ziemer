@@ -192,6 +192,10 @@ export function profilePhotoBlock({ user, profile, isOwn, isOnline, cdnBase }) {
 
   return `<div class="profile-photo-block">
   ${img}
+  <div class="profile-nameplate">
+    <strong>${esc(user.display_name)}</strong>
+    <span>@${esc(user.username)}</span>
+  </div>
   <div class="profile-photo-meta">
     ${onlineHtml}
     ${editLink}
@@ -319,7 +323,6 @@ export function friendSpaceModule({ topFriends, friendCount, cdnBase }) {
 
   return module({
     header: `${ic.users(12)} Friend Space`,
-    headerRight: `<a href="/friends">View All</a>`,
     body: `${countLine}<div class="friend-grid">${gridItems}</div>`
   });
 }

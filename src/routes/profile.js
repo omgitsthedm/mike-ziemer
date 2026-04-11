@@ -17,7 +17,7 @@ import { processPhotoUpload, cdnUrl, pickUploadedFile } from '../lib/media.js';
 import { layout, layoutCtx, esc, relTime, fmtDate, csrfField } from '../templates/layout.js';
 import { ic } from '../templates/icons.js';
 import {
-  module, profilePhotoBlock, contactBox, friendSpaceModule, wallModule, paginator
+  module, profilePhotoBlock, contactBox, detailsTable, songModule, vibeTagsModule, friendSpaceModule, wallModule, paginator
 } from '../templates/components.js';
 
 const profile = new Hono();
@@ -259,60 +259,18 @@ profile.post('/wall/:postId/delete', requireAuth, async (c) => {
    PROFILE PAGE TEMPLATE
    ============================================================ */
 function profilePage({ target, profile, viewer, topFriends, friendCount, friendStatus, wallPosts, isOwn, isOnline, readOnly, page, hasMoreWall, cdnBase, sailing, csrfToken }) {
-  const safeFriendCount = Number.isFinite(friendCount) ? friendCount : 0;
-  const displayName = target.display_name || target.username;
   const themeClass = profile?.theme_id ? ` theme-${profile.theme_id}` : '';
-  const headline = profile?.status_text
-    || profile?.social_intent
-    || (isOwn ? 'Your page is officially open for business.' : `${displayName}'s page is officially open for business.`);
-  const quickLine = compactLine(
-    profile?.social_intent
-      || profile?.about_me
-      || 'Public deck notes, shipboard plans, and a little scrapbook energy.',
-    92
-  );
-
-  const masthead = `<section class="profile-masthead">
-    <div class="profile-masthead-main">
-      <div class="profile-masthead-kicker">${ic.star(12)} ${isOwn ? 'Your DeckSpace Page' : 'DeckSpace Profile'}</div>
-      <h2 class="profile-masthead-title">${esc(displayName)} <span>@${esc(target.username)}</span></h2>
-      <p class="profile-masthead-sub">${esc(headline)}</p>
-      <div class="profile-meta-pills">
-        <span class="profile-meta-pill">${isOnline ? 'Online now' : `Active ${relTime(target.last_active_at || target.created_at)}`}</span>
-        ${profile?.hometown ? `<span class="profile-meta-pill">${esc(profile.hometown)}</span>` : ''}
-        <span class="profile-meta-pill">${userMemberSince(target)}</span>
-      </div>
-      <div class="profile-masthead-links">
-        <a href="/photos?user=${esc(target.username)}" class="profile-masthead-link">${ic.camera(12)} Photo Roll</a>
-        <a href="/events?user=${esc(target.username)}" class="profile-masthead-link">${ic.calendar(12)} Plans</a>
-        <a href="/friends" class="profile-masthead-link">${ic.users(12)} Friend Space</a>
-        <a href="${isOwn ? '/profile/edit' : '#wall-post-form'}" class="profile-masthead-link">${isOwn ? `${ic.settings(12)} Edit Page` : `${ic.pencil(12)} Write on Wall`}</a>
-      </div>
-    </div>
-    <aside class="profile-masthead-rail" aria-label="Profile summary">
-      <div class="profile-brand-stamp" aria-label="DeckSpace brand mark">
-        <img src="/images/deckspace-logo.png" alt="DeckSpace" class="profile-brand-stamp-logo" width="52" height="52">
-        <div class="profile-brand-stamp-copy">
-          <strong>DeckSpace</strong>
-          <span>On Deck</span>
-        </div>
-      </div>
-      <div class="profile-stat-grid" aria-label="Profile stats">
-        <div class="profile-stat-chip"><strong>${safeFriendCount}</strong><span>Friends</span></div>
-        <div class="profile-stat-chip"><strong>${topFriends.length}</strong><span>Top Space</span></div>
-        <div class="profile-stat-chip"><strong>${wallPosts.length}</strong><span>Wall Notes</span></div>
-        <div class="profile-stat-chip"><strong>${profile?.profile_views || 0}</strong><span>Views</span></div>
-      </div>
-      <div class="profile-masthead-note">${esc(quickLine)}</div>
-      ${isOwn ? `<a href="/friends/manage-top" class="profile-rail-link">${ic.users(12)} Fill Top Space</a>` : ''}
-    </aside>
-  </section>`;
+  const masthead = `<div class="profile-classic-note">${ic.star(12)} ${isOwn ? 'Your DeckSpace Page' : 'DeckSpace Profile'}</div>`;
 
   // Build left column
   const leftCol = [
     profilePhotoBlock({ user: target, profile, isOwn, isOnline, cdnBase }),
-    profilePassportModule({ user: target, profile, isOwn }),
-    contactBox({ targetUser: target, viewerUser: viewer, friendStatus, csrfToken }),
+    isOwn ? '' : contactBox({ targetUser: target, viewerUser: viewer, friendStatus, csrfToken }),
+    profileLinksModule({ user: target, isOwn }),
+    detailsTable({ profile, user: target }),
+    songModule(profile),
+    vibeTagsModule(profile),
+    profileTopFriendsModule({ isOwn }),
   ].join('');
 
   // Build right column
@@ -325,7 +283,6 @@ function profilePage({ target, profile, viewer, topFriends, friendCount, friendS
     : '';
 
   const friendSpace = friendSpaceModule({ topFriends, friendCount, cdnBase });
-  const friendSpaceCard = `${friendSpace}${isOwn ? `<div class="profile-top-space-action"><a href="/friends/manage-top" class="ds-btn ds-btn-sm">Manage Top Friends</a></div>` : ''}`;
 
   const wall = wallModule({
     posts: wallPosts, profileUser: target, viewerUser: viewer, readOnly,
@@ -335,7 +292,7 @@ function profilePage({ target, profile, viewer, topFriends, friendCount, friendS
   const rightCol = `<div class="profile-main-panels">
     ${aboutMe ? `<div class="profile-panel">${aboutMe}</div>` : ''}
     ${whoMeet ? `<div class="profile-panel">${whoMeet}</div>` : ''}
-    <div class="profile-panel profile-panel-wide">${friendSpaceCard}</div>
+    <div class="profile-panel">${friendSpace}</div>
   </div>
   <div class="profile-wall-shell">${wall}</div>`;
 
@@ -452,31 +409,26 @@ function compactLine(value, max = 60) {
   return line.length > max ? `${line.slice(0, max)}…` : line;
 }
 
-function profilePassportModule({ user, profile, isOwn }) {
-  const facts = [
-    profile?.hometown ? `<div class="profile-passport-item"><dt>${ic.mapPin(12)} Hometown</dt><dd>${esc(profile.hometown)}</dd></div>` : '',
-    user?.created_at ? `<div class="profile-passport-item"><dt>${ic.calendar(12)} Member Since</dt><dd>${fmtDate(user.created_at)}</dd></div>` : '',
-    `<div class="profile-passport-item"><dt>${ic.shipWheel(12)} Profile URL</dt><dd><a href="/profile/${esc(user.username)}">/profile/${esc(user.username)}</a></dd></div>`,
-  ].filter(Boolean).join('');
+function profileLinksModule({ user }) {
+  return module({
+    header: `${ic.list(12)} Links`,
+    body: `<div class="profile-links-list">
+      <a href="/photos?user=${esc(user.username)}">View My Photos</a>
+      <a href="/events?user=${esc(user.username)}">My Events</a>
+      <div class="profile-links-url">
+        <span>URL:</span>
+        <a href="/profile/${esc(user.username)}">/profile/${esc(user.username)}</a>
+      </div>
+    </div>`
+  });
+}
 
-  const vibeChips = (profile?.vibe_tags || []).length
-    ? `<div class="profile-passport-tag-wrap"><div class="profile-passport-mini-label">Vibe Stickers</div><div class="profile-passport-tags">${(profile.vibe_tags || []).map((tag) => `<span class="vibe-tag">${esc(tag)}</span>`).join('')}</div></div>`
-    : `<div class="profile-passport-empty">${isOwn ? 'Add a few vibe tags so your page looks alive.' : 'No vibe stickers on this page yet.'}</div>`;
-
-  const songBlock = profile?.song_title
-    ? `<div class="profile-passport-song">
-        <div class="profile-passport-song-label">${ic.music(12)} Now Spinning</div>
-        <strong>${esc(profile.song_title)}</strong>
-        ${profile?.song_artist ? `<span>${esc(profile.song_artist)}</span>` : ''}
-      </div>`
-    : '';
-
-  return `<div class="ds-module">
-    <div class="ds-module-header">${ic.star(12)} Passport</div>
-    <div class="ds-module-body profile-passport-body">
-      <dl class="profile-passport-list">${facts}</dl>
-      ${songBlock}
-      ${vibeChips}
-    </div>
-  </div>`;
+function profileTopFriendsModule({ isOwn }) {
+  const body = isOwn
+    ? `<a href="/friends/manage-top" class="profile-manage-top-btn">Manage Top Friends</a>`
+    : `<div class="ds-empty-state">Top friends are pinned on the main page.</div>`;
+  return module({
+    header: `${ic.star(12)} Top Friends`,
+    body
+  });
 }
