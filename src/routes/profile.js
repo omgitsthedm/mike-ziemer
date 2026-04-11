@@ -154,7 +154,60 @@ profile.get('/profile/:username', async (c) => {
   const { topFriends, friendCount, friendStatus } = await getProfilePage(db, target.id, viewer?.id);
   const profile = target.profiles;
 
-  const wallPosts = await getWallPosts(db, target.id, page);
+  const [
+    wallPosts,
+    recentPhotos,
+    upcomingPlans,
+    latestPhoto,
+    latestWallNote,
+    latestRsvp,
+  ] = await Promise.all([
+    getWallPosts(db, target.id, page),
+    q(
+      db.from('photos')
+        .select('id, thumb_key, medium_key, caption, created_at')
+        .eq('user_id', target.id)
+        .eq('moderation_status', 'visible')
+        .order('created_at', { ascending: false })
+        .limit(4)
+    ).catch(() => []),
+    q(
+      db.from('event_rsvps')
+        .select('status, created_at, events!inner(id, title, start_at, location)')
+        .eq('user_id', target.id)
+        .in('status', ['going', 'interested'])
+        .gte('events.start_at', new Date().toISOString())
+        .order('start_at', { ascending: true, foreignTable: 'events' })
+        .limit(3)
+    ).catch(() => []),
+    q(
+      db.from('photos')
+        .select('id, created_at, caption')
+        .eq('user_id', target.id)
+        .eq('moderation_status', 'visible')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+    ).catch(() => null),
+    q(
+      db.from('wall_posts')
+        .select('id, created_at')
+        .eq('profile_user_id', target.id)
+        .eq('moderation_status', 'visible')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+    ).catch(() => null),
+    q(
+      db.from('event_rsvps')
+        .select('status, created_at, events!inner(id, title, start_at)')
+        .eq('user_id', target.id)
+        .in('status', ['going', 'interested'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+    ).catch(() => null),
+  ]);
 
   // Profile views increment (fire-and-forget, skip own views)
   if (viewer && viewer.id !== target.id) {
@@ -172,7 +225,9 @@ profile.get('/profile/:username', async (c) => {
     target, profile, viewer, topFriends, friendCount, friendStatus,
     wallPosts, isOwn, isOnline, readOnly,
     page, hasMoreWall: wallPosts.length === 20,
-    cdnBase, sailing, csrfToken: csrf
+    cdnBase, sailing, csrfToken: csrf,
+    recentPhotos, upcomingPlans,
+    recentActivity: buildRecentActivity({ latestPhoto, latestWallNote, latestRsvp })
   });
 
   return c.html(layoutCtx(c, {
@@ -258,7 +313,7 @@ profile.post('/wall/:postId/delete', requireAuth, async (c) => {
 /* ============================================================
    PROFILE PAGE TEMPLATE
    ============================================================ */
-function profilePage({ target, profile, viewer, topFriends, friendCount, friendStatus, wallPosts, isOwn, isOnline, readOnly, page, hasMoreWall, cdnBase, sailing, csrfToken }) {
+function profilePage({ target, profile, viewer, topFriends, friendCount, friendStatus, wallPosts, isOwn, isOnline, readOnly, page, hasMoreWall, cdnBase, sailing, csrfToken, recentPhotos = [], upcomingPlans = [], recentActivity = [] }) {
   const themeClass = profile?.theme_id ? ` theme-${profile.theme_id}` : '';
   const masthead = `<div class="profile-classic-note">${ic.star(12)} ${isOwn ? 'Your DeckSpace Page' : 'DeckSpace Profile'}</div>`;
 
@@ -282,6 +337,40 @@ function profilePage({ target, profile, viewer, topFriends, friendCount, friendS
     ? module({ header: `${ic.users(12)} Who I'd Like to Meet`, body: `<div class="blurb-body">${esc(profile.who_id_like_to_meet)}</div>` })
     : '';
 
+  const activity = module({
+    header: `${ic.clock(12)} Recent Activity`,
+    body: recentActivity.length
+      ? `<div class="profile-activity-list">${recentActivity.map((item) => `<div class="profile-activity-item"><strong>${esc(item.label)}</strong><span>${esc(item.detail)}</span></div>`).join('')}</div>`
+      : `<div class="ds-empty-state">${isOwn ? 'Start posting, RSVPing, or uploading photos to bring this page to life.' : 'No recent deck activity yet.'}</div>`
+  });
+
+  const plans = module({
+    header: `${ic.calendar(12)} Upcoming Plans`,
+    body: upcomingPlans.length
+      ? `<div class="profile-plans-list">${upcomingPlans.map((entry) => {
+          const event = entry.events;
+          const when = fmtDate(event?.start_at, { time: true });
+          return `<a href="/events/${esc(event?.id || '')}" class="profile-plan-card">
+            <strong>${esc(event?.title || 'Upcoming event')}</strong>
+            <span>${esc(when)}${event?.location ? ` · ${esc(event.location)}` : ''}</span>
+          </a>`;
+        }).join('')}</div>`
+      : `<div class="ds-empty-state">${isOwn ? 'RSVP to a few events and they will show up here.' : 'No plans posted yet.'}</div>`
+  });
+
+  const photos = module({
+    header: `${ic.camera(12)} Recent Photos`,
+    body: recentPhotos.length
+      ? `<div class="profile-recent-photos">${recentPhotos.map((photo) => {
+          const thumb = photo.thumb_key || photo.medium_key || '';
+          if (!thumb) return '';
+          const src = thumb.startsWith('http') ? thumb : `${cdnBase}/${thumb}`;
+          const alt = photo.caption ? esc(photo.caption) : 'Recent photo';
+          return `<a href="/photos/${esc(photo.id)}" class="profile-recent-photo"><img src="${esc(src)}" alt="${alt}" width="92" height="92" loading="lazy"></a>`;
+        }).join('')}</div>`
+      : `<div class="ds-empty-state">${isOwn ? 'Upload a few photos to fill out your scrapbook.' : 'No photos on this page yet.'}</div>`
+  });
+
   const friendSpace = friendSpaceModule({ topFriends, friendCount, cdnBase });
 
   const wall = wallModule({
@@ -292,7 +381,10 @@ function profilePage({ target, profile, viewer, topFriends, friendCount, friendS
   const rightCol = `<div class="profile-main-panels">
     ${aboutMe ? `<div class="profile-panel">${aboutMe}</div>` : ''}
     ${whoMeet ? `<div class="profile-panel">${whoMeet}</div>` : ''}
+    <div class="profile-panel">${activity}</div>
+    <div class="profile-panel">${plans}</div>
     <div class="profile-panel">${friendSpace}</div>
+    <div class="profile-panel">${photos}</div>
   </div>
   <div class="profile-wall-shell">${wall}</div>`;
 
@@ -407,6 +499,40 @@ function compactLine(value, max = 60) {
   const line = (value || '').replace(/\s+/g, ' ').trim();
   if (!line) return '';
   return line.length > max ? `${line.slice(0, max)}…` : line;
+}
+
+function buildRecentActivity({ latestPhoto, latestWallNote, latestRsvp }) {
+  const items = [];
+
+  if (latestRsvp?.events?.title) {
+    items.push({
+      time: latestRsvp.created_at,
+      label: latestRsvp.status === 'going' ? 'Locked in a plan' : 'Marked something interesting',
+      detail: `${latestRsvp.events.title} · ${relTime(latestRsvp.created_at)}`
+    });
+  }
+
+  if (latestPhoto?.created_at) {
+    items.push({
+      time: latestPhoto.created_at,
+      label: 'Dropped a new photo',
+      detail: latestPhoto.caption
+        ? `${compactLine(latestPhoto.caption, 46)} · ${relTime(latestPhoto.created_at)}`
+        : `Updated the scrapbook ${relTime(latestPhoto.created_at)}`
+    });
+  }
+
+  if (latestWallNote?.created_at) {
+    items.push({
+      time: latestWallNote.created_at,
+      label: 'Got a wall note',
+      detail: `Wall still buzzing ${relTime(latestWallNote.created_at)}`
+    });
+  }
+
+  return items
+    .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
+    .slice(0, 3);
 }
 
 function profileLinksModule({ user }) {

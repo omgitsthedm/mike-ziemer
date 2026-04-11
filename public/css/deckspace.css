@@ -624,6 +624,73 @@ ul {
   border-radius: 0;
   white-space: nowrap;
 }
+.profile-activity-list {
+  display: grid;
+  gap: 0;
+}
+.profile-activity-item {
+  display: grid;
+  gap: 2px;
+  padding: 7px 6px;
+  border-bottom: 1px solid #eeeeee;
+}
+.profile-activity-item:last-child {
+  border-bottom: none;
+}
+.profile-activity-item strong {
+  display: block;
+  font-size: 11px;
+  color: var(--ds-navy);
+}
+.profile-activity-item span {
+  display: block;
+  font-size: 11px;
+  color: #677792;
+}
+.profile-plans-list {
+  display: grid;
+  gap: 6px;
+  padding: 2px 0;
+}
+.profile-plan-card {
+  display: grid;
+  gap: 2px;
+  padding: 7px 8px;
+  border: 1px solid #d8e2f1;
+  background: #fbfdff;
+  text-decoration: none;
+}
+.profile-plan-card:hover {
+  border-color: #b9cae3;
+  background: #f4f8ff;
+  text-decoration: none;
+}
+.profile-plan-card strong {
+  display: block;
+  font-size: 11px;
+  color: var(--ds-link);
+}
+.profile-plan-card span {
+  display: block;
+  font-size: 10px;
+  color: #6c7d96;
+}
+.profile-recent-photos {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.profile-recent-photo {
+  display: block;
+  background: #f7fbff;
+  border: 1px solid #d8e2f1;
+}
+.profile-recent-photo img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
 
 /* ============================================================
    FRIEND SPACE / TOP FRIENDS GRID
@@ -3242,6 +3309,9 @@ a.ds-btn-orange:hover {
     flex-shrink: 0;
     margin: 0;
   }
+  .profile-recent-photos {
+    grid-template-columns: repeat(2, 1fr);
+  }
 
   /* Compress friend grid */
   .friend-grid {
@@ -3540,6 +3610,10 @@ a.ds-btn-orange:hover {
     gap: 8px;
   }
   .profile-main-panels { grid-template-columns: 1fr; }
+
+  .profile-recent-photos {
+    grid-template-columns: repeat(2, 1fr);
+  }
 
   /* Home grid: narrow sidebar */
   .home-grid {
