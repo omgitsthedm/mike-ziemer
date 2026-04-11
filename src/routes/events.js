@@ -25,12 +25,15 @@ const events = new Hono();
    EVENTS LIST — Shattered Shores MySpace-style schedule
    ============================================================ */
 const EVENT_CATEGORIES = ['karaoke','trivia','dinner','deck','social','excursion','drinks','poker','theme','music','other'];
+const EVENT_VIEWS = ['all', 'official', 'community', 'popular', 'late'];
 
 events.get('/events', async (c) => {
   const viewer   = await resolveSession(c.env, c.req.raw);
   const db       = getDb(c.env);
   const sailing  = await getSailing(db, c.env.SAILING_ID).catch(() => null);
   const category = (c.req.query('category') || '').toLowerCase().trim();
+  const rawView = (c.req.query('view') || '').toLowerCase().trim();
+  const view = EVENT_VIEWS.includes(rawView) ? rawView : 'all';
 
   // Fetch all visible public events for the sailing, ordered by time
   let evQuery = db.from('events')
@@ -46,10 +49,11 @@ events.get('/events', async (c) => {
   }
 
   const { data: allEventsRaw } = await evQuery;
+  const allEvents = filterEventsForView(allEventsRaw || [], view);
 
   // Group by calendar date
   const dayMap = new Map();
-  for (const ev of allEventsRaw || []) {
+  for (const ev of allEvents) {
     const d = ev.start_at.slice(0, 10);
     if (!dayMap.has(d)) dayMap.set(d, []);
     dayMap.get(d).push(ev);
@@ -58,16 +62,26 @@ events.get('/events', async (c) => {
   const userFilter = (c.req.query('user') || '').trim();
   const title = category
     ? `Cruise Events: ${category}`
+    : view !== 'all'
+    ? `Cruise Events: ${view}`
     : userFilter
     ? `Cruise Events by ${userFilter}`
     : 'Cruise Events and Plans';
 
-  const body = eventsSchedulePage({ viewer, sailing, days, activeCategory: category });
+  const body = eventsSchedulePage({ viewer, sailing, days, activeCategory: category, activeView: view });
 
   return c.html(layoutCtx(c, {
     title,
     description: category
       ? `Browse public ${category} events on Deckspace for this sailing.`
+      : view === 'official'
+      ? 'Browse official Deckspace ship programming for this sailing.'
+      : view === 'community'
+      ? 'Browse public passenger-made Deckspace plans for this sailing.'
+      : view === 'popular'
+      ? 'Browse the most active Deckspace events by RSVP count for this sailing.'
+      : view === 'late'
+      ? 'Browse after-dark Deckspace events for this sailing.'
       : userFilter
       ? `Browse Deckspace events connected to ${userFilter} on this sailing.`
       : 'Browse public Deckspace events for this sailing, including official programming, passenger plans, and RSVP counts.',
@@ -376,6 +390,32 @@ function fmtShortDate(dateStr) {
   return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
+function isLateNightEvent(dateStr) {
+  if (!dateStr) return false;
+  const hour = new Date(dateStr).getHours();
+  return hour >= 22 || hour < 2;
+}
+
+function filterEventsForView(events, view = 'all') {
+  const items = [...events];
+  switch (view) {
+    case 'official':
+      return items.filter((ev) => ev.event_type === 'official');
+    case 'community':
+      return items.filter((ev) => ev.event_type !== 'official');
+    case 'late':
+      return items.filter((ev) => isLateNightEvent(ev.start_at));
+    case 'popular':
+      return items.sort((a, b) => {
+        const diff = (b.rsvp_count || 0) - (a.rsvp_count || 0);
+        if (diff !== 0) return diff;
+        return new Date(a.start_at) - new Date(b.start_at);
+      });
+    default:
+      return items;
+  }
+}
+
 function eventCategoryLabel(cat) {
   if (!cat) return 'Open Deck';
   return cat.charAt(0).toUpperCase() + cat.slice(1);
@@ -404,20 +444,47 @@ function eventWindowLabel(event) {
 function teaser(text = '', fallback = '') {
   const source = (text || fallback || '').trim();
   if (!source) return '';
-  return source.length > 180 ? `${source.slice(0, 177).trim()}...` : source;
+  return source.length > 120 ? `${source.slice(0, 117).trim()}...` : source;
 }
 
-function eventsSchedulePage({ viewer, sailing, days, activeCategory = '' }) {
+function viewLabel(view) {
+  const labels = {
+    all: 'Everything',
+    official: 'Ship Picks',
+    community: 'Passenger Plans',
+    popular: 'Big Crowd',
+    late: 'After Dark',
+  };
+  return labels[view] || 'Everything';
+}
+
+function viewDescription(view) {
+  const labels = {
+    official: 'Just the official ship schedule.',
+    community: 'Only public passenger-made plans.',
+    popular: 'Sort by the strongest RSVP pull.',
+    late: 'Nighttime and after-hours options.',
+    all: 'Official programming and public passenger plans together.',
+  };
+  return labels[view] || labels.all;
+}
+
+function queryHref({ category = '', view = 'all' }) {
+  const params = new URLSearchParams();
+  if (category) params.set('category', category);
+  if (view && view !== 'all') params.set('view', view);
+  const qs = params.toString();
+  return qs ? `/events?${qs}` : '/events';
+}
+
+function eventsSchedulePage({ viewer, sailing, days, activeCategory = '', activeView = 'all' }) {
   const shipName = sailing?.ship_name || 'the ship';
   const allEvents = days.flatMap(([, evs]) => evs || []);
   const now = new Date();
   const totalEvents = allEvents.length;
   const officialCount = allEvents.filter((ev) => ev.event_type === 'official').length;
   const passengerCount = totalEvents - officialCount;
-  const lateNightCount = allEvents.filter((ev) => {
-    const hour = new Date(ev.start_at).getHours();
-    return hour >= 22 || hour < 2;
-  }).length;
+  const lateNightCount = allEvents.filter((ev) => isLateNightEvent(ev.start_at)).length;
   const nextUp = allEvents.find((ev) => new Date(ev.start_at) >= now) || allEvents[0] || null;
   const officialSpotlight = allEvents.find((ev) => ev.event_type === 'official' && new Date(ev.start_at) >= now)
     || allEvents.find((ev) => ev.event_type === 'official')
@@ -433,13 +500,16 @@ function eventsSchedulePage({ viewer, sailing, days, activeCategory = '' }) {
   }, null);
   const dayJumps = days.map(([date, evs], idx) => {
     const dayInfo = DAY_HEADERS[idx] || { label: `Day ${idx + 1}`, sub: 'Still very much happening.' };
+    const first = evs[0];
     return {
       anchor: `day-${date}`,
       label: dayInfo.label,
       sub: fmtShortDate(date),
       count: evs.length,
+      firstTime: first ? fmtTime(first.start_at) : '',
     };
   });
+  const openDayAnchor = nextUp ? `day-${nextUp.start_at.slice(0, 10)}` : dayJumps[0]?.anchor || '';
 
   // ---- LEFT RAIL ----
   const top8Items = [
@@ -493,9 +563,9 @@ function eventsSchedulePage({ viewer, sailing, days, activeCategory = '' }) {
   </div>
 
   <div class="ds-module ss-rail-module">
-    <div class="ds-module-header">${ic.flag(12)} Cruise Bulletin</div>
+    <div class="ds-module-header">${ic.flag(12)} Fast Read</div>
     <div class="ds-module-body ss-bulletin">
-      This board is where official programming, spontaneous plans, and "meet us in fifteen" energy all land. Check times, locations, and RSVP counts before you commit your emotional evening.
+      Use the browse modes first, then drill into a day. RSVP counts tell you where the crowd is. The rest is taste and timing.
     </div>
   </div>
 
@@ -530,28 +600,22 @@ function eventsSchedulePage({ viewer, sailing, days, activeCategory = '' }) {
 
   // ---- MAIN CONTENT ----
 
-  const statusBar = `<div class="ss-status-bar">
-  <span class="ss-status-item"><strong>Mood:</strong> cautiously devastated</span>
-  <span class="ss-status-sep">|</span>
-  <span class="ss-status-item"><strong>Tonight's Read:</strong> official schedule meets passenger-instigated plot</span>
-  <span class="ss-status-sep">|</span>
-  <span class="ss-status-item"><strong>Use It For:</strong> quick scans, RSVP counts, and meeting people before the thing starts</span>
-  <span class="ss-status-sep">|</span>
-  <span class="ss-status-item"><strong>Last Updated:</strong> live from Deckspace</span>
-</div>`;
-
   const catPills = `<div class="event-cat-pills">
-    <a href="/events" class="event-cat-pill${!activeCategory ? ' active' : ''}">All</a>
+    <a href="${queryHref({ view: activeView })}" class="event-cat-pill${!activeCategory ? ' active' : ''}">All</a>
     ${EVENT_CATEGORIES.map(cat =>
-      `<a href="/events?category=${encodeURIComponent(cat)}" class="event-cat-pill${activeCategory === cat ? ' active' : ''}">${CAT_ICONS[cat] ? CAT_ICONS[cat]() : ''}${esc(cat)}</a>`
+      `<a href="${queryHref({ category: cat, view: activeView })}" class="event-cat-pill${activeCategory === cat ? ' active' : ''}">${CAT_ICONS[cat] ? CAT_ICONS[cat]() : ''}${esc(cat)}</a>`
     ).join('')}
+  </div>`;
+
+  const viewPills = `<div class="ss-view-pills">
+    ${EVENT_VIEWS.map((view) => `<a href="${queryHref({ category: activeCategory, view })}" class="ss-view-pill${activeView === view ? ' active' : ''}">${esc(viewLabel(view))}</a>`).join('')}
   </div>`;
 
   const hero = `<section class="ss-banner ss-banner-modern">
   <div class="ss-banner-copy">
     <div class="ss-banner-kicker">${ic.shipWheel(13)} Deckspace Events Board</div>
     <div class="ss-banner-title">Your shipboard calendar with a side of social damage.</div>
-    <div class="ss-banner-sub">Browse official programming, passenger-made plans, RSVP momentum, and the exact location of whatever everyone suddenly cares about tonight.</div>
+    <div class="ss-banner-sub">${esc(viewDescription(activeView))}</div>
   </div>
   <div class="ss-banner-meta">
     <div class="ss-banner-stat"><strong>${totalEvents}</strong><span>events on deck</span></div>
@@ -561,44 +625,44 @@ function eventsSchedulePage({ viewer, sailing, days, activeCategory = '' }) {
   </div>
 </section>`;
 
-  const highlightCards = `<section class="ss-highlight-grid">
+  const spotlightStrip = `<section class="ss-highlight-grid">
   <article class="ss-highlight-card">
     <div class="ss-highlight-label">${ic.calendar(12)} Next Up</div>
     ${nextUp
       ? `<a href="/events/${esc(nextUp.id)}" class="ss-highlight-title">${esc(nextUp.title)}</a>
-         <div class="ss-highlight-meta">${fmtShortDate(nextUp.start_at)} at ${fmtTime(nextUp.start_at)}${nextUp.location ? ` &middot; ${esc(nextUp.location)}` : ''}</div>
-         <p>${esc(teaser(nextUp.description, 'This one is next on the board, so if you are choosing one plan fast, start here.'))}</p>`
+         <div class="ss-highlight-meta">${fmtShortDate(nextUp.start_at)} at ${fmtTime(nextUp.start_at)}${nextUp.location ? ` &middot; ${esc(nextUp.location)}` : ''}</div>`
       : `<div class="ss-highlight-empty">The board is quiet right now. That seems unlikely to last.</div>`}
   </article>
   <article class="ss-highlight-card">
     <div class="ss-highlight-label">${ic.ship(12)} Official Spotlight</div>
     ${officialSpotlight
       ? `<a href="/events/${esc(officialSpotlight.id)}" class="ss-highlight-title">${esc(officialSpotlight.title)}</a>
-         <div class="ss-highlight-meta">${fmtShortDate(officialSpotlight.start_at)} at ${fmtTime(officialSpotlight.start_at)}${officialSpotlight.location ? ` &middot; ${esc(officialSpotlight.location)}` : ''}</div>
-         <p>${esc(teaser(officialSpotlight.description, 'Ship-run programming, tighter timing, and the cleanest answer to "what is actually happening?"'))}</p>`
+         <div class="ss-highlight-meta">${fmtShortDate(officialSpotlight.start_at)} at ${fmtTime(officialSpotlight.start_at)}${officialSpotlight.location ? ` &middot; ${esc(officialSpotlight.location)}` : ''}</div>`
       : `<div class="ss-highlight-empty">No official programming is posted in this slice yet.</div>`}
   </article>
   <article class="ss-highlight-card">
     <div class="ss-highlight-label">${ic.users(12)} Community Pull</div>
     ${communitySpotlight
       ? `<a href="/events/${esc(communitySpotlight.id)}" class="ss-highlight-title">${esc(communitySpotlight.title)}</a>
-         <div class="ss-highlight-meta">${communitySpotlight.rsvp_count || 0} going${communitySpotlight.location ? ` &middot; ${esc(communitySpotlight.location)}` : ''}</div>
-         <p>${esc(teaser(communitySpotlight.description, 'This is the passenger-made plan with the strongest gravity on the board right now.'))}</p>`
+         <div class="ss-highlight-meta">${communitySpotlight.rsvp_count || 0} going${communitySpotlight.location ? ` &middot; ${esc(communitySpotlight.location)}` : ''}</div>`
       : `<div class="ss-highlight-empty">Passenger-made plans have not picked up a swarm yet.</div>`}
   </article>
 </section>`;
 
-  const intro = `<div class="ss-intro">
-  <p><strong>Deckspace Events</strong> is built to be scanned fast. Official programming stays in the mix with guest-made plans, so you can decide what is worth showing up for without bouncing between ship paper, hearsay, and five different wall posts.</p>
-  <p>Use the filters to narrow the mood, jump to a day when you already know the stretch you care about, and watch RSVP counts if you want to find where the crowd is drifting.</p>
-</div>
-${catPills}
-${dayJumps.length ? `<div class="ss-day-jumps-inline">${dayJumps.map((jump) => `<a href="#${jump.anchor}" class="ss-day-jump-pill">${esc(jump.label)} <span>${jump.count}</span></a>`).join('')}</div>` : ''}`;
+  const plannerControls = `<div class="ss-planner-controls">
+  <div class="ss-planner-topline">
+    <strong>Browse mode:</strong> pick the slice you want first, then narrow by category.
+  </div>
+  ${viewPills}
+  ${catPills}
+  ${dayJumps.length ? `<div class="ss-day-jumps-inline">${dayJumps.map((jump) => `<a href="#${jump.anchor}" class="ss-day-jump-pill">${esc(jump.label)} <span>${jump.count}</span><em>${esc(jump.firstTime || 'TBD')}</em></a>`).join('')}</div>` : ''}
+</div>`;
 
   const dayModules = days.map(([date, evs], idx) => {
     const dayInfo = DAY_HEADERS[idx] || { label: `Day ${idx + 1}`, sub: 'Still very much happening.' };
     const officialDayCount = evs.filter((ev) => ev.event_type === 'official').length;
     const guestDayCount = evs.length - officialDayCount;
+    const peakPull = [...evs].sort((a, b) => (b.rsvp_count || 0) - (a.rsvp_count || 0))[0];
     const rows = evs.map((ev) => {
       const icon = CAT_ICONS[ev.category] || CAT_ICONS.other;
       const tone = ev.event_type === 'official' ? 'official' : 'guest';
@@ -631,8 +695,8 @@ ${dayJumps.length ? `<div class="ss-day-jumps-inline">${dayJumps.map((jump) => `
 </article>`;
     }).join('');
 
-    return `<section class="ds-module ss-day-module" id="day-${date}">
-  <div class="ds-module-header ss-day-header">
+    return `<details class="ds-module ss-day-module ss-day-drawer" id="day-${date}"${openDayAnchor === `day-${date}` ? ' open' : ''}>
+  <summary class="ds-module-header ss-day-header">
     <div class="ss-day-heading">
       <span class="ss-day-label">${dayInfo.label}</span>
       <span class="ss-day-date">${esc(fmtShortDate(date))}</span>
@@ -642,12 +706,13 @@ ${dayJumps.length ? `<div class="ss-day-jumps-inline">${dayJumps.map((jump) => `
       <span>${evs.length} total</span>
       <span>${officialDayCount} official</span>
       <span>${guestDayCount} guest</span>
+      ${peakPull ? `<span>${peakPull.rsvp_count || 0} top pull</span>` : ''}
     </div>
-  </div>
+  </summary>
   <div class="ds-module-body ss-day-body">
     ${rows}
   </div>
-</section>`;
+</details>`;
   }).join('');
 
   const noEventsMsg = days.length === 0
@@ -656,17 +721,10 @@ ${dayJumps.length ? `<div class="ss-day-jumps-inline">${dayJumps.map((jump) => `
 
   const mainContent = `<section class="ss-main">
   ${hero}
-  ${statusBar}
-  ${highlightCards}
-  ${intro}
+  ${spotlightStrip}
+  ${plannerControls}
   ${noEventsMsg}
   ${dayModules}
-  ${days.length ? `<div class="ds-module ss-wrapup-module">
-    <div class="ds-module-header">${ic.anchor(12)} Why this page works</div>
-    <div class="ds-module-body ss-wrapup-copy">
-      Official programming stays in the same flow as guest-made plans, so the page feels like a living shipboard board instead of a separate "social" page and "real schedule" page fighting each other.
-    </div>
-  </div>` : ''}
 </section>`;
 
   return `<div class="ss-wrap">${leftRail}${mainContent}</div>`;

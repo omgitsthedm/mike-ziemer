@@ -804,7 +804,7 @@ ul {
 .ss-bulletin {
   font-size: 11px;
   font-style: italic;
-  line-height: 1.55;
+  line-height: 1.45;
   color: #333;
 }
 .ss-right-now {
@@ -893,8 +893,8 @@ ul {
   font-size: 12px;
   color: #c9dcff;
   margin-top: 6px;
-  max-width: 56ch;
-  line-height: 1.5;
+  max-width: 42ch;
+  line-height: 1.45;
 }
 .ss-banner-meta {
   display: grid;
@@ -918,23 +918,6 @@ ul {
   font-size: 10px;
   color: #d9e7ff;
   line-height: 1.35;
-}
-
-.ss-status-bar {
-  background: #ffffcc;
-  border: 1px solid #cccc66;
-  padding: 6px 9px;
-  font-size: 10px;
-  color: #333;
-  margin-bottom: 6px;
-  line-height: 1.6;
-}
-.ss-status-item strong {
-  color: #2e4366;
-}
-.ss-status-sep {
-  margin: 0 6px;
-  color: #999;
 }
 
 .ss-highlight-grid {
@@ -967,34 +950,58 @@ ul {
   margin-bottom: 5px;
 }
 .ss-highlight-meta {
-  font-size: 10px;
+  font-size: 11px;
   color: #61718a;
-  margin-bottom: 6px;
+  margin-bottom: 0;
+  line-height: 1.45;
 }
-.ss-highlight-card p,
 .ss-highlight-empty {
   font-size: 11px;
-  color: #33445f;
-  line-height: 1.5;
+  color: #5e6e84;
+  line-height: 1.45;
 }
-.ss-intro {
-  background: #f9f9f9;
-  border: 1px solid #cccccc;
-  padding: 10px 11px;
+.ss-planner-controls {
+  background: linear-gradient(to bottom, #fbfdff 0%, #f4f8fc 100%);
+  border: 1px solid #d8e1ee;
+  padding: 10px 11px 8px;
   margin-bottom: 6px;
 }
-.ss-intro p + p {
-  margin-top: 6px;
+.ss-planner-topline {
+  font-size: 11px;
+  color: #4b5c76;
+  margin-bottom: 7px;
+  line-height: 1.4;
 }
-.ss-intro p {
-  font-size: 12px;
-  line-height: 1.55;
-  color: #33445f;
-}
+.ss-view-pills,
 .event-cat-pills {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+.ss-view-pills {
+  margin-bottom: 6px;
+}
+.ss-view-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid #d6e0eb;
+  background: #fff;
+  color: #264981;
+  font-size: 11px;
+  font-weight: bold;
+}
+.ss-view-pill:hover,
+.ss-view-pill.active {
+  text-decoration: none;
+}
+.ss-view-pill.active {
+  background: linear-gradient(to bottom, #ff8427 0%, #ff6600 100%);
+  border-color: #c95100;
+  color: #fff;
+}
+.event-cat-pills {
   margin: 0 0 6px;
 }
 .event-cat-pill {
@@ -1022,13 +1029,14 @@ ul {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-bottom: 8px;
+  margin-top: 2px;
 }
 .ss-day-jump-pill {
-  display: inline-flex;
+  display: inline-grid;
+  grid-template-columns: auto auto;
+  gap: 1px 6px;
   align-items: center;
-  gap: 6px;
-  padding: 5px 9px;
+  padding: 6px 9px;
   border: 1px solid #d8e2f1;
   background: #fff;
   font-size: 11px;
@@ -1043,9 +1051,25 @@ ul {
   padding: 1px 5px;
   font-size: 10px;
 }
+.ss-day-jump-pill em {
+  grid-column: 1 / 3;
+  font-style: normal;
+  color: #6d7c92;
+  font-size: 10px;
+}
 
 .ss-day-module {
   margin-bottom: 7px;
+}
+.ss-day-drawer {
+  overflow: hidden;
+}
+.ss-day-drawer summary {
+  list-style: none;
+  cursor: pointer;
+}
+.ss-day-drawer summary::-webkit-details-marker {
+  display: none;
 }
 .ss-day-header {
   display: flex;
@@ -1053,6 +1077,16 @@ ul {
   align-items: flex-start;
   gap: 10px;
   flex-wrap: wrap;
+}
+.ss-day-header::after {
+  content: '+';
+  margin-left: auto;
+  font-size: 18px;
+  line-height: 1;
+  color: #ffe3bf;
+}
+.ss-day-drawer[open] .ss-day-header::after {
+  content: '−';
 }
 .ss-day-heading {
   display: flex;
@@ -1079,6 +1113,7 @@ ul {
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
+  margin-right: 8px;
 }
 .ss-day-summary span {
   padding: 2px 6px;
@@ -1183,9 +1218,9 @@ ul {
 }
 .ss-event-description {
   font-size: 12px;
-  line-height: 1.5;
+  line-height: 1.4;
   color: #39485e;
-  margin-bottom: 7px;
+  margin-bottom: 6px;
 }
 .ss-event-meta-row {
   display: flex;
@@ -1219,14 +1254,6 @@ ul {
 }
 .ss-events-empty {
   margin-bottom: 8px;
-}
-.ss-wrapup-module {
-  margin-top: 8px;
-}
-.ss-wrapup-copy {
-  font-size: 11px;
-  line-height: 1.55;
-  color: #45566f;
 }
 
 /* ============================================================
@@ -1521,12 +1548,13 @@ ul {
   .event-detail-shell {
     grid-template-columns: 1fr;
   }
+  .ss-day-header::after {
+    order: -1;
+    margin-left: 0;
+  }
 }
 
 @media (max-width: 640px) {
-  .ss-status-bar {
-    display: none;
-  }
   .ss-banner {
     padding: 12px 10px 10px;
   }
@@ -1552,6 +1580,9 @@ ul {
   }
   .ss-day-summary {
     width: 100%;
+  }
+  .ss-day-jump-pill {
+    width: calc(50% - 3px);
   }
   .event-detail-meta-grid {
     grid-template-columns: 1fr;
