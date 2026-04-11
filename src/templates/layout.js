@@ -185,7 +185,7 @@ function renderNav(user, activeNav, notifCount, csrfToken = '') {
   return `<nav id="ds-nav" role="navigation" aria-label="Main navigation">
   <div id="ds-nav-inner">
     <a href="/" id="ds-logo"><span class="logo-deck">Deck</span><span class="logo-space">space</span></a>
-    <button id="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">${ic.menu(18)}</button>
+    <button id="nav-toggle" type="button" aria-label="Toggle navigation" aria-controls="ds-nav-links" aria-expanded="false">${ic.menu(18)}</button>
     <div id="ds-nav-links">${links}${mobileExtras}</div>
     ${rightSide}
   </div>

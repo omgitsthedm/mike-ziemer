@@ -74,6 +74,9 @@ body {
 }
 body.nav-open {
   overflow: hidden;
+  position: fixed;
+  inset: 0 auto auto 0;
+  width: 100%;
 }
 body::before {
   content: "";
@@ -749,6 +752,11 @@ input[type="button"] {
   border: 1px solid #d8e2f1;
   background: #fbfdff;
   text-decoration: none;
+  transition:
+    transform var(--dur-instant) var(--ease-out-quart),
+    background var(--dur-fast) var(--ease-out-quart),
+    border-color var(--dur-fast) var(--ease-out-quart),
+    box-shadow var(--dur-fast) var(--ease-out-quart);
 }
 .profile-plan-card:hover {
   border-color: #b9cae3;
@@ -774,6 +782,10 @@ input[type="button"] {
   display: block;
   background: #f7fbff;
   border: 1px solid #d8e2f1;
+  transition:
+    transform var(--dur-instant) var(--ease-out-quart),
+    border-color var(--dur-fast) var(--ease-out-quart),
+    box-shadow var(--dur-fast) var(--ease-out-quart);
 }
 .profile-recent-photo img {
   display: block;
@@ -793,6 +805,16 @@ input[type="button"] {
   }
 }
 
+.profile-plan-card:active,
+.profile-plan-card.is-pressing,
+.profile-recent-photo:active,
+.profile-recent-photo.is-pressing,
+.friend-grid-item:active,
+.friend-grid-item.is-pressing {
+  transform: translateY(1px) scale(0.985);
+  box-shadow: var(--shadow-press);
+}
+
 /* ============================================================
    FRIEND SPACE / TOP FRIENDS GRID
    ============================================================ */
@@ -807,6 +829,11 @@ input[type="button"] {
   padding: 6px 4px 4px;
   background: #fbfdff;
   border: 1px solid #dde6f2;
+  transition:
+    transform var(--dur-instant) var(--ease-out-quart),
+    background var(--dur-fast) var(--ease-out-quart),
+    border-color var(--dur-fast) var(--ease-out-quart),
+    box-shadow var(--dur-fast) var(--ease-out-quart);
 }
 .friend-grid-item img {
   width: 60px;
@@ -1316,6 +1343,22 @@ input[type="button"] {
   border: 1px solid #d8e2f1;
   background: #fff;
   font-size: 11px;
+  text-decoration: none;
+  transition:
+    transform var(--dur-instant) var(--ease-out-quart),
+    background var(--dur-fast) var(--ease-out-quart),
+    border-color var(--dur-fast) var(--ease-out-quart),
+    box-shadow var(--dur-fast) var(--ease-out-quart);
+}
+.ss-day-jump-pill:hover {
+  background: #f5f9ff;
+  border-color: #bfd1ea;
+  box-shadow: var(--shadow-lift);
+}
+.ss-day-jump-pill:active,
+.ss-day-jump-pill.is-pressing {
+  transform: translateY(1px) scale(0.985);
+  box-shadow: var(--shadow-press);
 }
 .ss-day-jump-pill span {
   display: inline-flex;
@@ -1626,8 +1669,21 @@ input[type="button"] {
   border: 1px solid #cccccc;
   border-bottom: none;
   margin-right: 2px;
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  transition:
+    transform var(--dur-instant) var(--ease-out-quart),
+    background var(--dur-fast) var(--ease-out-quart),
+    border-color var(--dur-fast) var(--ease-out-quart),
+    box-shadow var(--dur-fast) var(--ease-out-quart);
 }
-.ds-tab:hover { background: #d0e0f0; text-decoration: none; }
+.ds-tab:hover { background: #d0e0f0; text-decoration: none; box-shadow: var(--shadow-lift); }
+.ds-tab:active,
+.ds-tab.is-pressing {
+  transform: translateY(1px) scale(0.985);
+  box-shadow: var(--shadow-press);
+}
 .ds-tab.ds-tab-active {
   background: #1752B0;
   color: #ffffff;
@@ -2181,15 +2237,32 @@ input[type="button"] {
   overflow: hidden;
   background: #e8e8e8;
   border: 1px solid var(--ds-border);
+  transition:
+    transform var(--dur-instant) var(--ease-out-quart),
+    border-color var(--dur-fast) var(--ease-out-quart),
+    box-shadow var(--dur-fast) var(--ease-out-quart);
 }
 .photo-thumb-item img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
+  transition:
+    opacity var(--dur-fast) var(--ease-out-quart),
+    transform var(--dur-fast) var(--ease-out-quart);
 }
 .photo-thumb-item:hover img {
   opacity: 0.85;
+}
+.photo-thumb-item:active,
+.photo-thumb-item.is-pressing {
+  transform: translateY(1px) scale(0.985);
+  box-shadow: var(--shadow-press);
+}
+.photo-thumb-item:active img,
+.photo-thumb-item.is-pressing img {
+  opacity: 0.88;
+  transform: scale(0.985);
 }
 .photo-caption-overlay {
   position: absolute;
@@ -2218,9 +2291,18 @@ input[type="button"] {
   gap: 8px;
   padding: 5px 6px;
   border-bottom: 1px solid #eeeeee;
+  transition:
+    transform var(--dur-instant) var(--ease-out-quart),
+    background var(--dur-fast) var(--ease-out-quart),
+    box-shadow var(--dur-fast) var(--ease-out-quart);
 }
 .person-row:last-child { border-bottom: none; }
 .person-row:hover { background: #fafafa; }
+.person-row:active,
+.person-row.is-pressing {
+  transform: translateY(1px);
+  background: #f2f6fd;
+}
 .person-thumb {
   flex-shrink: 0;
   width: 44px;
@@ -2690,6 +2772,10 @@ a.ds-btn-orange:hover {
   padding: 10px 11px;
   border: 1px solid #cad8ed;
   background: linear-gradient(180deg, #fff, #f8fbff);
+  transition:
+    transform var(--dur-instant) var(--ease-out-quart),
+    box-shadow var(--dur-fast) var(--ease-out-quart),
+    border-color var(--dur-fast) var(--ease-out-quart);
 }
 .home-spotlight-label {
   font-size: 9px;
@@ -3591,6 +3677,27 @@ a.ds-btn-orange:hover {
   #nav-toggle {
     min-height: 44px;
   }
+  .ss-view-pill,
+  .event-cat-pill,
+  .photo-board-pill,
+  .vibe-pill,
+  .profile-manage-top-btn,
+  .ds-tab,
+  .ss-day-jump-pill {
+    min-height: 44px;
+  }
+  .ss-view-pill,
+  .event-cat-pill,
+  .photo-board-pill,
+  .vibe-pill,
+  .ds-tab {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .ss-day-jump-pill {
+    gap: 3px 8px;
+    padding: 8px 11px;
+  }
   .ds-btn,
   .ds-btn-sm {
     display: inline-flex;
@@ -3606,6 +3713,26 @@ a.ds-btn-orange:hover {
   .comment-delete-btn {
     min-width: 32px;
     min-height: 32px;
+  }
+  .friend-grid {
+    gap: 8px;
+  }
+  .friend-grid-item {
+    padding: 8px 5px 6px;
+  }
+  .profile-recent-photos {
+    gap: 8px;
+  }
+  .photo-grid {
+    gap: 6px;
+  }
+  .people-list {
+    display: grid;
+    gap: 2px;
+  }
+  .person-row {
+    min-height: 56px;
+    padding: 7px 8px;
   }
   .admin-stat-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -4214,6 +4341,10 @@ a.ds-btn-orange:hover {
   overflow-x: auto;
   padding: 0 0 2px;
   margin-bottom: 10px;
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: 2px;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
 }
 .voyage-strip-stop {
   min-width: 122px;
@@ -4229,6 +4360,7 @@ a.ds-btn-orange:hover {
     background var(--dur-fast) var(--ease-out-quart),
     border-color var(--dur-fast) var(--ease-out-quart),
     box-shadow var(--dur-fast) var(--ease-out-quart);
+  scroll-snap-align: start;
 }
 .voyage-strip-stop span {
   font-size: 9px;

@@ -12,3 +12,4 @@
 2026-04-10 23:15:00 | modified: src/routes/profile.js, src/templates/components.js, public/css/deckspace.css | reason: rebuild profile page to match classic MySpace-style reference with left rail modules and single stacked content column
 2026-04-10 23:28:00 | modified: src/routes/profile.js, public/css/deckspace.css | reason: add engaging profile modules for recent activity, upcoming plans, and recent photos within the restored classic layout
 2026-04-10 23:52:00 | modified: public/css/deckspace.css, public/js/app.js | reason: add mobile-first motion, press feedback, and drawer interaction polish across Deckspace with iPhone-friendly tap targets and reduced-motion support
+2026-04-11 00:12:00 | modified: public/css/deckspace.css, public/js/app.js, src/templates/layout.js | reason: harden iPhone navigation behavior with true scroll lock, larger mobile hit targets, and stronger press states across rails, tabs, cards, and jump controls

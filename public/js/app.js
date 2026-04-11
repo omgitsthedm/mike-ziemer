@@ -298,16 +298,47 @@
     var btn = document.getElementById('nav-toggle');
     var links = document.getElementById('ds-nav-links');
     if (!btn || !links) return;
+    var body = document.body;
 
     function isCompactNav() {
       return window.innerWidth <= 640;
     }
 
+    function lockScroll() {
+      if (body.classList.contains('nav-open')) return;
+      body.dataset.navScrollY = String(window.scrollY || window.pageYOffset || 0);
+      body.style.top = '-' + body.dataset.navScrollY + 'px';
+    }
+
+    function unlockScroll() {
+      if (!body.dataset.navScrollY) {
+        body.style.top = '';
+        return;
+      }
+      var y = parseInt(body.dataset.navScrollY, 10) || 0;
+      body.style.top = '';
+      delete body.dataset.navScrollY;
+      window.scrollTo(0, y);
+    }
+
     function setOpen(next) {
+      var compact = isCompactNav();
+      var shouldLock = next && compact;
+
+      if (shouldLock && !body.classList.contains('nav-open')) {
+        lockScroll();
+      }
+      if (!shouldLock && body.classList.contains('nav-open')) {
+        unlockScroll();
+      }
+
       links.classList.toggle('open', next);
       btn.setAttribute('aria-expanded', String(next));
-      document.body.classList.toggle('nav-open', next && isCompactNav());
+      links.setAttribute('aria-hidden', compact ? String(!next) : 'false');
+      body.classList.toggle('nav-open', shouldLock);
     }
+
+    links.setAttribute('aria-hidden', isCompactNav() ? 'true' : 'false');
 
     btn.addEventListener('click', function () {
       setOpen(!links.classList.contains('open'));
@@ -333,8 +364,9 @@
 
     window.addEventListener('resize', function () {
       if (!isCompactNav()) {
-        document.body.classList.remove('nav-open');
         setOpen(false);
+      } else {
+        links.setAttribute('aria-hidden', String(!links.classList.contains('open')));
       }
     });
   }
@@ -358,6 +390,7 @@
       '.profile-plan-card',
       '.photo-board-pill',
       '.ss-view-pill',
+      '.ss-day-jump-pill',
       '.event-cat-pill',
       '.voyage-strip-stop',
       '.vibe-pill',
