@@ -186,7 +186,7 @@ function renderNav(user, activeNav, notifCount, csrfToken = '') {
   return `<nav id="ds-nav" role="navigation" aria-label="Main navigation">
   <div id="ds-nav-inner">
     <a href="/" id="ds-logo" aria-label="Deckspace home">
-      <img src="/images/deckspace-mark.png" alt="Deckspace" class="ds-brand-wordmark" width="512" height="512">
+      <img src="/images/deckspace-mark.png" alt="Deckspace" class="ds-brand-wordmark" width="18" height="18" style="width:18px;height:18px">
       <span class="sr-only">Deckspace</span>
     </a>
     <button id="nav-toggle" type="button" aria-label="Toggle navigation" aria-controls="ds-nav-links" aria-expanded="false">${ic.menu(18)}</button>
@@ -280,7 +280,7 @@ function renderFooter() {
   <div class="ds-footer-inner">
     <div class="ds-footer-brand">
       <a href="/" class="ds-footer-logo-link" aria-label="Deckspace home">
-        <img src="/images/deckspace-mark.png" alt="Deckspace" class="ds-footer-logo" width="512" height="512">
+        <img src="/images/deckspace-mark.png" alt="Deckspace" class="ds-footer-logo" width="24" height="24" style="width:24px;height:24px">
       </a>
       <div class="ds-footer-copy">
         Deckspace is just for this sailing. After the trip, the scrapbook sticks around a little longer, then the lights go out.

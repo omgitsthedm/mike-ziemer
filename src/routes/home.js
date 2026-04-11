@@ -239,7 +239,7 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
   const commandDeck = `<section class="home-command-deck">
   <div class="home-command-copy">
     <div class="home-command-brand">
-      <img src="/images/deckspace-mark.png" alt="Deckspace" class="home-command-logo" width="512" height="512">
+      <img src="/images/deckspace-mark.png" alt="Deckspace" class="home-command-logo" width="18" height="18" style="width:18px;height:18px">
       <div class="home-command-brand-copy">
         <div class="home-command-kicker">${ic.shipWheel(13)} Welcome back, ${esc(firstName)}</div>
         <div class="home-command-brandline">Deckspace on deck for ${esc(sailing?.ship_name || 'the sailing')}</div>
@@ -534,7 +534,7 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [],
   const rightCol = `<div class="landing-right">
 
   <div class="landing-logo-wrap">
-    <img src="/images/deckspace-logo.png" alt="Deckspace" class="landing-brand-logo" width="460" height="460">
+    <img src="/images/deckspace-logo.png" alt="Deckspace" class="landing-brand-logo" width="72" height="72" style="width:72px;height:72px">
     <div class="landing-logo-sub">your cruise, your crew, your page</div>
   </div>
 

@@ -189,8 +189,9 @@ input[type="button"] {
   text-decoration: none;
 }
 .ds-brand-wordmark {
-  height: 14px;
-  width: auto;
+  width: 18px !important;
+  height: 18px !important;
+  max-width: none;
   filter: drop-shadow(0 1px 1px rgba(0, 21, 60, 0.3));
 }
 
@@ -333,8 +334,9 @@ input[type="button"] {
   align-items: center;
 }
 .ds-footer-logo {
-  width: 28px;
-  height: auto;
+  width: 24px !important;
+  height: 24px !important;
+  max-width: none;
 }
 .ds-footer-copy {
   max-width: 620px;
@@ -2723,8 +2725,9 @@ a.ds-btn-orange:hover {
   margin-bottom: 8px;
 }
 .home-command-logo {
-  width: 22px;
-  height: auto;
+  width: 18px !important;
+  height: 18px !important;
+  max-width: none;
   flex-shrink: 0;
 }
 .home-command-brand-copy {
@@ -3310,8 +3313,9 @@ a.ds-btn-orange:hover {
   justify-items: center;
 }
 .landing-brand-logo {
-  width: min(100%, 86px);
-  height: auto;
+  width: 72px !important;
+  height: 72px !important;
+  max-width: none;
 }
 .landing-logo-sub {
   font-size: 11px;
@@ -3608,7 +3612,8 @@ a.ds-btn-orange:hover {
     padding-right: 4px;
   }
   .ds-brand-wordmark {
-    height: 12px;
+    width: 16px !important;
+    height: 16px !important;
   }
 
   #ds-page {
@@ -3690,7 +3695,8 @@ a.ds-btn-orange:hover {
     align-items: flex-start;
   }
   .home-command-logo {
-    width: 18px;
+    width: 16px !important;
+    height: 16px !important;
   }
 
   /* Photo grid: 3 cols on mobile */
@@ -5019,7 +5025,8 @@ a.ds-btn-orange:hover {
     padding: 5px 14px 5px 0;
   }
   .ds-brand-wordmark {
-    height: 16px;
+    width: 20px !important;
+    height: 20px !important;
   }
 
   #ds-nav-links a {
@@ -5262,7 +5269,8 @@ a.ds-btn-orange:hover {
   }
 
   .landing-brand-logo {
-    width: min(100%, 98px);
+    width: 84px !important;
+    height: 84px !important;
   }
 
   .landing-logo-sub {
