@@ -76,7 +76,8 @@ export function layout({
   <meta name="twitter:description" content="${esc(metaDescription)}">
   <meta name="twitter:image" content="${esc(socialImage)}">
   <link rel="stylesheet" href="/css/deckspace.css">
-  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="64x64" href="/images/deckspace-favicon.png">
+  <link rel="apple-touch-icon" href="/images/deckspace-apple-touch.png">
 </head>
 <body class="${bodyClass}">
 
@@ -184,7 +185,10 @@ function renderNav(user, activeNav, notifCount, csrfToken = '') {
 
   return `<nav id="ds-nav" role="navigation" aria-label="Main navigation">
   <div id="ds-nav-inner">
-    <a href="/" id="ds-logo"><span class="logo-deck">Deck</span><span class="logo-space">space</span></a>
+    <a href="/" id="ds-logo" aria-label="Deckspace home">
+      <img src="/images/deckspace-logo.png" alt="Deckspace" class="ds-brand-wordmark" width="188" height="188">
+      <span class="sr-only">Deckspace</span>
+    </a>
     <button id="nav-toggle" type="button" aria-label="Toggle navigation" aria-controls="ds-nav-links" aria-expanded="false">${ic.menu(18)}</button>
     <div id="ds-nav-links">${links}${mobileExtras}</div>
     ${rightSide}
@@ -274,12 +278,22 @@ function defaultMetaDescription(title, sailing) {
 function renderFooter() {
   return `<footer class="ds-footer">
   <div class="ds-footer-inner">
-    <div class="ds-footer-copy">Deckspace is just for this sailing. After the trip, the scrapbook sticks around a little longer, then the lights go out.</div>
+    <div class="ds-footer-brand">
+      <a href="/" class="ds-footer-logo-link" aria-label="Deckspace home">
+        <img src="/images/deckspace-logo.png" alt="Deckspace" class="ds-footer-logo" width="188" height="188">
+      </a>
+      <div class="ds-footer-copy">
+        Deckspace is just for this sailing. After the trip, the scrapbook sticks around a little longer, then the lights go out.
+      </div>
+      <a href="https://littlefightnyc.com" class="ds-footer-credit" target="_blank" rel="noreferrer">Designed and Built by Little Fight NYC</a>
+    </div>
     <div class="ds-footer-links">
       <a href="/voyage">Voyage</a>
       <a href="/about">About</a>
       <a href="/contact">Contact</a>
       <a href="/privacy">Privacy</a>
+      <a href="/terms">Terms &amp; Usage</a>
+      <a href="/sitemap">Sitemap</a>
     </div>
   </div>
 </footer>`;

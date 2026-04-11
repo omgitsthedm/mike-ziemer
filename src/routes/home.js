@@ -238,7 +238,13 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
 
   const commandDeck = `<section class="home-command-deck">
   <div class="home-command-copy">
-    <div class="home-command-kicker">${ic.shipWheel(13)} Welcome back, ${esc(firstName)}</div>
+    <div class="home-command-brand">
+      <img src="/images/deckspace-logo.png" alt="Deckspace" class="home-command-logo" width="188" height="188">
+      <div class="home-command-brand-copy">
+        <div class="home-command-kicker">${ic.shipWheel(13)} Welcome back, ${esc(firstName)}</div>
+        <div class="home-command-brandline">Deckspace on deck for ${esc(sailing?.ship_name || 'the sailing')}</div>
+      </div>
+    </div>
     <h2 class="home-command-title">Everything happening on ${esc(sailing?.ship_name || 'the ship')}, without the scramble.</h2>
     <p class="home-command-sub">Deckspace is your one-stop board for tonight's plans, wall chatter, photo drops, and the people who are actually around right now.</p>
     <div class="home-command-links">
@@ -528,7 +534,7 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [],
   const rightCol = `<div class="landing-right">
 
   <div class="landing-logo-wrap">
-    <div class="landing-logo">Deck<span class="landing-logo-accent">space</span></div>
+    <img src="/images/deckspace-logo.png" alt="Deckspace" class="landing-brand-logo" width="460" height="460">
     <div class="landing-logo-sub">your cruise, your crew, your page</div>
   </div>
 

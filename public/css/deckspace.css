@@ -176,22 +176,23 @@ input[type="button"] {
 }
 
 #ds-logo {
-  font-size: 16px;
-  font-weight: bold;
+  display: inline-flex;
+  align-items: center;
   color: #ffffff;
   text-decoration: none;
-  padding: 5px 8px 5px 0;
+  padding: 3px 8px 3px 0;
   border-right: 1px solid #334488;
   margin-right: 4px;
-  font-style: italic;
-  letter-spacing: -0.5px;
 }
 #ds-logo:hover {
   color: #ffcc00;
   text-decoration: none;
 }
-#ds-logo .logo-deck { color: #ffffff; }
-#ds-logo .logo-space { color: #99bbff; }
+.ds-brand-wordmark {
+  height: 38px;
+  width: auto;
+  filter: drop-shadow(0 1px 1px rgba(0, 21, 60, 0.3));
+}
 
 #ds-nav-links {
   display: flex;
@@ -322,16 +323,40 @@ input[type="button"] {
   align-items: center;
   flex-wrap: wrap;
 }
+.ds-footer-brand {
+  display: grid;
+  gap: 6px;
+  align-items: start;
+}
+.ds-footer-logo-link {
+  display: inline-flex;
+  align-items: center;
+}
+.ds-footer-logo {
+  width: 120px;
+  height: auto;
+}
 .ds-footer-copy {
   max-width: 620px;
   font-size: 11px;
   color: #4b5d79;
   line-height: 1.45;
 }
+.ds-footer-credit {
+  color: #ff6600;
+  font-size: 11px;
+  font-weight: bold;
+  text-decoration: none;
+}
+.ds-footer-credit:hover {
+  color: #cc5200;
+  text-decoration: underline;
+}
 .ds-footer-links {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+  justify-content: flex-end;
 }
 .ds-footer-links a {
   font-size: 11px;
@@ -2691,6 +2716,21 @@ a.ds-btn-orange:hover {
     linear-gradient(180deg, rgba(243,247,255,0.96), rgba(232,240,255,0.98));
   border: 1px solid #b4c7e8;
 }
+.home-command-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.home-command-logo {
+  width: 92px;
+  height: auto;
+  flex-shrink: 0;
+}
+.home-command-brand-copy {
+  display: grid;
+  gap: 2px;
+}
 .home-command-kicker {
   font-size: 10px;
   font-weight: bold;
@@ -2698,6 +2738,11 @@ a.ds-btn-orange:hover {
   letter-spacing: 0.5px;
   text-transform: uppercase;
   margin-bottom: 5px;
+}
+.home-command-brandline {
+  font-size: 11px;
+  color: #61718a;
+  letter-spacing: 0.2px;
 }
 .home-command-title {
   margin: 0 0 6px;
@@ -3260,15 +3305,14 @@ a.ds-btn-orange:hover {
 /* Right column: logo */
 .landing-logo-wrap {
   text-align: center;
-  padding: 12px 0 8px;
+  padding: 10px 0 8px;
+  display: grid;
+  justify-items: center;
 }
-.landing-logo {
-  font-size: 32px;
-  font-weight: bold;
-  font-style: italic;
-  color: var(--ds-navy);
+.landing-brand-logo {
+  width: min(100%, 230px);
+  height: auto;
 }
-.landing-logo-accent { color: var(--ds-orange); }
 .landing-logo-sub {
   font-size: 11px;
   color: var(--ds-text-light);
@@ -3561,7 +3605,10 @@ a.ds-btn-orange:hover {
     display: none;
   }
   #ds-logo {
-    font-size: 14px;
+    padding-right: 4px;
+  }
+  .ds-brand-wordmark {
+    height: 31px;
   }
 
   #ds-page {
@@ -3638,6 +3685,12 @@ a.ds-btn-orange:hover {
   .voyage-command-stats,
   .photo-board-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .home-command-brand {
+    align-items: flex-start;
+  }
+  .home-command-logo {
+    width: 78px;
   }
 
   /* Photo grid: 3 cols on mobile */
@@ -4963,8 +5016,10 @@ a.ds-btn-orange:hover {
   }
 
   #ds-logo {
-    font-size: 22px;
-    padding: 7px 14px 7px 0;
+    padding: 5px 14px 5px 0;
+  }
+  .ds-brand-wordmark {
+    height: 44px;
   }
 
   #ds-nav-links a {
@@ -5206,8 +5261,8 @@ a.ds-btn-orange:hover {
     height: 32px;
   }
 
-  .landing-logo {
-    font-size: 52px;
+  .landing-brand-logo {
+    width: min(100%, 280px);
   }
 
   .landing-logo-sub {

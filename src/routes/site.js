@@ -108,6 +108,83 @@ site.get('/privacy', async (c) => {
   }));
 });
 
+site.get('/terms', async (c) => {
+  const user = await resolveSession(c.env, c.req.raw).catch(() => null);
+  const db = getDb(c.env);
+  const sailing = await getSailing(db, c.env.SAILING_ID).catch(() => null);
+
+  const body = [
+    module({
+      header: `${ic.bookOpen(12)} Terms & Usage`,
+      body: `<p style="margin-bottom:8px">Deckspace is intended for the active sailing community attached to this voyage. By using the site, you agree to keep your participation public, respectful, and tied to the shared onboard experience.</p>
+      <p style="margin-bottom:8px">Profiles, wall notes, RSVPs, comments, and photos are meant to be visible to other passengers and staff supporting the sailing. The product is not designed for private messaging or hidden side channels.</p>
+      <p>Operators may remove content, suspend access, or place the site into read-only mode when needed for safety, moderation, archive handling, or the end of the voyage.</p>`
+    }),
+    module({
+      header: `${ic.shield(12)} Acceptable Use`,
+      body: `<ul style="margin-left:18px;line-height:1.6">
+        <li>No harassment, threats, impersonation, or targeted abuse.</li>
+        <li>No posting of explicit, illegal, or non-consensual content.</li>
+        <li>No spam, scam behavior, or repeated unwanted promotion.</li>
+        <li>No attempts to disrupt the sailing bulletin, event board, or moderation tools.</li>
+        <li>Respect crew instructions and any onboard policies that apply to the voyage.</li>
+      </ul>`
+    })
+  ].join('');
+
+  return c.html(layoutCtx(c, {
+    title: 'Deckspace Terms and Acceptable Usage',
+    description: 'Read Deckspace terms, public-usage expectations, acceptable conduct rules, and moderation rights for the sailing community.',
+    canonicalUrl: new URL('/terms', c.req.url).toString(),
+    user,
+    sailing,
+    body,
+  }));
+});
+
+site.get('/sitemap', async (c) => {
+  const user = await resolveSession(c.env, c.req.raw).catch(() => null);
+  const db = getDb(c.env);
+  const sailing = await getSailing(db, c.env.SAILING_ID).catch(() => null);
+
+  const sections = [
+    {
+      header: `${ic.shipWheel(12)} Main Deck`,
+      links: [
+        ['/', 'Home'],
+        ['/people', 'People'],
+        ['/events', 'Events'],
+        ['/photos', 'Photos'],
+        ['/voyage', 'Voyage'],
+      ]
+    },
+    {
+      header: `${ic.bookOpen(12)} Info & Policies`,
+      links: [
+        ['/about', 'About'],
+        ['/contact', 'Contact'],
+        ['/privacy', 'Privacy'],
+        ['/terms', 'Terms & Usage'],
+        ['/sitemap.xml', 'XML Sitemap'],
+      ]
+    }
+  ];
+
+  const body = sections.map((section) => module({
+    header: section.header,
+    body: `<ul style="margin-left:18px;line-height:1.7">${section.links.map(([href, label]) => `<li><a href="${href}">${label}</a></li>`).join('')}</ul>`
+  })).join('');
+
+  return c.html(layoutCtx(c, {
+    title: 'Deckspace Sitemap',
+    description: 'Browse the major Deckspace pages, policy pages, and the XML sitemap for this sailing site.',
+    canonicalUrl: new URL('/sitemap', c.req.url).toString(),
+    user,
+    sailing,
+    body,
+  }));
+});
+
 site.get('/robots.txt', (c) => {
   const origin = new URL(c.req.url).origin;
   const body = `User-agent: *\nAllow: /\n\nSitemap: ${origin}/sitemap.xml\n`;
@@ -149,6 +226,8 @@ site.get('/sitemap.xml', async (c) => {
     { loc: '/about', lastmod: now },
     { loc: '/contact', lastmod: now },
     { loc: '/privacy', lastmod: now },
+    { loc: '/terms', lastmod: now },
+    { loc: '/sitemap', lastmod: now },
     ...((usersRes.data || []).map((user) => ({
       loc: `/profile/${user.username}`,
       lastmod: user.created_at || now,
