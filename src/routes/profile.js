@@ -274,16 +274,7 @@ function profilePage({ target, profile, viewer, topFriends, friendCount, friendS
 
   const masthead = `<section class="profile-masthead">
     <div class="profile-masthead-main">
-      <div class="profile-masthead-topline">
-        <div class="profile-masthead-kicker">${ic.star(12)} ${isOwn ? 'Your DeckSpace Page' : 'DeckSpace Profile'}</div>
-        <div class="profile-brand-stamp" aria-label="DeckSpace brand mark">
-          <img src="/images/deckspace-logo.png" alt="DeckSpace" class="profile-brand-stamp-logo" width="52" height="52">
-          <div class="profile-brand-stamp-copy">
-            <strong>DeckSpace</strong>
-            <span>On Deck</span>
-          </div>
-        </div>
-      </div>
+      <div class="profile-masthead-kicker">${ic.star(12)} ${isOwn ? 'Your DeckSpace Page' : 'DeckSpace Profile'}</div>
       <h2 class="profile-masthead-title">${esc(displayName)} <span>@${esc(target.username)}</span></h2>
       <p class="profile-masthead-sub">${esc(headline)}</p>
       <div class="profile-meta-pills">
@@ -291,20 +282,30 @@ function profilePage({ target, profile, viewer, topFriends, friendCount, friendS
         ${profile?.hometown ? `<span class="profile-meta-pill">${esc(profile.hometown)}</span>` : ''}
         <span class="profile-meta-pill">${userMemberSince(target)}</span>
       </div>
-      <div class="profile-stat-row" aria-label="Profile stats">
-        <span class="profile-stat-pill"><strong>${safeFriendCount}</strong> friends</span>
-        <span class="profile-stat-pill"><strong>${topFriends.length}</strong> top space</span>
-        <span class="profile-stat-pill"><strong>${wallPosts.length}</strong> wall notes</span>
-        <span class="profile-stat-pill"><strong>${profile?.profile_views || 0}</strong> views</span>
-      </div>
       <div class="profile-masthead-links">
         <a href="/photos?user=${esc(target.username)}" class="profile-masthead-link">${ic.camera(12)} Photo Roll</a>
         <a href="/events?user=${esc(target.username)}" class="profile-masthead-link">${ic.calendar(12)} Plans</a>
         <a href="/friends" class="profile-masthead-link">${ic.users(12)} Friend Space</a>
         <a href="${isOwn ? '/profile/edit' : '#wall-post-form'}" class="profile-masthead-link">${isOwn ? `${ic.settings(12)} Edit Page` : `${ic.pencil(12)} Write on Wall`}</a>
       </div>
-      <div class="profile-masthead-note">${esc(quickLine)}</div>
     </div>
+    <aside class="profile-masthead-rail" aria-label="Profile summary">
+      <div class="profile-brand-stamp" aria-label="DeckSpace brand mark">
+        <img src="/images/deckspace-logo.png" alt="DeckSpace" class="profile-brand-stamp-logo" width="52" height="52">
+        <div class="profile-brand-stamp-copy">
+          <strong>DeckSpace</strong>
+          <span>On Deck</span>
+        </div>
+      </div>
+      <div class="profile-stat-grid" aria-label="Profile stats">
+        <div class="profile-stat-chip"><strong>${safeFriendCount}</strong><span>Friends</span></div>
+        <div class="profile-stat-chip"><strong>${topFriends.length}</strong><span>Top Space</span></div>
+        <div class="profile-stat-chip"><strong>${wallPosts.length}</strong><span>Wall Notes</span></div>
+        <div class="profile-stat-chip"><strong>${profile?.profile_views || 0}</strong><span>Views</span></div>
+      </div>
+      <div class="profile-masthead-note">${esc(quickLine)}</div>
+      ${isOwn ? `<a href="/friends/manage-top" class="profile-rail-link">${ic.users(12)} Fill Top Space</a>` : ''}
+    </aside>
   </section>`;
 
   // Build left column

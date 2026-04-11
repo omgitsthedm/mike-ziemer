@@ -326,7 +326,9 @@ ul {
 }
 
 .profile-masthead {
-  display: block;
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(240px, 0.9fr);
+  gap: 14px;
   padding: 10px 12px 12px;
   background: linear-gradient(180deg, #f4f8ff 0%, #e8f0ff 100%);
   border: 1px solid #b8cae7;
@@ -335,12 +337,6 @@ ul {
 .profile-masthead-main {
   display: grid;
   gap: 8px;
-}
-.profile-masthead-topline {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
 }
 .profile-masthead-kicker {
   font-size: 10px;
@@ -448,28 +444,56 @@ ul {
   letter-spacing: 0.4px;
   color: #71829c;
 }
-.profile-stat-row {
-  display: flex;
-  flex-wrap: wrap;
+.profile-masthead-rail {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+.profile-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
 }
-.profile-stat-pill {
+.profile-stat-chip {
+  min-height: 58px;
+  padding: 8px;
+  background: rgba(255,255,255,0.94);
+  border: 1px solid #cad7eb;
+  display: grid;
+  align-content: center;
+  gap: 2px;
+}
+.profile-stat-chip strong {
+  display: block;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--ds-navy);
+}
+.profile-stat-chip span {
+  display: block;
+  font-size: 9px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.45px;
+  color: #66768f;
+}
+.profile-rail-link {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  min-height: 26px;
-  padding: 0 8px;
-  background: rgba(255,255,255,0.94);
-  border: 1px solid #cad7eb;
-  color: #5d6e87;
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.45px;
+  justify-content: center;
+  min-height: 30px;
+  padding: 0 10px;
+  background: #fff7e8;
+  border: 1px solid #e3c57d;
+  color: #7b5200;
+  font-size: 11px;
+  font-weight: bold;
+  text-decoration: none;
 }
-.profile-stat-pill strong {
-  font-size: 12px;
-  line-height: 1;
-  color: var(--ds-navy);
+.profile-rail-link:hover {
+  background: #fff2d0;
+  color: #6a4500;
 }
 .profile-wrap {
   display: grid;
@@ -3406,14 +3430,9 @@ a.ds-btn-orange:hover {
   .profile-wrap {
     grid-template-columns: 1fr;
   }
+  .profile-masthead,
   .profile-main-panels {
     grid-template-columns: 1fr;
-  }
-  .profile-masthead-topline {
-    align-items: flex-start;
-  }
-  .profile-brand-stamp {
-    align-self: flex-start;
   }
 
   /* Profile photo block goes inline */
@@ -3736,12 +3755,12 @@ a.ds-btn-orange:hover {
     grid-template-columns: 160px 1fr;
     gap: 8px;
   }
+  .profile-masthead,
   .profile-main-panels {
     grid-template-columns: 1fr;
   }
-  .profile-masthead-topline {
-    flex-direction: column;
-    align-items: flex-start;
+  .profile-stat-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   /* Home grid: narrow sidebar */
