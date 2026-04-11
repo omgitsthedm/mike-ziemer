@@ -239,7 +239,7 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
   const commandDeck = `<section class="home-command-deck">
   <div class="home-command-copy">
     <div class="home-command-brand">
-      <img src="/images/deckspace-logo.png" alt="Deckspace" class="home-command-logo" width="188" height="188">
+      <img src="/images/deckspace-mark.png" alt="Deckspace" class="home-command-logo" width="512" height="512">
       <div class="home-command-brand-copy">
         <div class="home-command-kicker">${ic.shipWheel(13)} Welcome back, ${esc(firstName)}</div>
         <div class="home-command-brandline">Deckspace on deck for ${esc(sailing?.ship_name || 'the sailing')}</div>
