@@ -299,26 +299,157 @@
     var links = document.getElementById('ds-nav-links');
     if (!btn || !links) return;
 
+    function isCompactNav() {
+      return window.innerWidth <= 640;
+    }
+
+    function setOpen(next) {
+      links.classList.toggle('open', next);
+      btn.setAttribute('aria-expanded', String(next));
+      document.body.classList.toggle('nav-open', next && isCompactNav());
+    }
+
     btn.addEventListener('click', function () {
-      var isOpen = links.classList.toggle('open');
-      btn.setAttribute('aria-expanded', String(isOpen));
+      setOpen(!links.classList.contains('open'));
     });
 
     // Close when a link is tapped
     links.addEventListener('click', function (e) {
-      if (e.target.closest('a')) {
-        links.classList.remove('open');
-        btn.setAttribute('aria-expanded', 'false');
+      if (e.target.closest('a, button')) {
+        setOpen(false);
       }
     });
 
     // Close on outside click
     document.addEventListener('click', function (e) {
-      if (!e.target.closest('#ds-nav-inner')) {
-        links.classList.remove('open');
-        btn.setAttribute('aria-expanded', 'false');
+      if (links.classList.contains('open') && !e.target.closest('#ds-nav-inner')) {
+        setOpen(false);
       }
     });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') setOpen(false);
+    });
+
+    window.addEventListener('resize', function () {
+      if (!isCompactNav()) {
+        document.body.classList.remove('nav-open');
+        setOpen(false);
+      }
+    });
+  }
+
+  /* ============================================================
+     TAP / PRESS FEEDBACK
+     Add a brief press state so taps feel immediate on touch devices.
+     ============================================================ */
+  function initPressFeedback() {
+    var selector = [
+      '.ds-btn',
+      '.contact-btn',
+      '.reaction-btn',
+      '.nav-link-subtle',
+      '.nav-link-admin',
+      '.nav-link-signin',
+      '#ds-nav-links a',
+      '.nav-mobile-button',
+      '#nav-toggle',
+      '.profile-manage-top-btn',
+      '.profile-plan-card',
+      '.photo-board-pill',
+      '.ss-view-pill',
+      '.event-cat-pill',
+      '.voyage-strip-stop',
+      '.vibe-pill',
+      '.friend-grid-item',
+      '.photo-thumb-item',
+      '.profile-recent-photo',
+      '.admin-action-card',
+      '.admin-quick-links .ds-btn',
+      '.ds-tab'
+    ].join(',');
+
+    function activate(el) {
+      if (!el) return;
+      el.classList.add('is-pressing');
+      window.clearTimeout(el._pressTimer);
+      el._pressTimer = window.setTimeout(function () {
+        el.classList.remove('is-pressing');
+      }, 180);
+    }
+
+    document.addEventListener('pointerdown', function (e) {
+      var el = e.target.closest(selector);
+      if (el) activate(el);
+    }, { passive: true });
+
+    document.addEventListener('pointerup', function (e) {
+      var el = e.target.closest(selector);
+      if (el) {
+        window.setTimeout(function () { el.classList.remove('is-pressing'); }, 40);
+      }
+    }, { passive: true });
+
+    document.addEventListener('pointercancel', function (e) {
+      var el = e.target.closest(selector);
+      if (el) el.classList.remove('is-pressing');
+    }, { passive: true });
+
+    document.addEventListener('pointerout', function (e) {
+      var el = e.target.closest(selector);
+      if (el) el.classList.remove('is-pressing');
+    }, { passive: true });
+  }
+
+  /* ============================================================
+     MOTION REVEALS
+     Subtle staged reveal for modules and cards as they enter view.
+     ============================================================ */
+  function initMotionReveals() {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      return;
+    }
+
+    var selector = [
+      '.ds-module',
+      '.profile-photo-block',
+      '.contact-box',
+      '.event-card',
+      '.photo-thumb-item',
+      '.person-row',
+      '.comment-entry',
+      '.friend-grid-item',
+      '.profile-plan-card',
+      '.profile-recent-photo',
+      '.voyage-strip-stop',
+      '.admin-action-card',
+      '.admin-bridge-flag',
+      '.admin-stat-card',
+      '.photo-board-stat',
+      '.photo-board-spotlight',
+      '.home-spotlight-card',
+      '.home-ship-desk-card',
+      '.voyage-command-stat'
+    ].join(',');
+
+    var items = Array.prototype.slice.call(document.querySelectorAll(selector));
+    if (!items.length || !('IntersectionObserver' in window)) return;
+
+    items.forEach(function (el, index) {
+      el.setAttribute('data-motion', '');
+      el.style.setProperty('--motion-index', String(Math.min(index, 8)));
+    });
+
+    var obs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          obs.unobserve(entry.target);
+        }
+      });
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+
+    items.forEach(function (el) { obs.observe(el); });
   }
 
   /* ============================================================
@@ -505,6 +636,8 @@
     initTagInput();
     initUsernameValidation();
     initPasswordMatch();
+    initPressFeedback();
+    initMotionReveals();
   }
 
   if (document.readyState === 'loading') {
