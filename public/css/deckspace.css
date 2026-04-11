@@ -518,6 +518,12 @@ ul {
   margin-bottom: 6px;
   box-shadow: inset 0 0 0 1px rgba(255,255,255,0.8);
 }
+.profile-photo-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+}
 
 .profile-photo-block img.avatar {
   width: 160px;
@@ -558,6 +564,55 @@ ul {
 .profile-status-line {
   font-size: 11px;
   color: var(--ds-text-light);
+}
+.profile-passport-body {
+  display: grid;
+  gap: 10px;
+}
+.profile-passport-facts {
+  display: grid;
+  gap: 6px;
+}
+.profile-passport-row {
+  padding-bottom: 6px;
+  border-bottom: 1px solid #e6edf7;
+}
+.profile-passport-row:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+.profile-passport-row span {
+  display: block;
+  font-size: 9px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.45px;
+  color: #6c7d96;
+  margin-bottom: 2px;
+}
+.profile-passport-row strong {
+  display: block;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ds-navy);
+}
+.profile-passport-row strong em {
+  font-style: normal;
+  color: #63738d;
+  font-weight: normal;
+}
+.profile-passport-row a {
+  color: var(--ds-link);
+}
+.profile-passport-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.profile-passport-empty {
+  font-size: 11px;
+  line-height: 1.45;
+  color: #65768f;
 }
 
 .online-indicator {
@@ -647,43 +702,8 @@ ul {
 }
 
 /* ============================================================
-   PROFILE URL / SONG MODULE
+   PROFILE SONG MODULE
    ============================================================ */
-.profile-url-field {
-  font-size: 10px;
-  padding: 4px 6px;
-  color: var(--ds-text-light);
-  border-top: 1px solid var(--ds-border);
-  word-break: break-all;
-}
-.profile-url-field a { color: var(--ds-link); font-size: 10px; }
-.profile-links-body {
-  padding: 5px 6px;
-}
-.profile-link-stack {
-  display: grid;
-  gap: 4px;
-}
-.profile-link-row {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  min-height: 24px;
-  color: var(--ds-link);
-  font-size: 11px;
-  font-weight: bold;
-  text-decoration: none;
-}
-.profile-link-row:hover {
-  color: var(--ds-navy);
-  text-decoration: underline;
-}
-.profile-url-inline {
-  border-top: 1px dashed #d4deec;
-  margin-top: 6px;
-  padding: 6px 0 0;
-}
-
 .song-player {
   padding: 5px 6px;
   font-size: 11px;
@@ -803,6 +823,9 @@ ul {
   color: var(--ds-text-light);
 }
 .friend-count-line a { color: var(--ds-link); }
+.profile-top-space-action {
+  margin-top: 6px;
+}
 
 /* ============================================================
    WALL POSTS / GUESTBOOK — public comment entries
@@ -3353,6 +3376,9 @@ a.ds-btn-orange:hover {
     gap: 8px;
     text-align: left;
     padding: 6px;
+  }
+  .profile-photo-meta {
+    align-items: flex-start;
   }
   .profile-photo-block img.avatar {
     width: 80px;

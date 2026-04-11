@@ -17,8 +17,7 @@ import { processPhotoUpload, cdnUrl, pickUploadedFile } from '../lib/media.js';
 import { layout, layoutCtx, esc, relTime, fmtDate, csrfField } from '../templates/layout.js';
 import { ic } from '../templates/icons.js';
 import {
-  module, profilePhotoBlock, contactBox, detailsTable, songModule,
-  vibeTagsModule, friendSpaceModule, wallModule, paginator
+  module, profilePhotoBlock, contactBox, friendSpaceModule, wallModule, paginator
 } from '../templates/components.js';
 
 const profile = new Hono();
@@ -296,9 +295,8 @@ function profilePage({ target, profile, viewer, topFriends, friendCount, friendS
       <p class="profile-masthead-sub">“${esc(headline)}”</p>
       <div class="profile-meta-pills">
         <span class="profile-meta-pill">${isOnline ? 'Online now' : `Active ${relTime(target.last_active_at || target.created_at)}`}</span>
-        <span class="profile-meta-pill">${safeFriendCount} friend${safeFriendCount === 1 ? '' : 's'}</span>
-        <span class="profile-meta-pill">${topFriends.length} in the Top Space</span>
-        <span class="profile-meta-pill">${profile?.profile_views || 0} profile view${(profile?.profile_views || 0) === 1 ? '' : 's'}</span>
+        ${profile?.hometown ? `<span class="profile-meta-pill">${esc(profile.hometown)}</span>` : ''}
+        <span class="profile-meta-pill">${userMemberSince(target)}</span>
       </div>
       <div class="profile-masthead-links">
         <a href="/photos?user=${esc(target.username)}" class="profile-masthead-link">${ic.camera(12)} Photo Roll</a>
@@ -313,16 +311,16 @@ function profilePage({ target, profile, viewer, topFriends, friendCount, friendS
         <span>friends in orbit</span>
       </div>
       <div class="profile-stat-card">
+        <strong>${topFriends.length}</strong>
+        <span>top space slots filled</span>
+      </div>
+      <div class="profile-stat-card">
         <strong>${wallPosts.length}</strong>
         <span>wall notes loaded</span>
       </div>
       <div class="profile-stat-card">
-        <strong>${profile?.vibe_tags?.length || 0}</strong>
-        <span>vibe stickers</span>
-      </div>
-      <div class="profile-stat-card">
-        <strong>${profile?.song_title ? '1' : '0'}</strong>
-        <span>profile songs queued</span>
+        <strong>${profile?.profile_views || 0}</strong>
+        <span>profile views</span>
       </div>
     </div>
   </section>`;
@@ -338,12 +336,8 @@ function profilePage({ target, profile, viewer, topFriends, friendCount, friendS
   // Build left column
   const leftCol = [
     profilePhotoBlock({ user: target, profile, isOwn, isOnline, cdnBase }),
+    profilePassportModule({ user: target, profile, isOwn }),
     contactBox({ targetUser: target, viewerUser: viewer, friendStatus, csrfToken }),
-    mediaLinksModule(target, profile, cdnBase),
-    detailsTable({ profile, user: target }),
-    songModule(profile),
-    vibeTagsModule(profile),
-    isOwn ? editTopFriendsLink() : ''
   ].join('');
 
   // Build right column
@@ -356,6 +350,7 @@ function profilePage({ target, profile, viewer, topFriends, friendCount, friendS
     : '';
 
   const friendSpace = friendSpaceModule({ topFriends, friendCount, cdnBase });
+  const friendSpaceCard = `${friendSpace}${isOwn ? `<div class="profile-top-space-action"><a href="/friends/manage-top" class="ds-btn ds-btn-sm">Manage Top Friends</a></div>` : ''}`;
 
   const wall = wallModule({
     posts: wallPosts, profileUser: target, viewerUser: viewer, readOnly,
@@ -365,7 +360,7 @@ function profilePage({ target, profile, viewer, topFriends, friendCount, friendS
   const rightCol = `<div class="profile-main-panels">
     ${aboutMe ? `<div class="profile-panel">${aboutMe}</div>` : ''}
     ${whoMeet ? `<div class="profile-panel">${whoMeet}</div>` : ''}
-    <div class="profile-panel profile-panel-wide">${friendSpace}</div>
+    <div class="profile-panel profile-panel-wide">${friendSpaceCard}</div>
   </div>
   <div class="profile-wall-shell">${wall}</div>`;
 
@@ -376,32 +371,6 @@ function profilePage({ target, profile, viewer, topFriends, friendCount, friendS
   <div class="profile-left">${leftCol}</div>
   <div class="profile-right">${rightCol}</div>
 </div>
-</div>`;
-}
-
-function mediaLinksModule(user, profile, cdnBase) {
-  const links = [
-    `<a href="/photos?user=${esc(user.username)}" class="profile-link-row">${ic.camera(12)} View My Photos</a>`,
-    `<a href="/events?user=${esc(user.username)}" class="profile-link-row">${ic.calendar(12)} My Events</a>`,
-    `<a href="/friends" class="profile-link-row">${ic.users(12)} Friend Space</a>`,
-  ];
-  return `<div class="ds-module">
-  <div class="ds-module-header">${ic.list(12)} Links</div>
-  <div class="ds-module-body profile-links-body">
-    <div class="profile-link-stack">${links.join('')}</div>
-    <div class="profile-url-field profile-url-inline">
-      URL: <a href="/profile/${esc(user.username)}">/profile/${esc(user.username)}</a>
-    </div>
-  </div>
-</div>`;
-}
-
-function editTopFriendsLink() {
-  return `<div class="ds-module">
-  <div class="ds-module-header">${ic.heart(12)} Top Friends</div>
-  <div class="ds-module-body">
-    <a href="/friends/manage-top" class="ds-btn ds-btn-sm w-full" style="display:block;text-align:center">Manage Top Friends</a>
-  </div>
 </div>`;
 }
 
@@ -507,4 +476,25 @@ function compactLine(value, max = 60) {
   const line = (value || '').replace(/\s+/g, ' ').trim();
   if (!line) return '';
   return line.length > max ? `${line.slice(0, max)}…` : line;
+}
+
+function profilePassportModule({ user, profile, isOwn }) {
+  const facts = [
+    profile?.hometown ? `<div class="profile-passport-row"><span>Hometown</span><strong>${esc(profile.hometown)}</strong></div>` : '',
+    user?.created_at ? `<div class="profile-passport-row"><span>Member Since</span><strong>${fmtDate(user.created_at)}</strong></div>` : '',
+    profile?.song_title ? `<div class="profile-passport-row"><span>Profile Song</span><strong>${esc(profile.song_title)}${profile?.song_artist ? ` <em>${esc(profile.song_artist)}</em>` : ''}</strong></div>` : '',
+    `<div class="profile-passport-row"><span>Profile URL</span><strong><a href="/profile/${esc(user.username)}">/profile/${esc(user.username)}</a></strong></div>`,
+  ].filter(Boolean).join('');
+
+  const vibeChips = (profile?.vibe_tags || []).length
+    ? `<div class="profile-passport-tags">${(profile.vibe_tags || []).map((tag) => `<span class="vibe-tag">${esc(tag)}</span>`).join('')}</div>`
+    : `<div class="profile-passport-empty">${isOwn ? 'Add a few vibe tags so your page looks alive.' : 'No vibe stickers on this page yet.'}</div>`;
+
+  return `<div class="ds-module">
+    <div class="ds-module-header">${ic.star(12)} Passport</div>
+    <div class="ds-module-body profile-passport-body">
+      <div class="profile-passport-facts">${facts}</div>
+      ${vibeChips}
+    </div>
+  </div>`;
 }

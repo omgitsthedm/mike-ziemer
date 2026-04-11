@@ -187,20 +187,15 @@ export function profilePhotoBlock({ user, profile, isOwn, isOnline, cdnBase }) {
       : '';
 
   const editLink = isOwn
-    ? `<div class="text-center mt-4"><a href="/profile/edit" class="ds-btn ds-btn-sm">Edit Profile</a></div>`
-    : '';
-
-  const statusLine = profile?.status_text
-    ? `<div class="profile-status-mood">&ldquo;${esc(profile.status_text)}&rdquo;</div>`
+    ? `<a href="/profile/edit" class="ds-btn ds-btn-sm">Edit Profile</a>`
     : '';
 
   return `<div class="profile-photo-block">
   ${img}
-  <span class="profile-display-name">${esc(user.display_name)}</span>
-  <div class="text-small text-muted">@${esc(user.username)}</div>
-  ${statusLine}
-  ${onlineHtml}
-  ${editLink}
+  <div class="profile-photo-meta">
+    ${onlineHtml}
+    ${editLink}
+  </div>
 </div>`;
 }
 
