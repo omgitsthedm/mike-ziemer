@@ -17,7 +17,7 @@ import { processPhotoUpload, cdnUrl, pickUploadedFile } from '../lib/media.js';
 import { layout, layoutCtx, esc, relTime, fmtDate, csrfField } from '../templates/layout.js';
 import { ic } from '../templates/icons.js';
 import {
-  module, profilePhotoBlock, contactBox, friendSpaceModule, wallModule, paginator, avatar, absUrl
+  module, profilePhotoBlock, contactBox, friendSpaceModule, wallModule, paginator
 } from '../templates/components.js';
 
 const profile = new Hono();
@@ -262,73 +262,25 @@ function profilePage({ target, profile, viewer, topFriends, friendCount, friendS
   const safeFriendCount = Number.isFinite(friendCount) ? friendCount : 0;
   const displayName = target.display_name || target.username;
   const themeClass = profile?.theme_id ? ` theme-${profile.theme_id}` : '';
-  const avatarUrl = profile?.avatar_url ? absUrl(cdnBase, profile.avatar_url) : null;
   const headline = profile?.status_text
     || profile?.social_intent
     || (isOwn ? 'Your page is officially open for business.' : `${displayName}'s page is officially open for business.`);
-  const cruiseVibe = profile?.social_intent || 'Floating somewhere between mischief, caffeine, and making plans.';
-  const storyCards = [
-    {
-      label: 'Cruise Vibe',
-      value: cruiseVibe,
-      note: profile?.vibe_tags?.length ? `${profile.vibe_tags.length} vibe tag${profile.vibe_tags.length === 1 ? '' : 's'} on deck` : 'Needs a few more stickers and labels',
-    },
-    {
-      label: 'Hometown Signal',
-      value: profile?.hometown || 'Currently claiming the ship as home base.',
-      note: userMemberSince(target),
-    },
-    {
-      label: 'Now Playing',
-      value: profile?.song_title
-        ? `${profile.song_title}${profile?.song_artist ? ` — ${profile.song_artist}` : ''}`
-        : 'No profile song set yet.',
-      note: profile?.who_id_like_to_meet
-        ? `Looking to meet: ${compactLine(profile.who_id_like_to_meet, 60)}`
-        : 'Wall is open for drive-by notes and introductions',
-    },
-  ];
-  const heroVisual = `<div class="profile-hero-visual">
-    <div class="profile-hero-portrait">
-      ${avatar(avatarUrl, displayName, 'large', 'class="profile-hero-avatar"')}
+  const brandPanel = `<div class="profile-brand-panel">
+    <div class="profile-brand-logo-wrap">
+      <img src="/images/deckspace-logo.png" alt="DeckSpace" class="profile-brand-logo" width="220" height="220">
     </div>
-    <div class="profile-hero-stickers">
-      <div class="profile-hero-sticker accent">
-        <span>${ic.music(11)} Now Spinning</span>
-        <strong>${esc(compactLine(profile?.song_title ? `${profile.song_title}${profile?.song_artist ? ` — ${profile.song_artist}` : ''}` : 'No profile song loaded yet.', 56))}</strong>
-      </div>
-      <div class="profile-hero-sticker">
-        <span>${ic.users(11)} Top Space</span>
-        <strong>${topFriends.length}/8 slots filled</strong>
-      </div>
-      <div class="profile-hero-sticker">
-        <span>${ic.star(11)} Vibe Check</span>
-        <strong>${esc(compactLine((profile?.vibe_tags || []).join(' • ') || 'Needs a few more stickers.', 56))}</strong>
-      </div>
+    <div class="profile-brand-chips">
+      <span class="profile-brand-chip">${safeFriendCount} friend${safeFriendCount === 1 ? '' : 's'}</span>
+      <span class="profile-brand-chip">${topFriends.length}/8 top slots</span>
+      <span class="profile-brand-chip">${wallPosts.length} wall post${wallPosts.length === 1 ? '' : 's'}</span>
+      <span class="profile-brand-chip">${profile?.profile_views || 0} views</span>
     </div>
-    <div class="profile-stat-strip">
-      <div class="profile-stat-card">
-        <strong>${safeFriendCount}</strong>
-        <span>friends in orbit</span>
-      </div>
-      <div class="profile-stat-card">
-        <strong>${topFriends.length}</strong>
-        <span>top space slots filled</span>
-      </div>
-      <div class="profile-stat-card">
-        <strong>${wallPosts.length}</strong>
-        <span>wall notes loaded</span>
-      </div>
-      <div class="profile-stat-card">
-        <strong>${profile?.profile_views || 0}</strong>
-        <span>profile views</span>
-      </div>
-    </div>
+    <p class="profile-brand-note">A public DeckSpace page for wall notes, plans, shipboard friends, and the scrapbook trail you leave behind.</p>
   </div>`;
 
   const masthead = `<section class="profile-masthead">
     <div class="profile-masthead-main">
-      <div class="profile-masthead-kicker">${ic.star(12)} ${isOwn ? 'Your Deckspace Page' : 'Deckspace Profile'}</div>
+      <div class="profile-masthead-kicker">${ic.star(12)} ${isOwn ? 'Your DeckSpace Page' : 'DeckSpace Profile'}</div>
       <h2 class="profile-masthead-title">${esc(displayName)} <span>@${esc(target.username)}</span></h2>
       <p class="profile-masthead-sub">“${esc(headline)}”</p>
       <div class="profile-meta-pills">
@@ -342,16 +294,26 @@ function profilePage({ target, profile, viewer, topFriends, friendCount, friendS
         <a href="/friends" class="profile-masthead-link">${ic.users(12)} Friend Space</a>
         <a href="${isOwn ? '/profile/edit' : '#wall-post-form'}" class="profile-masthead-link">${isOwn ? `${ic.settings(12)} Edit Page` : `${ic.pencil(12)} Write on Wall`}</a>
       </div>
+      <div class="profile-stat-strip">
+        <div class="profile-stat-card">
+          <strong>${safeFriendCount}</strong>
+          <span>friends in orbit</span>
+        </div>
+        <div class="profile-stat-card">
+          <strong>${topFriends.length}</strong>
+          <span>top space slots filled</span>
+        </div>
+        <div class="profile-stat-card">
+          <strong>${wallPosts.length}</strong>
+          <span>wall notes loaded</span>
+        </div>
+        <div class="profile-stat-card">
+          <strong>${profile?.profile_views || 0}</strong>
+          <span>profile views</span>
+        </div>
+      </div>
     </div>
-    ${heroVisual}
-  </section>`;
-
-  const storyStrip = `<section class="profile-story-strip">
-    ${storyCards.map((card) => `<article class="profile-story-card">
-      <div class="profile-story-label">${esc(card.label)}</div>
-      <div class="profile-story-value">${esc(card.value)}</div>
-      <div class="profile-story-note">${esc(card.note)}</div>
-    </article>`).join('')}
+    ${brandPanel}
   </section>`;
 
   // Build left column
@@ -387,7 +349,6 @@ function profilePage({ target, profile, viewer, topFriends, friendCount, friendS
 
   return `<div class="profile-page${themeClass}">
   ${masthead}
-  ${storyStrip}
   <div class="profile-wrap">
   <div class="profile-left">${leftCol}</div>
   <div class="profile-right">${rightCol}</div>
@@ -503,7 +464,6 @@ function profilePassportModule({ user, profile, isOwn }) {
   const facts = [
     profile?.hometown ? `<article class="profile-passport-card"><div class="profile-passport-icon">${ic.mapPin(14)}</div><span>Hometown</span><strong>${esc(profile.hometown)}</strong></article>` : '',
     user?.created_at ? `<article class="profile-passport-card"><div class="profile-passport-icon">${ic.calendar(14)}</div><span>Member Since</span><strong>${fmtDate(user.created_at)}</strong></article>` : '',
-    profile?.song_title ? `<article class="profile-passport-card wide"><div class="profile-passport-icon">${ic.music(14)}</div><span>Profile Song</span><strong>${esc(compactLine(profile.song_title, 40))}${profile?.song_artist ? ` <em>${esc(compactLine(profile.song_artist, 28))}</em>` : ''}</strong></article>` : '',
     `<article class="profile-passport-card wide"><div class="profile-passport-icon">${ic.shipWheel(14)}</div><span>Profile URL</span><strong><a href="/profile/${esc(user.username)}">/profile/${esc(user.username)}</a></strong></article>`,
   ].filter(Boolean).join('');
 
@@ -511,10 +471,19 @@ function profilePassportModule({ user, profile, isOwn }) {
     ? `<div class="profile-passport-tags">${(profile.vibe_tags || []).map((tag) => `<span class="vibe-tag">${esc(tag)}</span>`).join('')}</div>`
     : `<div class="profile-passport-empty">${isOwn ? 'Add a few vibe tags so your page looks alive.' : 'No vibe stickers on this page yet.'}</div>`;
 
+  const songBlock = profile?.song_title
+    ? `<div class="profile-passport-song">
+        <div class="profile-passport-song-label">${ic.music(12)} Now Spinning</div>
+        <strong>${esc(profile.song_title)}</strong>
+        ${profile?.song_artist ? `<span>${esc(profile.song_artist)}</span>` : ''}
+      </div>`
+    : '';
+
   return `<div class="ds-module">
     <div class="ds-module-header">${ic.star(12)} Passport</div>
     <div class="ds-module-body profile-passport-body">
       <div class="profile-passport-grid">${facts}</div>
+      ${songBlock}
       ${vibeChips}
     </div>
   </div>`;
