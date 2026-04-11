@@ -260,10 +260,12 @@ profile.post('/wall/:postId/delete', requireAuth, async (c) => {
    PROFILE PAGE TEMPLATE
    ============================================================ */
 function profilePage({ target, profile, viewer, topFriends, friendCount, friendStatus, wallPosts, isOwn, isOnline, readOnly, page, hasMoreWall, cdnBase, sailing, csrfToken }) {
+  const safeFriendCount = Number.isFinite(friendCount) ? friendCount : 0;
+  const displayName = target.display_name || target.username;
   const themeClass = profile?.theme_id ? ` theme-${profile.theme_id}` : '';
   const headline = profile?.status_text
     || profile?.social_intent
-    || (isOwn ? 'Your page is officially open for business.' : `${target.display_name}'s page is officially open for business.`);
+    || (isOwn ? 'Your page is officially open for business.' : `${displayName}'s page is officially open for business.`);
   const cruiseVibe = profile?.social_intent || 'Floating somewhere between mischief, caffeine, and making plans.';
   const storyCards = [
     {
@@ -282,7 +284,7 @@ function profilePage({ target, profile, viewer, topFriends, friendCount, friendS
         ? `${profile.song_title}${profile?.song_artist ? ` — ${profile.song_artist}` : ''}`
         : 'No profile song set yet.',
       note: profile?.who_id_like_to_meet
-        ? `Looking to meet: ${profile.who_id_like_to_meet.slice(0, 60)}${profile.who_id_like_to_meet.length > 60 ? '…' : ''}`
+        ? `Looking to meet: ${compactLine(profile.who_id_like_to_meet, 60)}`
         : 'Wall is open for drive-by notes and introductions',
     },
   ];
@@ -290,11 +292,11 @@ function profilePage({ target, profile, viewer, topFriends, friendCount, friendS
   const masthead = `<section class="profile-masthead">
     <div class="profile-masthead-main">
       <div class="profile-masthead-kicker">${ic.star(12)} ${isOwn ? 'Your Deckspace Page' : 'Deckspace Profile'}</div>
-      <h2 class="profile-masthead-title">${esc(target.display_name)} <span>@${esc(target.username)}</span></h2>
+      <h2 class="profile-masthead-title">${esc(displayName)} <span>@${esc(target.username)}</span></h2>
       <p class="profile-masthead-sub">“${esc(headline)}”</p>
       <div class="profile-meta-pills">
         <span class="profile-meta-pill">${isOnline ? 'Online now' : `Active ${relTime(target.last_active_at || target.created_at)}`}</span>
-        <span class="profile-meta-pill">${friendCount} friend${friendCount === 1 ? '' : 's'}</span>
+        <span class="profile-meta-pill">${safeFriendCount} friend${safeFriendCount === 1 ? '' : 's'}</span>
         <span class="profile-meta-pill">${topFriends.length} in the Top Space</span>
         <span class="profile-meta-pill">${profile?.profile_views || 0} profile view${(profile?.profile_views || 0) === 1 ? '' : 's'}</span>
       </div>
@@ -307,7 +309,7 @@ function profilePage({ target, profile, viewer, topFriends, friendCount, friendS
     </div>
     <div class="profile-stat-strip">
       <div class="profile-stat-card">
-        <strong>${friendCount}</strong>
+        <strong>${safeFriendCount}</strong>
         <span>friends in orbit</span>
       </div>
       <div class="profile-stat-card">
@@ -360,7 +362,12 @@ function profilePage({ target, profile, viewer, topFriends, friendCount, friendS
     page, hasMore: hasMoreWall, csrfToken
   });
 
-  const rightCol = [aboutMe, whoMeet, friendSpace, wall].join('');
+  const rightCol = `<div class="profile-main-panels">
+    ${aboutMe ? `<div class="profile-panel">${aboutMe}</div>` : ''}
+    ${whoMeet ? `<div class="profile-panel">${whoMeet}</div>` : ''}
+    <div class="profile-panel profile-panel-wide">${friendSpace}</div>
+  </div>
+  <div class="profile-wall-shell">${wall}</div>`;
 
   return `<div class="profile-page${themeClass}">
   ${masthead}
@@ -494,4 +501,10 @@ export default profile;
 function userMemberSince(user) {
   if (!user?.created_at) return 'Fresh to the ship';
   return `Member since ${fmtDate(user.created_at)}`;
+}
+
+function compactLine(value, max = 60) {
+  const line = (value || '').replace(/\s+/g, ' ').trim();
+  if (!line) return '';
+  return line.length > max ? `${line.slice(0, max)}…` : line;
 }
