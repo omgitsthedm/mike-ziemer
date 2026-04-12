@@ -25,6 +25,9 @@ import { ic } from './icons.js';
  * @param {string}  [opts.currentUrl]  — current absolute request URL
  * @param {string}  [opts.pageHeading] — page H1 text
  * @param {boolean} [opts.showPageHeading] — whether to render layout H1
+ * @param {Array<object>|object} [opts.structuredData] — optional JSON-LD blocks
+ * @param {boolean} [opts.noIndex] — override default robots behavior
+ * @param {string}  [opts.cspNonce] — CSP nonce for inline JSON-LD
  */
 export function layout({
   title,
@@ -43,6 +46,9 @@ export function layout({
   currentUrl = '',
   pageHeading = '',
   showPageHeading = true,
+  structuredData = [],
+  noIndex = undefined,
+  cspNonce = '',
 }) {
   const pageTitle = title
     ? (/\bDeckspace\b/i.test(title) ? title : `${title} | Deckspace`)
@@ -50,10 +56,20 @@ export function layout({
   const themeId = user?.profiles?.theme_id || 'classic';
   const bodyClass = ['theme-' + themeId, themeClass].filter(Boolean).join(' ');
   const origin = currentUrl ? new URL(currentUrl).origin : '';
-  const canonicalHref = canonicalUrl || currentUrl || '';
+  const canonicalHref = canonicalUrl || normalizeCanonicalUrl(currentUrl) || '';
   const socialImage = ogImageUrl || (origin ? `${origin}/images/deckspace-social.svg` : '/images/deckspace-social.svg');
   const metaDescription = description || defaultMetaDescription(title, sailing);
   const heading = pageHeading || title || 'Deckspace';
+  const robotsContent = buildRobotsContent(currentUrl, noIndex);
+  const schemaBlocks = buildSchemaBlocks({
+    currentUrl,
+    canonicalHref,
+    pageTitle,
+    metaDescription,
+    socialImage,
+    structuredData,
+    cspNonce,
+  });
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -62,15 +78,19 @@ export function layout({
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#003399">
   <meta name="description" content="${esc(metaDescription)}">
+  <meta name="robots" content="${esc(robotsContent)}">
+  <meta name="googlebot" content="${esc(robotsContent)}">
   ${csrfToken ? `<meta name="csrf-token" content="${esc(csrfToken)}">` : ''}
   <title>${esc(pageTitle)}</title>
   ${canonicalHref ? `<link rel="canonical" href="${esc(canonicalHref)}">` : ''}
+  ${origin ? `<link rel="sitemap" type="application/xml" title="XML Sitemap" href="${esc(origin)}/sitemap.xml">` : ''}
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Deckspace">
   <meta property="og:title" content="${esc(pageTitle)}">
   <meta property="og:description" content="${esc(metaDescription)}">
   ${canonicalHref ? `<meta property="og:url" content="${esc(canonicalHref)}">` : ''}
   <meta property="og:image" content="${esc(socialImage)}">
+  <meta property="og:image:alt" content="DeckSpace preview image">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="${esc(pageTitle)}">
   <meta name="twitter:description" content="${esc(metaDescription)}">
@@ -78,6 +98,7 @@ export function layout({
   <link rel="stylesheet" href="/css/deckspace.css">
   <link rel="icon" type="image/png" sizes="64x64" href="/images/deckspace-favicon.png">
   <link rel="apple-touch-icon" href="/images/deckspace-apple-touch.png">
+  ${schemaBlocks}
 </head>
 <body class="${bodyClass}">
 
@@ -277,6 +298,7 @@ export function layoutCtx(c, opts) {
   return layout({
     notifCount: c.get('notifCount') || 0,
     csrfToken:  c.get('csrfToken')  || '',
+    cspNonce:   c.get('cspNonce')   || '',
     currentUrl: c.req.url,
     ...opts
   });
@@ -290,6 +312,188 @@ function defaultMetaDescription(title, sailing) {
     return `${title} on Deckspace, the shared cruise page for meeting people, following plans, sharing photos, and keeping a short trip archive.`;
   }
   return 'Deckspace is the shared cruise page for meeting people, following plans, sharing photos, and keeping a short trip archive.';
+}
+
+function normalizeCanonicalUrl(url) {
+  if (!url) return '';
+  try {
+    const parsed = new URL(url);
+    return `${parsed.origin}${parsed.pathname}`;
+  } catch (_) {
+    return url;
+  }
+}
+
+function buildRobotsContent(currentUrl, noIndex) {
+  const shouldNoIndex = typeof noIndex === 'boolean' ? noIndex : defaultNoIndex(currentUrl);
+  return shouldNoIndex
+    ? 'noindex, nofollow, noarchive'
+    : 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1';
+}
+
+function defaultNoIndex(currentUrl) {
+  if (!currentUrl) return false;
+  try {
+    const { pathname } = new URL(currentUrl);
+    return [
+      /^\/login\/?$/i,
+      /^\/register\/?$/i,
+      /^\/setup(?:\/.*)?$/i,
+      /^\/admin(?:\/.*)?$/i,
+      /^\/notifications\/?$/i,
+      /^\/friends(?:\/.*)?$/i,
+      /^\/profile\/edit\/?$/i,
+      /^\/events\/create\/?$/i,
+      /^\/events\/[^/]+\/edit\/?$/i,
+      /^\/photos\/upload\/?$/i,
+    ].some((pattern) => pattern.test(pathname));
+  } catch (_) {
+    return false;
+  }
+}
+
+function buildSchemaBlocks({ currentUrl, canonicalHref, pageTitle, metaDescription, socialImage, structuredData, cspNonce }) {
+  const defaults = buildDefaultStructuredData({ currentUrl, canonicalHref, pageTitle, metaDescription, socialImage });
+  const customBlocks = Array.isArray(structuredData)
+    ? structuredData
+    : structuredData
+    ? [structuredData]
+    : [];
+  return [...defaults, ...customBlocks]
+    .filter(Boolean)
+    .map((block) => `<script type="application/ld+json"${cspNonce ? ` nonce="${esc(cspNonce)}"` : ''}>${safeJson(block)}</script>`)
+    .join('\n  ');
+}
+
+function buildDefaultStructuredData({ currentUrl, canonicalHref, pageTitle, metaDescription, socialImage }) {
+  if (!currentUrl || !canonicalHref) return [];
+
+  let origin = '';
+  let pathname = '/';
+  try {
+    const parsed = new URL(currentUrl);
+    origin = parsed.origin;
+    pathname = parsed.pathname || '/';
+  } catch (_) {
+    return [];
+  }
+
+  const websiteId = `${origin}/#website`;
+  const organizationId = `${origin}/#organization`;
+  const breadcrumb = buildBreadcrumbList({ origin, pathname, pageTitle, canonicalHref });
+  const page = {
+    '@context': 'https://schema.org',
+    '@type': pathname === '/' ? 'CollectionPage' : 'WebPage',
+    '@id': `${canonicalHref}#webpage`,
+    url: canonicalHref,
+    name: stripDeckspaceSuffix(pageTitle),
+    description: metaDescription,
+    isPartOf: { '@id': websiteId },
+    about: { '@id': organizationId },
+    primaryImageOfPage: socialImage,
+  };
+
+  if (breadcrumb) {
+    page.breadcrumb = { '@id': `${canonicalHref}#breadcrumb` };
+  }
+
+  return [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      '@id': websiteId,
+      url: origin,
+      name: 'DeckSpace',
+      description: 'DeckSpace is the public sailing page for events, photos, profiles, and shared trip updates.',
+      publisher: { '@id': organizationId },
+      inLanguage: 'en-US',
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      '@id': organizationId,
+      name: 'DeckSpace',
+      url: origin,
+      logo: `${origin}/images/deckspace-logo.png`,
+      description: 'DeckSpace is a public sailing page for events, photos, profiles, and short-lived trip archives.',
+      contactPoint: [{
+        '@type': 'ContactPoint',
+        contactType: 'customer support',
+        url: `${origin}/contact`,
+        availableLanguage: ['English'],
+      }],
+    },
+    page,
+    breadcrumb,
+  ].filter(Boolean);
+}
+
+function buildBreadcrumbList({ origin, pathname, pageTitle, canonicalHref }) {
+  const segments = pathname.split('/').filter(Boolean);
+  if (!segments.length) return null;
+
+  const nameMap = {
+    about: 'About',
+    contact: 'Help',
+    privacy: 'Privacy',
+    terms: 'Terms and Usage',
+    accessibility: 'Accessibility',
+    guidelines: 'Community Guidelines',
+    sitemap: 'Sitemap',
+    people: 'People',
+    events: 'Events',
+    photos: 'Photos',
+    voyage: 'Voyage',
+    profile: 'Profiles',
+    login: 'Sign In',
+    register: 'Join DeckSpace',
+  };
+
+  const items = [{
+    '@type': 'ListItem',
+    position: 1,
+    name: 'Home',
+    item: origin,
+  }];
+
+  let url = origin;
+  segments.forEach((segment, index) => {
+    url += `/${segment}`;
+    const isLast = index === segments.length - 1;
+    const label = isLast
+      ? stripDeckspaceSuffix(pageTitle)
+      : (nameMap[segment] || humanizeSlug(segment));
+    items.push({
+      '@type': 'ListItem',
+      position: items.length + 1,
+      name: label,
+      item: isLast ? canonicalHref : url,
+    });
+  });
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    '@id': `${canonicalHref}#breadcrumb`,
+    itemListElement: items,
+  };
+}
+
+function humanizeSlug(value) {
+  return String(value || '')
+    .replace(/[-_]+/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase()) || 'Page';
+}
+
+function stripDeckspaceSuffix(value) {
+  return String(value || 'DeckSpace')
+    .replace(/\s*\|\s*Deckspace$/i, '')
+    .split('|')[0]
+    .trim();
+}
+
+function safeJson(value) {
+  return JSON.stringify(value).replace(/</g, '\\u003c');
 }
 
 function renderFooter() {
@@ -310,16 +514,25 @@ function renderFooter() {
     <div class="ds-footer-links">
       <div class="ds-footer-link-group">
         <span class="ds-footer-link-label">Explore</span>
+        <a href="/">Home</a>
         <a href="/events">Events</a>
+        <a href="/photos">Photos</a>
+        <a href="/people">People</a>
         <a href="/voyage">Voyage</a>
         <a href="/about">About</a>
       </div>
       <div class="ds-footer-link-group">
         <span class="ds-footer-link-label">Support</span>
         <a href="/contact">Contact</a>
+        <a href="/accessibility">Accessibility</a>
+        <a href="/guidelines">Community Guidelines</a>
+      </div>
+      <div class="ds-footer-link-group">
+        <span class="ds-footer-link-label">Legal</span>
         <a href="/privacy">Privacy</a>
         <a href="/terms">Terms &amp; Usage</a>
         <a href="/sitemap">Sitemap</a>
+        <a href="/sitemap.xml">XML Sitemap</a>
       </div>
     </div>
   </div>

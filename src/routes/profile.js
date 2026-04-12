@@ -218,6 +218,7 @@ profile.get('/profile/:username', async (c) => {
   const isOwn      = viewer?.id === target.id;
   const readOnly   = sailing ? isSailingReadOnly(sailing) : false;
   const isOnline   = target.last_active_at && (Date.now() - new Date(target.last_active_at).getTime()) < 5 * 60 * 1000;
+  const avatarImage = profile?.avatar_url ? cdnUrl(c.env, profile.avatar_url) : null;
 
   const csrf = c.get('csrfToken') || '';
 
@@ -239,6 +240,8 @@ profile.get('/profile/:username', async (c) => {
     sailing,
     activeNav: isOwn ? 'profile' : '',
     body,
+    ogImageUrl: avatarImage || undefined,
+    structuredData: profileStructuredData(c.req.url, target, profile, avatarImage),
   }));
 });
 
@@ -489,6 +492,27 @@ function editProfileForm({ user, profile, siteKey, csrfToken = '' }) {
 }
 
 export default profile;
+
+function profileStructuredData(url, user, profile, imageUrl) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ProfilePage',
+    url: new URL(url).toString(),
+    name: `${user.display_name} on DeckSpace`,
+    description: profile?.about_me || `Public DeckSpace profile for ${user.display_name}.`,
+    mainEntity: {
+      '@type': 'Person',
+      name: user.display_name,
+      alternateName: `@${user.username}`,
+      description: profile?.about_me || undefined,
+      homeLocation: profile?.hometown ? {
+        '@type': 'Place',
+        name: profile.hometown,
+      } : undefined,
+      image: imageUrl || undefined,
+    },
+  };
+}
 
 function userMemberSince(user) {
   if (!user?.created_at) return 'Fresh to the ship';

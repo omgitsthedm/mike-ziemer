@@ -356,7 +356,9 @@ ${module({
     user: viewer,
     sailing,
     activeNav: 'photos',
-    body
+    body,
+    ogImageUrl: mediumUrl || undefined,
+    structuredData: photoStructuredData(c.req.url, photo, mediumUrl),
   }));
 });
 
@@ -430,6 +432,22 @@ photos.post('/photos/:id/delete', requireAuth, async (c) => {
 });
 
 export default photos;
+
+function photoStructuredData(url, photo, imageUrl) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ImageObject',
+    url: new URL(url).toString(),
+    name: photo.caption ? `DeckSpace photo: ${photo.caption.slice(0, 80)}` : `DeckSpace photo by ${photo.users?.display_name || 'a passenger'}`,
+    description: photo.caption || `Public DeckSpace photo shared by ${photo.users?.display_name || 'a passenger'}.`,
+    contentUrl: imageUrl || undefined,
+    creator: photo.users?.display_name ? {
+      '@type': 'Person',
+      name: photo.users.display_name,
+    } : undefined,
+    datePublished: photo.created_at,
+  };
+}
 
 function photoQueryHref({ userFilter = null, view = 'all' }) {
   const params = new URLSearchParams();

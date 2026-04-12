@@ -214,6 +214,7 @@ events.get('/events/:id', async (c) => {
 
   const readOnly = sailing ? isSailingReadOnly(sailing) : false;
   const isCreator = viewer?.id === event.creator_user_id;
+  const eventImage = event.cover_image_url ? absUrl(cdnBase, event.cover_image_url) : '';
 
   const csrf = c.get('csrfToken') || '';
   const body = eventDetailPage({ event, comments, userRsvp, attendees, viewer, sailing, readOnly, isCreator, page, hasMore: comments.length === 30, cdnBase, csrfToken: csrf });
@@ -227,6 +228,8 @@ events.get('/events/:id', async (c) => {
     sailing,
     activeNav: 'events',
     body,
+    ogImageUrl: eventImage || undefined,
+    structuredData: eventStructuredData(c.req.url, event, eventImage),
   }));
 });
 
@@ -953,3 +956,28 @@ function createEventForm({ error, values = {}, eventId, csrfToken = '' }) {
 }
 
 export default events;
+
+function eventStructuredData(url, event, imageUrl = '') {
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'Event',
+    url: new URL(url).toString(),
+    name: event.title,
+    description: event.description || `Public DeckSpace event: ${event.title}`,
+    startDate: event.start_at,
+    location: event.location ? {
+      '@type': 'Place',
+      name: event.location,
+    } : undefined,
+    organizer: {
+      '@type': 'Organization',
+      name: 'DeckSpace',
+    },
+    eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+    eventStatus: 'https://schema.org/EventScheduled',
+    image: imageUrl ? [imageUrl] : undefined,
+  };
+
+  if (event.end_at) schema.endDate = event.end_at;
+  return schema;
+}

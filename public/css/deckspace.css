@@ -393,6 +393,7 @@ input[type="button"] {
   gap: 18px;
   flex-wrap: wrap;
   justify-content: flex-end;
+  align-items: flex-start;
 }
 .ds-footer-link-group {
   display: grid;
@@ -415,6 +416,127 @@ input[type="button"] {
 .ds-footer-links a:hover {
   color: #cc5200;
   text-decoration: underline;
+}
+
+.site-page-shell {
+  display: grid;
+  gap: 10px;
+}
+
+.site-intro-card {
+  border: 1px solid #c6d8f7;
+  background: linear-gradient(180deg, #f7fbff 0%, #eef5ff 100%);
+  padding: 12px;
+}
+
+.site-intro-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 6px;
+  font-size: 10px;
+  font-weight: bold;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #4f6fae;
+}
+
+.site-intro-title {
+  margin: 0 0 6px;
+  font-size: 24px;
+  line-height: 1.1;
+  color: #173a82;
+}
+
+.site-intro-body {
+  margin: 0;
+  max-width: 720px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #4b5d79;
+}
+
+.site-page-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.site-list,
+.site-link-list {
+  margin: 0;
+  padding-left: 18px;
+  line-height: 1.65;
+}
+
+.site-list li,
+.site-link-list li {
+  margin-bottom: 4px;
+}
+
+.site-link-list a {
+  font-weight: bold;
+}
+
+.site-copy-stack {
+  display: grid;
+  gap: 8px;
+  line-height: 1.6;
+}
+
+.site-copy-stack p {
+  margin: 0;
+}
+
+.site-faq-list {
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.site-faq-item dt {
+  margin-bottom: 3px;
+  font-size: 12px;
+  font-weight: bold;
+  color: #173a82;
+}
+
+.site-faq-item dd {
+  margin: 0;
+  color: #4b5d79;
+  line-height: 1.6;
+}
+
+@media (max-width: 720px) {
+  .ds-footer-inner {
+    gap: 14px;
+  }
+
+  .ds-footer-brand-row {
+    align-items: center;
+  }
+
+  .ds-footer-copy {
+    max-width: none;
+  }
+
+  .ds-footer-links {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 14px 18px;
+  }
+
+  .ds-footer-link-group {
+    min-width: 132px;
+  }
+
+  .site-page-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .site-intro-title {
+    font-size: 20px;
+  }
 }
 
 /* ============================================================

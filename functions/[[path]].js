@@ -107,6 +107,8 @@ app.use('*', async (c, next) => {
    SECURITY HEADERS
    ============================================================ */
 app.use('*', async (c, next) => {
+  const cspNonce = crypto.randomUUID().replace(/-/g, '');
+  c.set('cspNonce', cspNonce);
   await next();
   const contentType = c.res.headers.get('Content-Type') || '';
   c.res.headers.set('X-Content-Type-Options', 'nosniff');
@@ -117,7 +119,7 @@ app.use('*', async (c, next) => {
   // CSP — tight; allow Turnstile and our CDN only
   const cspParts = [
     "default-src 'self'",
-    "script-src 'self' https://challenges.cloudflare.com",
+    `script-src 'self' 'nonce-${cspNonce}' https://challenges.cloudflare.com`,
     "style-src 'self' 'unsafe-inline'",
     `img-src 'self' data: ${c.env.R2_PUBLIC_URL || ''} https://ui-avatars.com https://picsum.photos https://fastly.picsum.photos https://www.edmtunes.com https://booking.whettravel.com`,
     "frame-src https://challenges.cloudflare.com",
