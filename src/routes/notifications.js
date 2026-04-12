@@ -25,7 +25,7 @@ notifications.get('/notifications', async (c) => {
 
   const listHtml = notifs.length
     ? notifs.map(n => notifItem(n)).join('')
-    : `<div class="ds-empty-state">No notifications yet.</div>`;
+    : `<div class="ds-empty-state">Nothing new right now. When someone adds you, writes on your wall, or comments, it will show up here.</div>`;
 
   const pager = paginator(page, notifs.length === 30, '/notifications');
 

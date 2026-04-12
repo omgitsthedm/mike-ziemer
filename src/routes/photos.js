@@ -71,7 +71,7 @@ photos.get('/photos', async (c) => {
 
   const gridHtml = (photoList || []).length
     ? `<div class="photo-board-grid">${(photoList || []).map((p, index) => photoBoardCard({ photo: p, cdnBase, eager: index < 6 })).join('')}</div>`
-    : `<div class="ds-empty-state">No photos yet. ${viewer ? `<a href="/photos/upload">Upload some!</a>` : ''}</div>`;
+    : `<div class="ds-empty-state">No photos yet. ${viewer ? `<a href="/photos/upload">Start the scrapbook.</a>` : 'Check back after the first few camera rolls hit.'}</div>`;
 
   const pager = paginator(page, hasMore, '/photos', userFilter ? `&user=${encodeURIComponent(userFilter)}` : '');
   const title = userFilter ? `Photos by ${userFilter}` : 'Shared Cruise Photos';
@@ -144,23 +144,23 @@ photos.get('/photos/upload', requireAuth, async (c) => {
   <div class="ds-module">
     <div class="ds-module-header">${ic.camera(12)} Upload Photos</div>
     <div class="ds-module-body">
-      <p class="text-small text-muted mb-8">Max 8 MB per photo. JPEG, PNG, GIF, WebP supported.</p>
+      <p class="text-small text-muted mb-8">Up to 8 MB each. JPEG, PNG, GIF, and WebP all work.</p>
       <form method="POST" action="/photos/upload" enctype="multipart/form-data" class="ds-form" data-retry="true">
         ${csrfField(c.get('csrfToken') || '')}
         <div class="ds-form-row">
           <label for="ph-file">Photo *</label>
           <input id="ph-file" name="photo" type="file" accept="image/*" data-preview="ph-preview">
-          <div class="hint">Choose one from your phone or computer.</div>
+          <div class="hint">Pick one from your phone or computer.</div>
         </div>
         <div class="ds-form-row">
           <label for="ph-camera">Take a new photo</label>
           <input id="ph-camera" name="photo_camera" type="file" accept="image/*" capture="environment" data-preview="ph-preview">
-          <div class="hint">On iPhone this opens the camera so you can snap one on the spot.</div>
+          <div class="hint">On iPhone this opens the camera so you can snap one right away.</div>
           <div id="ph-preview" style="margin-top:6px"></div>
         </div>
         <div class="ds-form-row">
           <label for="ph-caption">Caption <span style="font-weight:normal;color:#999">(optional)</span></label>
-          <input id="ph-caption" name="caption" type="text" class="ds-input" maxlength="300" placeholder="What's happening here?">
+          <input id="ph-caption" name="caption" type="text" class="ds-input" maxlength="300" placeholder="What is going on here?">
         </div>
         <div class="ds-form-row">
           <label for="ph-event">Link to Event <span style="font-weight:normal;color:#999">(optional)</span></label>
@@ -261,7 +261,7 @@ photos.get('/photos/:id', async (c) => {
     .single();
 
   if (!photo || photo.moderation_status !== 'visible') {
-    return c.html(layoutCtx(c, { title: 'Photo Not Found', user: viewer, sailing, body: '<div class="ds-empty-state">Photo not found.</div>' }), 404);
+    return c.html(layoutCtx(c, { title: 'Photo Not Found', user: viewer, sailing, body: '<div class="ds-empty-state">That photo is not here anymore.</div>' }), 404);
   }
 
   const { data: comments } = await db.from('photo_comments')
@@ -293,7 +293,7 @@ photos.get('/photos/:id', async (c) => {
         redirectTo: `/photos/${photo.id}`,
         csrfToken: csrf,
       })).join('')
-    : `<div class="ds-empty-state">No comments yet.</div>`;
+    : `<div class="ds-empty-state">No comments yet. Say something nice first.</div>`;
 
   const commentForm = viewer && !readOnly
     ? `<div class="comment-form">
@@ -327,7 +327,7 @@ photos.get('/photos/:id', async (c) => {
     <div class="photo-view-img">
       ${mediumUrl
         ? `<img src="${esc(mediumUrl)}" alt="${esc(photo.caption || `Photo uploaded by ${photo.users?.display_name || 'a passenger'}`)}" width="800" height="600">`
-        : `<div class="ds-empty-state photo-view-unavailable">Image unavailable</div>`}
+        : `<div class="ds-empty-state photo-view-unavailable">This image is not available right now.</div>`}
     </div>
     <div class="photo-view-side">
       <div class="photo-view-meta-card">

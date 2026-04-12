@@ -74,8 +74,8 @@ people.get('/people', async (c) => {
   </div>`;
 
   const searchForm = `<form method="GET" action="/people" class="ds-form" style="display:flex;gap:4px;margin-bottom:6px;align-items:center">
-    <label for="people-search" class="sr-only">Search passengers by name</label>
-    <input id="people-search" name="q" type="search" class="ds-input" value="${esc(search)}" placeholder="Search by name..." style="flex:1">
+    <label for="people-search" class="sr-only">Search people by name</label>
+    <input id="people-search" name="q" type="search" class="ds-input" value="${esc(search)}" placeholder="Search for a name..." style="flex:1">
     ${vibeTag ? `<input type="hidden" name="vibe" value="${esc(vibeTag)}">` : ''}
     <button type="submit" class="ds-btn ds-btn-primary">Search</button>
     ${search || vibeTag ? `<a href="/people" class="ds-btn">Clear</a>` : ''}
@@ -84,7 +84,7 @@ people.get('/people', async (c) => {
 
   const listHtml = users.length
     ? rows
-    : `<div class="ds-empty-state">No passengers found${search ? ` matching "${esc(search)}"` : ''}${vibeTag ? ` with vibe "${esc(vibeTag)}"` : ''}.</div>`;
+    : `<div class="ds-empty-state">No people found${search ? ` for "${esc(search)}"` : ''}${vibeTag ? ` with the vibe "${esc(vibeTag)}"` : ''}. Try another search or clear the filter.</div>`;
 
   const extraParams = [
     search  ? `q=${encodeURIComponent(search)}`   : '',
@@ -93,7 +93,7 @@ people.get('/people', async (c) => {
 
   const pager = paginator(page, users.length === 30, '/people', extraParams ? `&${extraParams}` : '');
 
-  const header = vibeTag ? `${ic.star(12)} Vibe: ${esc(vibeTag)}` : search ? `${ic.users(12)} Search: "${esc(search)}"` : `${ic.users(12)} All Passengers`;
+  const header = vibeTag ? `${ic.star(12)} Vibe: ${esc(vibeTag)}` : search ? `${ic.users(12)} Search: "${esc(search)}"` : `${ic.users(12)} Everyone on This Sailing`;
 
   const body = `${searchForm}${module({
     header,

@@ -303,7 +303,7 @@ export function friendSpaceModule({ topFriends, friendCount, cdnBase }) {
   if (!topFriends || !topFriends.length) {
     return module({
       header: `${ic.users(12)} Friend Space`,
-      body: `${countLine}<div class="ds-empty-state">No top friends yet.</div>`
+      body: `${countLine}<div class="ds-empty-state">No top friends picked yet.</div>`
     });
   }
 
@@ -350,7 +350,7 @@ export function wallModule({ posts, profileUser, viewerUser, readOnly, page, has
         redirectTo,
         csrfToken,
       })).join('')
-    : `<div class="ds-empty-state">No wall posts yet. Be the first!</div>`;
+    : `<div class="ds-empty-state">No wall notes yet. Be the first to say hi.</div>`;
 
   const pager = paginator(page || 1, hasMore, `/profile/${profileUser.username}`);
 
@@ -367,7 +367,7 @@ function wallPostForm(profileUserId, csrfToken = '') {
     ${csrfField(csrfToken)}
     <div class="ds-form-row">
       <label for="wall-body" class="sr-only">Write on wall</label>
-      <textarea id="wall-body" name="body" class="ds-textarea" placeholder="Write something on their wall..." required maxlength="2000"></textarea>
+      <textarea id="wall-body" name="body" class="ds-textarea" placeholder="Leave a note on their wall..." required maxlength="2000"></textarea>
     </div>
     <div class="form-row">
       <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm" data-loading-text="Posting...">${ic.send(11)} Post</button>

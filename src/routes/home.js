@@ -241,7 +241,7 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
     <div class="home-command-kicker">${ic.shipWheel(13)} Welcome back, ${esc(firstName)}</div>
     <div class="home-command-brandline">Deckspace on deck for ${esc(sailing?.ship_name || 'the sailing')}</div>
     <h2 class="home-command-title">Everything happening on ${esc(sailing?.ship_name || 'the ship')}, without the scramble.</h2>
-    <p class="home-command-sub">Deckspace is your one-stop board for tonight's plans, wall chatter, photo drops, and the people who are actually around right now.</p>
+    <p class="home-command-sub">Check tonight&rsquo;s plans, see who is around, catch wall notes, and keep up with fresh photo drops in one place.</p>
     <div class="home-command-links">
       <a href="/events">${ic.calendar(12)} Find tonight's move</a>
       <a href="/photos/upload">${ic.camera(12)} Drop a photo</a>
@@ -252,8 +252,8 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
   <div class="home-command-stats">
     <div class="home-command-stat"><strong>${tonightEvents.length}</strong><span>happening tonight</span></div>
     <div class="home-command-stat"><strong>${activePeopleCount}</strong><span>faces in the mix</span></div>
-    <div class="home-command-stat"><strong>${photoCount}</strong><span>fresh scrapbook drops</span></div>
-    <div class="home-command-stat"><strong>${activityCount}</strong><span>new wall moments</span></div>
+    <div class="home-command-stat"><strong>${photoCount}</strong><span>new photo drops</span></div>
+    <div class="home-command-stat"><strong>${activityCount}</strong><span>new wall notes</span></div>
   </div>
 </section>`;
 
@@ -268,18 +268,18 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
   <article class="home-spotlight-card">
     <div class="home-spotlight-label">${ic.users(12)} Crowd Radar</div>
     <div class="home-spotlight-title">${onlineUsers.length ? `${onlineUsers.length} people active now` : 'Quiet right now'}</div>
-    <div class="home-spotlight-meta">${onlineUsers.length ? 'Tap into profiles, wall posts, and tonight plans while everyone is still online.' : 'Good time to claim the vibe before everyone else logs on.'}</div>
+    <div class="home-spotlight-meta">${onlineUsers.length ? 'Jump into profiles, wall notes, and tonight&rsquo;s plans while people are still around.' : 'Quiet for the moment. Good time to look around before the crowd shows up.'}</div>
   </article>
   <article class="home-spotlight-card">
     <div class="home-spotlight-label">${ic.camera(12)} Scrapbook Pulse</div>
-    <div class="home-spotlight-title">${recentPhotos.length ? `${recentPhotos.length} recent photos` : 'No new drops yet'}</div>
-    <div class="home-spotlight-meta">${recentPhotos.length ? 'Fresh shots are already hitting the photo board.' : 'The camera roll has not gone public yet.'}</div>
+    <div class="home-spotlight-title">${recentPhotos.length ? `${recentPhotos.length} recent photos` : 'No new photos yet'}</div>
+    <div class="home-spotlight-meta">${recentPhotos.length ? 'Fresh shots are already landing on the photo board.' : 'The camera roll is quiet for now.'}</div>
   </article>
 </section>`;
 
   const tonightHtml = tonightEvents.length
     ? tonightEvents.map(e => eventCard({ event: e, cdnBase })).join('')
-    : `<div class="ds-empty-state">No events tonight yet. <a href="/events/create">Add one!</a></div>`;
+    : `<div class="ds-empty-state">Tonight is still open. <a href="/events/create">Post a plan.</a></div>`;
 
   const tonightModule = module({
     header: `${ic.calendar(12)} Tonight's Pull`,
@@ -290,7 +290,7 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
   // Upcoming events module
   const upcomingHtml = upcomingEvents.length
     ? upcomingEvents.map(e => eventCard({ event: e, cdnBase })).join('')
-    : `<div class="ds-empty-state">No upcoming events yet.</div>`;
+    : `<div class="ds-empty-state">Nothing else is on the board yet.</div>`;
 
   const upcomingModule = module({
     header: `${ic.clock(12)} Coming Up`,
@@ -312,7 +312,7 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
   </div>
 </div>`;
       }).join('')
-    : `<div class="ds-empty-state">No activity yet. <a href="/people">Find some friends!</a></div>`;
+    : `<div class="ds-empty-state">The wall is quiet right now. <a href="/people">Go meet some people.</a></div>`;
 
   const activityModule = module({
     header: `${ic.msgSquare(12)} Wall Chatter`,
@@ -331,7 +331,7 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
   <a href="/profile/${esc(p.username)}" class="home-member-name">${esc(p.display_name)}</a>
 </div>`;
       }).join('')
-    : `<div class="ds-empty-state">No members yet.</div>`;
+    : `<div class="ds-empty-state">No one has joined yet.</div>`;
 
   const peopleModule = module({
     header: `${ic.users(12)} Fresh Faces`,
@@ -342,7 +342,7 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
   // Recent photos module
   const photosHtml = recentPhotos.length
     ? `<div class="photo-grid">${recentPhotos.map(p => photoThumb({ photo: p, cdnBase })).join('')}</div>`
-    : `<div class="ds-empty-state">No photos yet. <a href="/photos">Upload some!</a></div>`;
+    : `<div class="ds-empty-state">No photos yet. <a href="/photos">Start the scrapbook.</a></div>`;
 
   const photosModule = module({
     header: `${ic.camera(12)} Scrapbook Drops`,
@@ -368,7 +368,7 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
         </a>`;
       }).join('')}</div>
       <div class="online-count">${onlineUsers.length} active in the last 10 min</div>`
-    : `<div class="ds-empty-state">No one active right now.</div>`;
+    : `<div class="ds-empty-state">No one is active right now.</div>`;
 
   const onlineModule = module({
     header: `${ic.user(12)} Online Right Now`,
@@ -474,7 +474,7 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [],
   <a href="/profile/${esc(p.username)}" class="landing-person-name">${esc(label)}</a>
 </div>`;
       }).join('')
-    : `<div style="font-size:11px;color:#666;padding:8px 0">No members yet &mdash; be the first!</div>`;
+    : `<div style="font-size:11px;color:#666;padding:8px 0">No one is here yet &mdash; be the first.</div>`;
 
   const leftCol = `<div class="landing-left">
 
@@ -484,8 +484,8 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [],
       <h1 class="landing-hero-title">A Place for Friends<br>on the High Seas</h1>
       <p class="landing-hero-sub">${esc(sailName)} &mdash; your public cruise social network</p>
       <p class="landing-hero-copy">
-        Meet the people on this cruise, see what&rsquo;s happening tonight, share photos from every port,
-        and write on each other&rsquo;s pages. When the trip ends, Deckspace lingers like a scrapbook for a little while.
+        Meet the people on this cruise, see what&rsquo;s happening tonight, share photos from every stop,
+        and leave notes on each other&rsquo;s pages. When the trip ends, Deckspace hangs around like a short scrapbook.
       </p>
       <div class="landing-hero-actions">
         <a href="/register" class="ds-btn ds-btn-orange">Join the Cruise &rarr;</a>
@@ -503,7 +503,7 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [],
       </div>
       <div class="landing-signal-item">
         <strong>${esc(String(stopCount))}</strong>
-        <span>voyage stops in the scrapbook</span>
+        <span>voyage stops to keep up with</span>
       </div>
     </div>
   </section>
@@ -517,8 +517,8 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [],
     <div class="landing-howto-step">
       <span class="landing-howto-num" aria-hidden="true">${ic.user(14)}</span>
       <div>
-        <strong>Make your profile</strong>
-        <span>Pick a username, add a photo, and show your vibe. Done in one minute!</span>
+        <strong>Make your page</strong>
+        <span>Pick a username, add a photo, and show your vibe. It takes about a minute.</span>
       </div>
     </div>
     <div class="landing-howto-step">
@@ -531,8 +531,8 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [],
     <div class="landing-howto-step">
       <span class="landing-howto-num" aria-hidden="true">${ic.bookOpen(14)}</span>
       <div>
-        <strong>Save the memories</strong>
-        <span>Photos and posts hang around like a little scrapbook after you get home.</span>
+        <strong>Keep the memories</strong>
+        <span>Photos and posts stick around like a short scrapbook after you get home.</span>
       </div>
     </div>
   </div>
@@ -555,10 +555,10 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [],
       <div class="landing-logo-sub">your cruise, your crew, your page</div>
     </div>
     <p class="landing-boarding-copy">
-      Make your page, find tonight&rsquo;s plans, and keep the ship in one place while everyone is actually on board.
+      Make your page, find tonight&rsquo;s plans, and keep up with the ship while everyone is actually on board.
     </p>
     <div class="landing-boarding-points">
-      <span>Public by design</span>
+      <span>Open to your sailing</span>
       <span>No email needed</span>
       <span>Built for this sailing</span>
     </div>
@@ -589,7 +589,7 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [],
         </div>
       </form>
       <div class="login-help-text">
-        <strong>Forgot your login?</strong> No worries! Head to the Guest Services desk and they can look you up.
+        <strong>Forgot your login?</strong> Guest Services can help you find it.
       </div>
     </div>
 

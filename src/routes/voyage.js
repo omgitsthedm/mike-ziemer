@@ -48,7 +48,7 @@ voyage.get('/voyage', async (c) => {
           ? `<div class="voyage-times">
               ${day.arrive_time ? `<span>${ic.anchor(11)} In ${day.arrive_time}</span>` : ''}
               ${day.depart_time ? `<span>${ic.ship(11)} Out ${day.depart_time}</span>` : ''}
-            </div>` : '<div class="voyage-times"><span>No clock pressure today.</span></div>';
+            </div>` : '<div class="voyage-times"><span>No set times today. Just enjoy the day.</span></div>';
         return `<details class="voyage-day${isToday ? ' voyage-today' : ''}" id="voyage-${day.day_date}"${openAnchor === `voyage-${day.day_date}` ? ' open' : ''}>
   <summary class="voyage-day-summary">
     <div class="voyage-day-step">${index + 1}</div>
@@ -65,7 +65,7 @@ voyage.get('/voyage', async (c) => {
 </details>`;
       }).join('')
     : `<div class="ds-empty-state">
-        The voyage schedule hasn't been published yet. Check back soon!
+        The voyage plan is not up yet. Stop back soon.
       </div>`;
 
   const sailingInfo = sailing
@@ -73,7 +73,7 @@ voyage.get('/voyage', async (c) => {
         <div class="voyage-command-copy">
           <div class="voyage-ship">${ic.ship(16)} ${esc(sailing.ship_name)}</div>
           <div class="voyage-name">${esc(sailing.name)}</div>
-          <p class="voyage-command-sub">Sea days, port windows, and the moments when everyone suddenly needs to know exactly what the ship is doing.</p>
+          <p class="voyage-command-sub">Sea days, port stops, and the quick answers everyone ends up needing at least once.</p>
         </div>
         <div class="voyage-command-stats">
           <div class="voyage-command-stat"><strong>${days.length}</strong><span>days on deck</span></div>

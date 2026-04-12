@@ -65,7 +65,7 @@ friends.get('/friends', async (c) => {
   </div>
 </div>`;
       }).join('')
-    : `<div class="ds-empty-state">No pending friend requests.</div>`;
+    : `<div class="ds-empty-state">No new friend requests right now.</div>`;
 
   const outgoingHtml = outgoing.length
     ? outgoing.map(f => {
@@ -105,7 +105,7 @@ friends.get('/friends', async (c) => {
   </div>
 </div>`;
       }).join('')
-    : `<div class="ds-empty-state">No friends yet. <a href="/people">Find some!</a></div>`;
+    : `<div class="ds-empty-state">Your Friend Space is still empty. <a href="/people">Go meet some people.</a></div>`;
 
   const body = [
     module({ header: 'Friend Requests', headerRight: `${incoming.length} pending`, body: `<div class="people-list">${incomingHtml}</div>` }),
@@ -153,7 +153,7 @@ friends.get('/friends/manage-top', async (c) => {
   <a href="/profile/${esc(tf.users?.username || '')}" style="font-size:12px">${esc(tf.users?.display_name || '?')}</a>
   <input type="hidden" name="friend_ids[]" value="${esc(tf.friend_user_id)}">
 </div>`).join('')
-    : `<div class="ds-empty-state">No top friends set.</div>`;
+    : `<div class="ds-empty-state">You have not picked any top friends yet.</div>`;
 
   const addableHtml = eligibleFriends.length
     ? eligibleFriends.map(f => {
@@ -163,13 +163,13 @@ friends.get('/friends/manage-top', async (c) => {
   <label for="tf-${esc(u?.id || '')}" style="font-size:12px">${esc(u?.display_name || '?')}</label>
 </div>`;
       }).join('')
-    : `<div class="ds-empty-state text-small">All friends already in Top 8, or you have no friends yet.</div>`;
+    : `<div class="ds-empty-state text-small">Nothing to add here yet. Either your Top 8 is full or you still need more friends.</div>`;
 
   const body = `<div style="max-width:400px;margin:0 auto">
   <div class="ds-module">
     <div class="ds-module-header">Manage Top Friends</div>
     <div class="ds-module-body">
-      <p class="text-small text-muted mb-8">Select up to 8 friends to display in your Friend Space.</p>
+      <p class="text-small text-muted mb-8">Pick up to 8 friends to show on your page.</p>
       <form method="POST" action="/profile/top-friends" class="ds-form">
         ${csrfField(csrf)}
         <div class="ds-form-row">

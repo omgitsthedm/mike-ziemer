@@ -179,11 +179,11 @@ events.get('/events/:id', async (c) => {
   try {
     event = await getEventById(db, c.req.param('id'));
   } catch (_) {
-    return c.html(layoutCtx(c, { title: 'Event Not Found', user: viewer, sailing, body: '<div class="ds-empty-state">Event not found.</div>' }), 404);
+    return c.html(layoutCtx(c, { title: 'Event Not Found', user: viewer, sailing, body: '<div class="ds-empty-state">That event is not here anymore.</div>' }), 404);
   }
 
   if (event.moderation_status !== 'visible') {
-    return c.html(layoutCtx(c, { title: 'Event Unavailable', user: viewer, sailing, body: '<div class="ds-empty-state">This event is not available.</div>' }), 410);
+    return c.html(layoutCtx(c, { title: 'Event Unavailable', user: viewer, sailing, body: '<div class="ds-empty-state">This event is not open right now.</div>' }), 410);
   }
 
   const [comments, userRsvp, attendees] = await Promise.all([
@@ -549,7 +549,7 @@ function eventsSchedulePage({ viewer, sailing, days, activeCategory = '', active
         ? `<ul class="ss-day-jump-list">
             ${dayJumps.map((jump) => `<li><a href="#${jump.anchor}">${esc(jump.label)}</a><span>${esc(jump.sub)}</span><strong>${jump.count}</strong></li>`).join('')}
           </ul>`
-        : `<div class="ss-small-copy">No schedule posted yet.</div>`}
+        : `<div class="ss-small-copy">Nothing is posted yet.</div>`}
     </div>
   </div>
 
@@ -638,7 +638,7 @@ function eventsSchedulePage({ viewer, sailing, days, activeCategory = '', active
     ${officialSpotlight
       ? `<a href="/events/${esc(officialSpotlight.id)}" class="ss-highlight-title">${esc(officialSpotlight.title)}</a>
          <div class="ss-highlight-meta">${fmtShortDate(officialSpotlight.start_at)} at ${fmtTime(officialSpotlight.start_at)}${officialSpotlight.location ? ` &middot; ${esc(officialSpotlight.location)}` : ''}</div>`
-      : `<div class="ss-highlight-empty">No official programming is posted in this slice yet.</div>`}
+      : `<div class="ss-highlight-empty">No official ship plans are posted in this slice yet.</div>`}
   </article>
   <article class="ss-highlight-card">
     <div class="ss-highlight-label">${ic.users(12)} Community Pull</div>
@@ -716,7 +716,7 @@ function eventsSchedulePage({ viewer, sailing, days, activeCategory = '', active
   }).join('');
 
   const noEventsMsg = days.length === 0
-    ? `<div class="ds-empty-state ss-events-empty">No events are posted yet. ${viewer ? '<a href="/events/create">Create the first one.</a>' : 'Check back soon once the board fills in.'}</div>`
+    ? `<div class="ds-empty-state ss-events-empty">No events are up yet. ${viewer ? '<a href="/events/create">Post the first one.</a>' : 'Check back once the board fills in.'}</div>`
     : '';
 
   const mainContent = `<section class="ss-main">
@@ -770,7 +770,7 @@ function eventDetailPage({ event, comments, userRsvp, attendees, viewer, sailing
             : pixelAvatarImg(a.users?.display_name || 'Passenger', a.users?.username || a.users?.display_name || '', 32, 'event-attendee-pixel-avatar')}
         </a>`;
       }).join(' ')
-    : `<span class="text-muted text-small">No RSVPs yet.</span>`;
+    : `<span class="text-muted text-small">No one has RSVPed yet.</span>`;
 
   // Comments
   const commentListHtml = comments.length
@@ -783,7 +783,7 @@ function eventDetailPage({ event, comments, userRsvp, attendees, viewer, sailing
         redirectTo: `/events/${esc(event.id)}`,
         csrfToken,
       })).join('')
-    : `<div class="ds-empty-state">No comments yet. Be the first!</div>`;
+    : `<div class="ds-empty-state">No comments yet. Be the first to jump in.</div>`;
 
   const commentForm = viewer && !readOnly
     ? `<div class="comment-form">
@@ -831,7 +831,7 @@ function eventDetailPage({ event, comments, userRsvp, attendees, viewer, sailing
         <div class="event-rsvp-actions">${rsvpHtml} ${editLink}</div>
         ${event.description
           ? `<div class="event-description">${esc(event.description)}</div>`
-          : `<div class="event-description event-description-empty">No host note yet. Check the time, location, and RSVP pull, then decide if it is your scene.</div>`}
+          : `<div class="event-description event-description-empty">No host note yet. Check the time, place, and RSVP count to see if it is your kind of night.</div>`}
       </div>
     </div>
   </section>

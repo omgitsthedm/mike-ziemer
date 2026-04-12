@@ -148,7 +148,7 @@ profile.get('/profile/:username', async (c) => {
   try {
     target = await getUserByUsername(db, c.env.SAILING_ID, c.req.param('username'));
   } catch (_) {
-    return c.html(layoutCtx(c, { title: 'Profile Not Found', user: viewer, sailing, body: '<div class="ds-empty-state">Profile not found.</div>' }), 404);
+    return c.html(layoutCtx(c, { title: 'Profile Not Found', user: viewer, sailing, body: '<div class="ds-empty-state">That page is not here.</div>' }), 404);
   }
 
   const { topFriends, friendCount, friendStatus } = await getProfilePage(db, target.id, viewer?.id);
@@ -331,7 +331,7 @@ function profilePage({ target, profile, viewer, topFriends, friendCount, friendS
   // Build right column
   const aboutMe = profile?.about_me
     ? module({ header: `${ic.bookOpen(12)} About Me`, body: `<div class="blurb-body">${esc(profile.about_me)}</div>` })
-    : (isOwn ? module({ header: `${ic.bookOpen(12)} About Me`, body: `<div class="ds-empty-state"><a href="/profile/edit">Add a bio</a></div>` }) : '');
+    : (isOwn ? module({ header: `${ic.bookOpen(12)} About Me`, body: `<div class="ds-empty-state"><a href="/profile/edit">Add a few lines about yourself.</a></div>` }) : '');
 
   const whoMeet = profile?.who_id_like_to_meet
     ? module({ header: `${ic.users(12)} Who I'd Like to Meet`, body: `<div class="blurb-body">${esc(profile.who_id_like_to_meet)}</div>` })
@@ -341,7 +341,7 @@ function profilePage({ target, profile, viewer, topFriends, friendCount, friendS
     header: `${ic.clock(12)} Recent Activity`,
     body: recentActivity.length
       ? `<div class="profile-activity-list">${recentActivity.map((item) => `<div class="profile-activity-item"><strong>${esc(item.label)}</strong><span>${esc(item.detail)}</span></div>`).join('')}</div>`
-      : `<div class="ds-empty-state">${isOwn ? 'Start posting, RSVPing, or uploading photos to bring this page to life.' : 'No recent deck activity yet.'}</div>`
+      : `<div class="ds-empty-state">${isOwn ? 'Post, RSVP, or upload a photo to wake this page up.' : 'Nothing new on this page yet.'}</div>`
   });
 
   const plans = module({
@@ -355,7 +355,7 @@ function profilePage({ target, profile, viewer, topFriends, friendCount, friendS
             <span>${esc(when)}${event?.location ? ` · ${esc(event.location)}` : ''}</span>
           </a>`;
         }).join('')}</div>`
-      : `<div class="ds-empty-state">${isOwn ? 'RSVP to a few events and they will show up here.' : 'No plans posted yet.'}</div>`
+      : `<div class="ds-empty-state">${isOwn ? 'RSVP to a few events and they will show up here.' : 'No plans on deck yet.'}</div>`
   });
 
   const photos = module({

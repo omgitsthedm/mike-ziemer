@@ -22,8 +22,8 @@ const auth = new Hono();
 
 function turnstileErrorMessage(result) {
   return result?.reason === 'verification_unavailable'
-    ? 'Verification is temporarily unavailable. Please wait a moment and try again.'
-    : 'Please complete the verification challenge.';
+    ? 'The quick safety check is down for a moment. Please try again in a minute.'
+    : 'Please finish the quick safety check.';
 }
 
 /* ============================================================
@@ -35,7 +35,7 @@ auth.get('/login', async (c) => {
 
   const next = c.req.query('next') || '/';
   const flash = c.req.query('registered') === '1'
-    ? 'Account created! Sign in with your new username and password.'
+    ? 'Your account is ready. Sign in with your new username and password.'
     : null;
   return c.html(layoutCtx(c, {
     title: 'Sign In to Your Deckspace Sailing',
@@ -63,7 +63,7 @@ auth.post('/login', async (c) => {
   try {
     // Rate limit: 5 attempts per IP per minute
     if (await isRateLimited(c.env, `login:${ip}`, 5)) {
-      return showLogin('Too many login attempts. Please wait a minute and try again.', 429);
+      return showLogin('Too many tries too fast. Please wait a minute and try again.', 429);
     }
 
     // Turnstile check
@@ -77,16 +77,16 @@ auth.post('/login', async (c) => {
       .ilike('username', username)
       .maybeSingle();
 
-    if (!user) return showLogin('No account found with that username. Not signed up yet?', 401);
-    if (user.account_status === 'banned') return showLogin('This account has been suspended.', 403);
+    if (!user) return showLogin('We could not find that username. Need a page? Make one first.', 401);
+    if (user.account_status === 'banned') return showLogin('This page has been turned off.', 403);
 
     const passwordOk = await verifyPassword(password, user.password_hash);
-    if (!passwordOk) return showLogin('Wrong password — give it another try!', 401);
+    if (!passwordOk) return showLogin('That password did not match. Try again.', 401);
 
     // Check sailing access window
     const sailing = await getSailing(db, sailingId).catch(() => null);
     if (sailing && !isSailingAccessible(sailing)) {
-      return showLogin('Deckspace is not currently active for this sailing.', 403);
+      return showLogin('Deckspace is not open for this sailing right now.', 403);
     }
 
     // Activate account if pending (first login)
@@ -101,7 +101,7 @@ auth.post('/login', async (c) => {
     return res;
   } catch (err) {
     console.error('[Login Error]', err);
-    return showLogin('Something went wrong. Please try again.', 500);
+    return showLogin('Something went wrong on our side. Please try again.', 500);
   }
 });
 
@@ -114,7 +114,7 @@ auth.get('/register', async (c) => {
 
   return c.html(layoutCtx(c, {
     title: 'Create Your Deckspace Sailing Account',
-    description: 'Create a Deckspace account for your sailing to meet passengers, RSVP to events, share photos, and join the public-by-design onboard community.',
+    description: 'Create a Deckspace account for your sailing to meet people, RSVP to plans, share photos, and join the shared ship page.',
     body: registerForm({ siteKey: c.env.TURNSTILE_SITE_KEY }),
   }));
 });
@@ -133,14 +133,14 @@ auth.post('/register', async (c) => {
 
   const showRegister = (error, status = 400) => c.html(layoutCtx(c, {
     title: 'Create Your Deckspace Sailing Account',
-    description: 'Create a Deckspace account for your sailing to meet passengers, RSVP to events, share photos, and join the public-by-design onboard community.',
+    description: 'Create a Deckspace account for your sailing to meet people, RSVP to plans, share photos, and join the shared ship page.',
     body: registerForm({ siteKey: c.env.TURNSTILE_SITE_KEY, error, values: { displayName, username, email } }),
   }), status);
 
   try {
     // Rate limit: 3 registrations per IP per minute
     if (await isRateLimited(c.env, `register:${ip}`, 3)) {
-      return showRegister('Too many attempts. Please wait a minute and try again.', 429);
+      return showRegister('Too many tries too fast. Please wait a minute and try again.', 429);
     }
 
     const turnstileToken = (form.get('cf-turnstile-response') || '').toString();
@@ -148,17 +148,17 @@ auth.post('/register', async (c) => {
     if (!turnstile.ok) return showRegister(turnstileErrorMessage(turnstile), turnstile.reason === 'verification_unavailable' ? 503 : 400);
 
     const errs = [];
-    if (!displayName || displayName.length < 2) errs.push('Display name must be at least 2 characters.');
-    if (!username || username.length < 3)        errs.push('Username must be at least 3 characters.');
-    if (!/^[a-z0-9_]+$/.test(username))         errs.push('Username can only contain letters, numbers, and underscores.');
-    if (!password || password.length < 8)        errs.push('Password must be at least 8 characters.');
-    if (password !== password2)                  errs.push('Passwords do not match.');
+    if (!displayName || displayName.length < 2) errs.push('Your name needs at least 2 characters.');
+    if (!username || username.length < 3)        errs.push('Your username needs at least 3 characters.');
+    if (!/^[a-z0-9_]+$/.test(username))         errs.push('Usernames can use letters, numbers, and underscores only.');
+    if (!password || password.length < 8)        errs.push('Your password needs at least 8 characters.');
+    if (password !== password2)                  errs.push('Those passwords do not match.');
     if (errs.length) return showRegister(errs.join(' '));
 
     // Check sailing access — only block if sailing explicitly restricts (not if missing)
     const sailing = await getSailing(db, sailingId).catch(() => null);
     if (sailing && !isSailingAccessible(sailing)) {
-      return showRegister('Deckspace is not currently accepting new registrations.', 403);
+      return showRegister('New sign-ups are closed for this sailing right now.', 403);
     }
 
     // Username uniqueness
@@ -167,7 +167,7 @@ auth.post('/register', async (c) => {
       .eq('sailing_id', sailingId)
       .ilike('username', username)
       .maybeSingle();
-    if (existing) return showRegister('That username is already taken.');
+    if (existing) return showRegister('That username is taken. Try another one.');
 
     const passwordHash = await hashPassword(password);
 
@@ -184,7 +184,7 @@ auth.post('/register', async (c) => {
 
     if (insertErr || !newUser) {
       console.error('[Register insert error]', insertErr);
-      return showRegister('Could not create account. Please try again.', 500);
+      return showRegister('We could not make your account yet. Please try again.', 500);
     }
 
     // Create empty profile (upsert so duplicate is safe)
@@ -202,7 +202,7 @@ auth.post('/register', async (c) => {
     }
   } catch (err) {
     console.error('[Register Error]', err);
-    return showRegister('Something went wrong. Please try again.', 500);
+    return showRegister('Something went wrong on our side. Please try again.', 500);
   }
 });
 
@@ -277,11 +277,11 @@ function loginForm({ next, siteKey, error, flash }) {
   ${error ? `<div class="ds-flash error">${esc(error)}</div>` : ''}
 
   <div class="ds-module">
-    <div class="ds-module-header">Welcome Back &mdash; Come Aboard!</div>
+    <div class="ds-module-header">Welcome Back</div>
     <div class="ds-module-body">
       <div class="login-instructions">
-        Type your <strong>username</strong> and <strong>password</strong> to get in.
-        First time here? <a href="/register">Make a free account! &raquo;</a>
+        Use your <strong>username</strong> and <strong>password</strong> to jump back in.
+        New here? <a href="/register">Make your page. &raquo;</a>
       </div>
       <form method="POST" action="/login" class="ds-form" data-retry="true">
         <input type="hidden" name="next" value="${esc(next)}">
@@ -296,11 +296,11 @@ function loginForm({ next, siteKey, error, flash }) {
         ${siteKey ? `<div class="cf-turnstile" data-sitekey="${esc(siteKey)}" data-theme="light"></div>
         <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>` : ''}
         <div class="ds-form-row mt-8">
-          <button type="submit" class="ds-btn ds-btn-primary w-full" data-loading-text="Signing in...">Come Aboard &rarr;</button>
+          <button type="submit" class="ds-btn ds-btn-primary w-full" data-loading-text="Signing in...">Sign In &rarr;</button>
         </div>
       </form>
       <div class="login-help-text">
-        <strong>Forgot your login?</strong> No big deal! Head to the Guest Services desk &mdash; they can look you up in seconds.
+        <strong>Forgot your login?</strong> Stop by Guest Services and they can help you find it fast.
       </div>
     </div>
   </div>
@@ -315,17 +315,17 @@ function registerForm({ siteKey, error, values = {} }) {
   return `<div class="reg-wrap">
   <div class="reg-left">
     <div class="reg-privacy-badge">
-      Open to everyone on your sailing. No ads, no hidden backchannels, no junk.
+      Everyone on your sailing can see it. No ads. No private side chats. No junk.
     </div>
     <div class="ds-module">
-      <div class="ds-module-header">Join the Fun &mdash; It&rsquo;s Free!</div>
+      <div class="ds-module-header">Make Your Deckspace Page</div>
       <div class="ds-module-body">
-        <div class="reg-time-note">Only takes 2 minutes &bull; Always free &bull; No email needed</div>
+        <div class="reg-time-note">Takes about 2 minutes &bull; Free to join &bull; No email needed</div>
         ${error ? `<div class="ds-flash error" style="margin-bottom:8px">${esc(error)}</div>` : ''}
         <form method="POST" action="/register" class="ds-form" data-retry="true">
           <div class="ds-form-row">
             <label for="display_name">Your Name <span class="reg-required">*</span></label>
-            <input id="display_name" name="display_name" type="text" class="ds-input" value="${esc(values.displayName || '')}" required maxlength="50" placeholder="How others will see you &mdash; e.g. Jessica M." autofocus>
+            <input id="display_name" name="display_name" type="text" class="ds-input" value="${esc(values.displayName || '')}" required maxlength="50" placeholder="What people on the ship will see" autofocus>
           </div>
           <div class="ds-form-row">
             <label for="reg-username">Username <span class="reg-required">*</span></label>
@@ -334,7 +334,7 @@ function registerForm({ siteKey, error, values = {} }) {
           </div>
           <div class="ds-form-row">
             <label for="email">Email <span class="reg-optional">(optional)</span></label>
-            <input id="email" name="email" type="email" class="ds-input" value="${esc(values.email || '')}" maxlength="200" placeholder="only needed if you want a password reset option">
+            <input id="email" name="email" type="email" class="ds-input" value="${esc(values.email || '')}" maxlength="200" placeholder="Only if you want an easier password reset later">
           </div>
           <div class="ds-form-row">
             <label for="reg-password">Password <span class="reg-required">*</span></label>
@@ -347,11 +347,11 @@ function registerForm({ siteKey, error, values = {} }) {
           ${siteKey ? `<div class="cf-turnstile" data-sitekey="${esc(siteKey)}" data-theme="light" style="margin:10px 0"></div>
           <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>` : ''}
           <div class="ds-form-row mt-8">
-            <button type="submit" class="ds-btn ds-btn-orange w-full" data-loading-text="Creating account...">Join the Crew &rarr;</button>
+            <button type="submit" class="ds-btn ds-btn-orange w-full" data-loading-text="Creating account...">Make My Page &rarr;</button>
           </div>
         </form>
         <p class="text-small text-muted mt-8 text-center">
-          Already have an account? <a href="/login">Sign in to Deckspace</a>
+          Already have a page? <a href="/login">Sign in to Deckspace</a>
         </p>
       </div>
     </div>
@@ -362,25 +362,25 @@ function registerForm({ siteKey, error, values = {} }) {
       <div class="ds-module-header">Why Deckspace?</div>
       <div class="ds-module-body reg-why-body">
         <p class="reg-why-intro">
-          You&rsquo;re on a cruise! You&rsquo;re going to meet tons of cool people.
-          <strong>Deckspace helps you remember everyone and stay in the loop.</strong>
+          You&rsquo;re on a cruise. You&rsquo;re about to meet a lot of people.
+          <strong>Deckspace helps you keep up without missing the fun.</strong>
         </p>
         <ul class="reg-why-list">
-          <li>${ic.users(11)} <strong>Find your people</strong> &mdash; See who&rsquo;s on the ship and add friends right away.</li>
-          <li>${ic.calendar(11)} <strong>Plan your nights</strong> &mdash; Check out what&rsquo;s happening tonight and RSVP to events.</li>
-          <li>${ic.camera(11)} <strong>Share photos</strong> &mdash; Post pics from every port and see what everyone else is up to.</li>
-          <li>${ic.mail(11)} <strong>Wall posts</strong> &mdash; Write on anyone&rsquo;s page, just like the old MySpace days!</li>
-          <li>${ic.bookOpen(11)} <strong>Short scrapbook</strong> &mdash; After the trip, Deckspace cools into a short read-only archive before it closes.</li>
+          <li>${ic.users(11)} <strong>Meet people fast</strong> &mdash; See who is on the ship and add friends right away.</li>
+          <li>${ic.calendar(11)} <strong>See tonight&rsquo;s plans</strong> &mdash; Check what is happening and RSVP in one tap.</li>
+          <li>${ic.camera(11)} <strong>Share the trip</strong> &mdash; Post photos from every stop and see what everyone else is up to.</li>
+          <li>${ic.mail(11)} <strong>Leave wall notes</strong> &mdash; Drop a note on someone&rsquo;s page, old-school style.</li>
+          <li>${ic.bookOpen(11)} <strong>Keep the scrapbook</strong> &mdash; After the trip, the page sticks around for a short read-only goodbye.</li>
         </ul>
         <div class="reg-why-footer">
-          Free. Public to your sailing. No ads. No hidden backchannels. No nonsense.
+          Free. Open to your sailing. No ads. No private side channels. Easy to use.
         </div>
       </div>
     </div>
 
     <div class="reg-note-box">
-      <strong>Want to keep it easy?</strong>
-      <p>Deckspace takes about 60 seconds to join. Fill in only what you feel like &mdash; you can always add more later from the comfort of your deck chair.</p>
+      <strong>Keep it easy.</strong>
+      <p>Join now, fill in the basics, and add the rest later from your deck chair.</p>
     </div>
   </div>
 </div>`;
@@ -389,48 +389,48 @@ function registerForm({ siteKey, error, values = {} }) {
 function onboardingForm(csrfToken = '') {
   return `<div style="max-width:540px;margin:0 auto">
   <div class="ds-module">
-    <div class="ds-module-header">Set Up Your Profile</div>
+    <div class="ds-module-header">Set Up Your Page</div>
     <div class="ds-module-body">
       <div class="onboarding-intro">
-        <strong>You&rsquo;re in! Now let&rsquo;s set up your page.</strong><br>
-        Everything here is optional &mdash; just fill in what you want. You can always change it later.
+        <strong>You&rsquo;re in.</strong><br>
+        Add a few quick details so people can find you, know your vibe, and say hi. You can change any of this later.
       </div>
       <form method="POST" action="/onboarding" class="ds-form">
         ${csrfField(csrfToken)}
         <div class="ds-form-row">
           <label for="ob-about">About Me <span class="reg-optional">(optional)</span></label>
           <textarea id="ob-about" name="about_me" class="ds-textarea" rows="4" maxlength="3000"
-            placeholder="Where are you from? What do you love? What are you hoping for on this cruise? Anything goes."></textarea>
+            placeholder="Say a little about yourself. Keep it light, fun, or honest."></textarea>
         </div>
         <div class="ds-form-row">
           <label for="ob-hometown">Hometown <span class="reg-optional">(optional)</span></label>
           <input id="ob-hometown" name="hometown" type="text" class="ds-input" maxlength="100" placeholder="City, State / Country">
-          <div class="hint">Helps people you meet know where you&rsquo;re from</div>
+          <div class="hint">Helps people place you fast</div>
         </div>
         <div class="ds-form-row">
           <label>Your Vibes <span class="reg-optional">(optional)</span></label>
           <div data-tag-input>
             <input type="hidden" name="vibe_tags" value="">
             <div class="vibe-tags tag-chips" style="min-height:28px;border:1px solid #ccc;padding:3px;background:#fff;margin-bottom:4px"></div>
-            <input type="text" class="ds-input" placeholder="Type a vibe and press Enter &mdash; karaoke, trivia, chill, nightlife...">
+            <input type="text" class="ds-input" placeholder="Type a vibe and press Enter — karaoke, trivia, chill, nightlife">
           </div>
-          <div class="hint">Shows on your profile so people can find you by shared interests</div>
+          <div class="hint">These show on your page so people with the same vibe can find you</div>
         </div>
         <div class="ds-form-row">
           <label for="ob-who">Who I&rsquo;d Like to Meet <span class="reg-optional">(optional)</span></label>
           <textarea id="ob-who" name="who_id_like_to_meet" class="ds-textarea" rows="2" maxlength="500"
-            placeholder="Trivia night partners, late-night bar crowd, fellow foodies..."></textarea>
+            placeholder="Trivia partners, late-night people, fellow foodies..."></textarea>
         </div>
         <div class="ds-form-row">
           <label for="ob-intent">Cruise Vibe <span class="reg-optional">(optional)</span></label>
           <input id="ob-intent" name="social_intent" type="text" class="ds-input" maxlength="200"
-            placeholder="Relaxation, nightlife, adventure, all of the above...">
+            placeholder="Relaxing, nightlife, adventure, all of the above">
         </div>
         <div class="ds-form-row mt-8">
-          <button type="submit" class="ds-btn ds-btn-orange w-full">Go to My Profile &raquo;</button>
+          <button type="submit" class="ds-btn ds-btn-orange w-full">Save and Show My Page &raquo;</button>
         </div>
         <div class="text-center" style="margin-top:8px">
-          <a href="/" class="text-small text-muted">Skip for now &mdash; I&rsquo;ll fill this in later</a>
+          <a href="/" class="text-small text-muted">Skip for now — I&rsquo;ll fill this in later</a>
         </div>
       </form>
     </div>

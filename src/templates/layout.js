@@ -270,12 +270,12 @@ export function layoutCtx(c, opts) {
 
 function defaultMetaDescription(title, sailing) {
   if (sailing?.name && sailing?.ship_name) {
-    return `Deckspace is the public-by-design cruise intranet for ${sailing.name} on ${sailing.ship_name}. Meet passengers, follow events, share photos, and keep a short post-cruise scrapbook.`;
+    return `Deckspace is the shared cruise page for ${sailing.name} on ${sailing.ship_name}. Meet people, follow plans, share photos, and keep a short trip scrapbook.`;
   }
   if (title) {
-    return `${title} on Deckspace, the public-by-design cruise intranet for meeting passengers, following events, sharing photos, and keeping a short voyage scrapbook.`;
+    return `${title} on Deckspace, the shared cruise page for meeting people, following plans, sharing photos, and keeping a short trip scrapbook.`;
   }
-  return 'Deckspace is the public-by-design cruise intranet for meeting passengers, following events, sharing photos, and keeping a short voyage scrapbook.';
+  return 'Deckspace is the shared cruise page for meeting people, following plans, sharing photos, and keeping a short trip scrapbook.';
 }
 
 function renderFooter() {
