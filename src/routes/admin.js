@@ -1055,36 +1055,39 @@ async function clearDemoState(db, env, sailingId, expectedUsernames = []) {
     const ids = (demoUsers || []).map((user) => user.id);
 
     if (ids.length) {
-      await db.from('notifications').delete().in('actor_id', ids).catch(() => {});
-      await db.from('audit_logs').delete().in('actor_user_id', ids).catch(() => {});
-      await db.from('reports').delete().in('reporter_user_id', ids).catch(() => {});
-      await db.from('users').delete().in('id', ids).catch(() => {});
+      try { await db.from('notifications').delete().in('actor_id', ids); } catch (_) {}
+      try { await db.from('audit_logs').delete().in('actor_user_id', ids); } catch (_) {}
+      try { await db.from('reports').delete().in('reporter_user_id', ids); } catch (_) {}
+      try { await db.from('users').delete().in('id', ids); } catch (_) {}
     }
   }
 
   if (meta?.voyageDates?.length) {
-    await db.from('voyage_days')
-      .delete()
-      .eq('sailing_id', sailingId)
-      .in('day_date', meta.voyageDates)
-      .catch(() => {});
+    try {
+      await db.from('voyage_days')
+        .delete()
+        .eq('sailing_id', sailingId)
+        .in('day_date', meta.voyageDates);
+    } catch (_) {}
   }
 
   const titles = demoEventTitles();
   if (titles.length) {
-    await db.from('events')
-      .delete()
-      .eq('sailing_id', sailingId)
-      .in('title', titles)
-      .catch(() => {});
+    try {
+      await db.from('events')
+        .delete()
+        .eq('sailing_id', sailingId)
+        .in('title', titles);
+    } catch (_) {}
   }
 
   const fallbackVoyageDates = buildDemoVoyageDays(demoBaseDate()).map((day) => day.day_date);
-  await db.from('voyage_days')
-    .delete()
-    .eq('sailing_id', sailingId)
-    .in('day_date', fallbackVoyageDates)
-    .catch(() => {});
+  try {
+    await db.from('voyage_days')
+      .delete()
+      .eq('sailing_id', sailingId)
+      .in('day_date', fallbackVoyageDates);
+  } catch (_) {}
 
   await Promise.all([
     env.KV?.delete(`sailing:${sailingId}:weather`).catch(() => {}),
