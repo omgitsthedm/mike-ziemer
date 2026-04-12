@@ -36,8 +36,8 @@ profile.get('/profile/edit', requireAuth, async (c) => {
   if (readOnly) return c.redirect('/profile/' + user.username);
 
   return c.html(layoutCtx(c, {
-    title: 'Edit Your Deckspace Profile',
-    description: 'Update your Deckspace profile details, interests, status, profile song, and public sailing identity.',
+    title: 'Edit Your DeckSpace Profile',
+    description: 'Update your DeckSpace profile details, interests, status, profile song, and public sailing identity.',
     user,
     sailing,
     body: editProfileForm({ user, profile: prof, siteKey: c.env.TURNSTILE_SITE_KEY, csrfToken: c.get('csrfToken') || '' })
@@ -232,10 +232,10 @@ profile.get('/profile/:username', async (c) => {
   });
 
   return c.html(layoutCtx(c, {
-    title: `${target.display_name}'s Deckspace Profile (@${target.username})`,
+    title: `${target.display_name}'s DeckSpace Profile (@${target.username})`,
     description: profile?.about_me
-      ? `View ${target.display_name} (@${target.username}) on Deckspace. ${profile.about_me.slice(0, 92)}`
-      : `View ${target.display_name} (@${target.username}) on Deckspace, including public wall posts, interests, and sailing activity.`,
+      ? `View ${target.display_name} (@${target.username}) on DeckSpace. ${profile.about_me.slice(0, 92)}`
+      : `View ${target.display_name} (@${target.username}) on DeckSpace, including public wall posts, interests, and sailing activity.`,
     user: viewer,
     sailing,
     activeNav: isOwn ? 'profile' : '',
@@ -255,7 +255,7 @@ profile.post('/wall/:profileUserId', requireAuth, async (c) => {
   const sailing = await getSailing(db, c.env.SAILING_ID).catch(() => null);
 
   if (sailing && isSailingReadOnly(sailing)) {
-    return c.html(layoutCtx(c, { title: 'Read Only', user: poster, sailing, body: '<div class="ds-flash error">Deckspace is in archive mode.</div>' }), 403);
+    return c.html(layoutCtx(c, { title: 'Read Only', user: poster, sailing, body: '<div class="ds-flash error">DeckSpace is in archive mode.</div>' }), 403);
   }
 
   const form = c.get('parsedForm') || await c.req.formData();

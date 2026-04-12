@@ -105,17 +105,49 @@ people.get('/people', async (c) => {
     : search
     ? `People Search: ${search}`
     : 'People on This Sailing';
+  const canonicalUrl = new URL('/people', c.req.url).toString();
+  const isFiltered = Boolean(search || vibeTag || page > 1);
 
   return c.html(layoutCtx(c, {
     title: pageTitle,
     description: search || vibeTag
-      ? `Browse Deckspace passengers for this sailing${search ? ` matching ${search}` : ''}${vibeTag ? ` with the interest ${vibeTag}` : ''}.`
-      : 'Browse Deckspace passengers on this sailing, discover shared interests, follow profile activity, and connect through public profiles.',
+      ? `Browse DeckSpace passengers for this sailing${search ? ` matching ${search}` : ''}${vibeTag ? ` with the interest ${vibeTag}` : ''}.`
+      : 'Browse DeckSpace passengers on this sailing, discover shared interests, follow profile activity, and connect through public profiles.',
     user: viewer,
     sailing,
     activeNav: 'people',
     body,
+    canonicalUrl,
+    noIndex: isFiltered,
+    structuredData: peopleListStructuredData(c.req.url, canonicalUrl, users, { search, vibeTag, page, isFiltered }),
   }));
 });
 
 export default people;
+
+function peopleListStructuredData(url, canonicalUrl, users, { search, vibeTag, page, isFiltered }) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    url: new URL(url).toString(),
+    name: search
+      ? `DeckSpace people search for ${search}`
+      : vibeTag
+      ? `DeckSpace people with interest ${vibeTag}`
+      : page > 1
+      ? `DeckSpace people page ${page}`
+      : 'DeckSpace people directory',
+    description: isFiltered
+      ? 'Filtered DeckSpace people results for this sailing.'
+      : 'Public passenger directory for this sailing on DeckSpace.',
+    mainEntity: {
+      '@type': 'ItemList',
+      itemListElement: users.slice(0, 12).map((user, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        url: new URL(`/profile/${user.username}`, canonicalUrl).toString(),
+        name: user.display_name,
+      })),
+    },
+  };
+}

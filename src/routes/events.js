@@ -82,28 +82,33 @@ events.get('/events', async (c) => {
     : userFilter
     ? `Cruise Events by ${userFilter}`
     : 'Cruise Events and Plans';
+  const canonicalUrl = new URL('/events', c.req.url).toString();
+  const isFiltered = Boolean(category || view !== 'all' || userFilter);
 
   const body = eventsSchedulePage({ viewer, sailing, days, activeCategory: category, activeView: view, attendeesByEvent, cdnBase: c.env.R2_PUBLIC_URL || '' });
 
   return c.html(layoutCtx(c, {
     title,
     description: category
-      ? `Browse public ${category} events on Deckspace for this sailing.`
+      ? `Browse public ${category} events on DeckSpace for this sailing.`
       : view === 'official'
-      ? 'Browse official Deckspace ship programming for this sailing.'
+      ? 'Browse official DeckSpace ship programming for this sailing.'
       : view === 'community'
-      ? 'Browse public passenger-made Deckspace plans for this sailing.'
+      ? 'Browse public passenger-made DeckSpace plans for this sailing.'
       : view === 'popular'
-      ? 'Browse the most active Deckspace events by RSVP count for this sailing.'
+      ? 'Browse the most active DeckSpace events by RSVP count for this sailing.'
       : view === 'late'
-      ? 'Browse after-dark Deckspace events for this sailing.'
+      ? 'Browse after-dark DeckSpace events for this sailing.'
       : userFilter
-      ? `Browse Deckspace events connected to ${userFilter} on this sailing.`
-      : 'Browse public Deckspace events for this sailing, including official programming, passenger plans, and RSVP counts.',
+      ? `Browse DeckSpace events connected to ${userFilter} on this sailing.`
+      : 'Browse public DeckSpace events for this sailing, including official programming, passenger plans, and RSVP counts.',
     user: viewer,
     sailing,
     activeNav: 'events',
     body,
+    canonicalUrl,
+    noIndex: isFiltered,
+    structuredData: eventsListStructuredData(c.req.url, canonicalUrl, allEvents, { category, view, userFilter, isFiltered }),
   }));
 });
 
@@ -119,8 +124,8 @@ events.get('/events/create', requireAuth, async (c) => {
   if (readOnly) return c.redirect('/events');
 
   return c.html(layoutCtx(c, {
-    title: 'Create a Deckspace Event',
-    description: 'Create a public Deckspace event for this sailing so other passengers can find it, RSVP, and join in.',
+    title: 'Create a DeckSpace Event',
+    description: 'Create a public DeckSpace event for this sailing so other passengers can find it, RSVP, and join in.',
     user,
     sailing,
     body: createEventForm({ csrfToken: c.get('csrfToken') || '' }),
@@ -148,8 +153,8 @@ events.post('/events/create', requireAuth, async (c) => {
 
   if (errs.length) {
     return c.html(layoutCtx(c, {
-      title: 'Create a Deckspace Event',
-      description: 'Create a public Deckspace event for this sailing so other passengers can find it, RSVP, and join in.',
+      title: 'Create a DeckSpace Event',
+      description: 'Create a public DeckSpace event for this sailing so other passengers can find it, RSVP, and join in.',
       user,
       sailing,
       body: createEventForm({ error: errs.join(' '), values: { title, desc, location, startAt, endAt, category }, csrfToken: c.get('csrfToken') || '' })
@@ -172,7 +177,7 @@ events.post('/events/create', requireAuth, async (c) => {
 
   if (insertErr || !newEvent) {
     return c.html(layoutCtx(c, {
-      title: 'Create a Deckspace Event', description: 'Create a public Deckspace event for this sailing so other passengers can find it, RSVP, and join in.', user, sailing,
+      title: 'Create a DeckSpace Event', description: 'Create a public DeckSpace event for this sailing so other passengers can find it, RSVP, and join in.', user, sailing,
       body: createEventForm({ error: 'Could not create event. Please try again.', values: { title, desc, location, startAt, endAt, category }, csrfToken: c.get('csrfToken') || '' })
     }), 500);
   }
@@ -223,7 +228,7 @@ events.get('/events/:id', async (c) => {
     title: `${event.title} | Cruise Event`,
     description: event.description
       ? `${event.description.slice(0, 150)}`
-      : `View details for ${event.title} on Deckspace, including time, location, RSVPs, and public comments.`,
+      : `View details for ${event.title} on DeckSpace, including time, location, RSVPs, and public comments.`,
     user: viewer,
     sailing,
     activeNav: 'events',
@@ -331,7 +336,7 @@ events.get('/events/:id/edit', requireAuth, async (c) => {
 
   return c.html(layoutCtx(c, {
     title: `Edit Event: ${event.title}`,
-    description: `Update details for the event ${event.title} on Deckspace.`,
+    description: `Update details for the event ${event.title} on DeckSpace.`,
     user,
     sailing,
     body: createEventForm({ values: {
@@ -652,7 +657,7 @@ function eventsSchedulePage({ viewer, sailing, days, activeCategory = '', active
 
   const hero = `<section class="ss-banner ss-banner-modern">
   <div class="ss-banner-copy">
-    <div class="ss-banner-kicker">${ic.shipWheel(13)} Deckspace Events Board</div>
+    <div class="ss-banner-kicker">${ic.shipWheel(13)} DeckSpace Events Board</div>
     <div class="ss-banner-title">Your shipboard calendar and public event board.</div>
     <div class="ss-banner-sub">${esc(viewDescription(activeView))}</div>
   </div>
@@ -956,6 +961,39 @@ function createEventForm({ error, values = {}, eventId, csrfToken = '' }) {
 }
 
 export default events;
+
+function eventsListStructuredData(url, canonicalUrl, events, { category, view, userFilter, isFiltered }) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    url: new URL(url).toString(),
+    name: category
+      ? `DeckSpace ${category} events`
+      : view === 'official'
+      ? 'DeckSpace official events'
+      : view === 'community'
+      ? 'DeckSpace passenger plans'
+      : view === 'popular'
+      ? 'DeckSpace popular events'
+      : view === 'late'
+      ? 'DeckSpace late-night events'
+      : userFilter
+      ? `DeckSpace events for ${userFilter}`
+      : 'DeckSpace events',
+    description: isFiltered
+      ? 'Filtered public event listings for this sailing on DeckSpace.'
+      : 'Public event listings for this sailing on DeckSpace.',
+    mainEntity: {
+      '@type': 'ItemList',
+      itemListElement: events.slice(0, 12).map((event, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        url: new URL(`/events/${event.id}`, canonicalUrl).toString(),
+        name: event.title,
+      })),
+    },
+  };
+}
 
 function eventStructuredData(url, event, imageUrl = '') {
   const schema = {

@@ -36,7 +36,7 @@ notifications.get('/notifications', async (c) => {
 
   return c.html(layoutCtx(c, {
     title: 'Alerts & Notifications',
-    description: 'Review public Deckspace alerts, friend activity, wall posts, event comments, photo comments, and moderation notices for your sailing.',
+    description: 'Review public DeckSpace alerts, friend activity, wall posts, event comments, photo comments, and moderation notices for your sailing.',
     user,
     sailing,
     body,

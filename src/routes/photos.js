@@ -76,6 +76,8 @@ photos.get('/photos', async (c) => {
   const pager = paginator(page, hasMore, '/photos', userFilter ? `&user=${encodeURIComponent(userFilter)}` : '');
   const title = userFilter ? `Photos by ${userFilter}` : 'Shared Cruise Photos';
   const boardHeader = userFilter ? `Photos by ${esc(userFilter)}` : 'Shared Photo Board';
+  const canonicalUrl = new URL('/photos', c.req.url).toString();
+  const isFiltered = Boolean(userFilter || view !== 'all' || page > 1);
   const spotlight = featured.length
     ? `<section class="photo-board-spotlights">
         ${featured.map((p) => photoSpotlightCard({ photo: p, cdnBase })).join('')}
@@ -86,7 +88,7 @@ photos.get('/photos', async (c) => {
   </div>`;
   const summary = `<section class="photo-board-shell">
     <div class="photo-board-copy">
-      <div class="photo-board-kicker">${ic.camera(13)} Deckspace Photo Board</div>
+      <div class="photo-board-kicker">${ic.camera(13)} DeckSpace Photo Board</div>
       <h2 class="photo-board-title">${boardHeader}</h2>
       <p class="photo-board-sub">${esc(photoViewDescription(view, userFilter))}</p>
       ${viewPills}
@@ -108,12 +110,19 @@ photos.get('/photos', async (c) => {
   return c.html(layoutCtx(c, {
     title,
     description: userFilter
-      ? `Browse public Deckspace photos shared by ${userFilter} on this sailing.`
-      : 'Browse recent Deckspace photos from the sailing, linked events, and public passenger uploads.',
+      ? `Browse public DeckSpace photos shared by ${userFilter} on this sailing.`
+      : view === 'events'
+      ? 'Browse DeckSpace photos linked to public events on this sailing.'
+      : view === 'captions'
+      ? 'Browse captioned DeckSpace photos from this sailing.'
+      : 'Browse recent DeckSpace photos from the sailing, linked events, and public passenger uploads.',
     user: viewer,
     sailing,
     activeNav: 'photos',
     body,
+    canonicalUrl,
+    noIndex: isFiltered,
+    structuredData: photoListStructuredData(c.req.url, canonicalUrl, photoList || [], { userFilter, view, page, isFiltered }),
   }));
 });
 
@@ -180,7 +189,7 @@ photos.get('/photos/upload', requireAuth, async (c) => {
 
   return c.html(layoutCtx(c, {
     title: 'Upload a Cruise Photo',
-    description: 'Upload a photo to Deckspace, add a caption, and optionally link it to an event on the sailing.',
+    description: 'Upload a photo to DeckSpace, add a caption, and optionally link it to an event on the sailing.',
     user,
     sailing,
     activeNav: 'photos',
@@ -351,8 +360,8 @@ ${module({
   return c.html(layoutCtx(c, {
     title: photo.caption ? `Photo: ${photo.caption.slice(0, 50)}` : `Photo by ${photo.users?.display_name || 'Passenger'}`,
     description: photo.caption
-      ? `${photo.caption} on Deckspace, shared publicly during this sailing.`
-      : `A public Deckspace photo shared by ${photo.users?.display_name || 'a passenger'} during this sailing.`,
+      ? `${photo.caption} on DeckSpace, shared publicly during this sailing.`
+      : `A public DeckSpace photo shared by ${photo.users?.display_name || 'a passenger'} during this sailing.`,
     user: viewer,
     sailing,
     activeNav: 'photos',
@@ -433,6 +442,35 @@ photos.post('/photos/:id/delete', requireAuth, async (c) => {
 
 export default photos;
 
+function photoListStructuredData(url, canonicalUrl, photos, { userFilter, view, page, isFiltered }) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    url: new URL(url).toString(),
+    name: userFilter
+      ? `DeckSpace photos by ${userFilter}`
+      : view === 'events'
+      ? 'DeckSpace event photos'
+      : view === 'captions'
+      ? 'DeckSpace captioned photos'
+      : page > 1
+      ? `DeckSpace photos page ${page}`
+      : 'DeckSpace photo board',
+    description: isFiltered
+      ? 'Filtered public DeckSpace photo results for this sailing.'
+      : 'Public DeckSpace photo board for the sailing.',
+    mainEntity: {
+      '@type': 'ItemList',
+      itemListElement: photos.slice(0, 12).map((photo, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        url: new URL(`/photos/${photo.id}`, canonicalUrl).toString(),
+        name: photo.caption || `DeckSpace photo ${index + 1}`,
+      })),
+    },
+  };
+}
+
 function photoStructuredData(url, photo, imageUrl) {
   return {
     '@context': 'https://schema.org',
@@ -506,7 +544,7 @@ function photoSpotlightCard({ photo, cdnBase }) {
   </a>
   <div class="photo-spotlight-copy">
     <div class="photo-spotlight-tag">${photo.events ? 'Linked to event' : 'Recent upload'}</div>
-    <a href="/photos/${esc(photo.id)}" class="photo-spotlight-title">${esc((photo.caption || 'Photo shared on Deckspace').slice(0, 80))}</a>
+    <a href="/photos/${esc(photo.id)}" class="photo-spotlight-title">${esc((photo.caption || 'Photo shared on DeckSpace').slice(0, 80))}</a>
     <div class="photo-spotlight-meta">${esc(photo.users?.display_name || 'Unknown')}${photo.events ? ` &middot; ${esc(photo.events.title)}` : ''}</div>
   </div>
 </article>`;

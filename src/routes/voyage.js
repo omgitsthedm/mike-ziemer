@@ -143,7 +143,27 @@ ${module({
     sailing,
     activeNav: 'voyage',
     body,
+    canonicalUrl: new URL('/voyage', c.req.url).toString(),
+    structuredData: voyageStructuredData(c.req.url, sailing, days),
   }));
 });
 
 export default voyage;
+
+function voyageStructuredData(url, sailing, days) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Trip',
+    url: new URL(url).toString(),
+    name: sailing?.name || 'DeckSpace voyage',
+    description: sailing?.ship_name
+      ? `Voyage schedule for ${sailing.name || 'this sailing'} on ${sailing.ship_name}.`
+      : 'Voyage schedule for this sailing on DeckSpace.',
+    itinerary: days.slice(0, 14).map((day) => ({
+      '@type': 'TouristTrip',
+      name: day.port_name,
+      description: day.notes || DAY_TYPE_LABEL[day.day_type] || day.day_type,
+      startDate: day.day_date,
+    })),
+  };
+}

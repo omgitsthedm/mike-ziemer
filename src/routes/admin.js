@@ -100,7 +100,7 @@ admin.get('/admin', async (c) => {
     <div class="admin-live-row">
       <span class="admin-live-label">Sailing</span>
       <strong>${esc(sailing?.name || 'Current sailing')}</strong>
-      <span>${esc(sailing?.ship_name || 'Deckspace')}</span>
+      <span>${esc(sailing?.ship_name || 'DeckSpace')}</span>
     </div>
     <div class="admin-live-row">
       <span class="admin-live-label">Bulletin</span>
@@ -737,7 +737,7 @@ function buildGeneratedDemoPassengers(count = 50) {
     'Here for the week, keeping things social, and trying not to miss the good sets.',
     'Mostly interested in meeting people, finding the right events, and getting off my phone a little.',
     'I like a mix of loud nights and quiet deck time, ideally with good conversation in both.',
-    'Using Deckspace the right way: making plans early and following through later.',
+    'Using DeckSpace the right way: making plans early and following through later.',
     'Happy to join group plans, especially if they involve music, photos, or a late walk around the ship.',
   ];
   const meetTemplates = [
@@ -808,7 +808,7 @@ function buildDemoVoyageDays(base) {
 
 function buildOfficialDemoEvents(base) {
   const templates = [
-    { day: 0, hour: 16, minute: 0, category: 'social', title: 'Boarding Check-In & Deckspace Welcome', location: 'Port Terminal', description: 'Check in, get settled, and start meeting people before sail away.', cover_image_url: DEMO_PROMO_IMAGES[0] },
+    { day: 0, hour: 16, minute: 0, category: 'social', title: 'Boarding Check-In & DeckSpace Welcome', location: 'Port Terminal', description: 'Check in, get settled, and start meeting people before sail away.', cover_image_url: DEMO_PROMO_IMAGES[0] },
     { day: 0, hour: 18, minute: 30, category: 'music', title: 'Sail Away Sad Songs', location: 'Pool Deck', description: 'Opening-night music as the ship leaves Miami.' },
     { day: 0, hour: 21, minute: 0, category: 'theme', title: 'Top 8 Originals Mixer', location: 'Atrium Lounge', description: 'Meet early arrivals, compare plans, and get the social board moving.' },
     { day: 0, hour: 23, minute: 30, category: 'karaoke', title: 'Midnight Emo Karaoke', location: 'Moon Pool Stage', description: 'Late-night singalong for the people who are not done yet.' },
@@ -820,7 +820,7 @@ function buildOfficialDemoEvents(base) {
     { day: 2, hour: 13, minute: 0, category: 'social', title: 'Old Camera Photo Walk', location: 'Havana Waterfront', description: 'A photo-friendly group walk for port-day memories.' },
     { day: 2, hour: 19, minute: 30, category: 'dinner', title: 'Havana Return Dinner', location: 'Main Dining Room', description: 'A shared dinner block for people getting back from port.' },
     { day: 2, hour: 23, minute: 0, category: 'music', title: 'Love Hurts, Waves Heal Main Set', location: 'Main Theater', description: 'The big themed night built around the Shattered Shores visual identity.', cover_image_url: DEMO_PROMO_IMAGES[1] },
-    { day: 3, hour: 11, minute: 0, category: 'other', title: 'Deckspace Profile Photo Hour', location: 'Atrium Photo Booth', description: 'Fresh profile photos and quick page updates.' },
+    { day: 3, hour: 11, minute: 0, category: 'other', title: 'DeckSpace Profile Photo Hour', location: 'Atrium Photo Booth', description: 'Fresh profile photos and quick page updates.' },
     { day: 3, hour: 15, minute: 0, category: 'social', title: 'Friend Space Swap', location: 'Blue Room', description: 'Meet people, add friends, and sort out your Top 8.' },
     { day: 3, hour: 20, minute: 30, category: 'theme', title: 'Black Parade Prom Night', location: 'Grand Ballroom', description: 'The most styled-out night on the schedule.' },
     { day: 3, hour: 23, minute: 45, category: 'deck', title: 'Late Deck Walk', location: 'Forward Deck', description: 'A low-pressure late-night group walk and talk.' },

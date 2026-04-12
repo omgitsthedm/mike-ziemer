@@ -115,7 +115,7 @@ friends.get('/friends', async (c) => {
 
   return c.html(layoutCtx(c, {
     title: 'Friends & Requests',
-    description: 'Manage your Deckspace friends, incoming requests, outgoing requests, and public Friend Space selections for this sailing.',
+    description: 'Manage your DeckSpace friends, incoming requests, outgoing requests, and public Friend Space selections for this sailing.',
     user,
     sailing,
     body,
@@ -191,7 +191,7 @@ friends.get('/friends/manage-top', async (c) => {
 
   return c.html(layoutCtx(c, {
     title: 'Manage Top Friends',
-    description: 'Choose which friends appear in your Deckspace Friend Space and Top 8-style profile section.',
+    description: 'Choose which friends appear in your DeckSpace Friend Space and Top 8-style profile section.',
     user,
     sailing,
     body

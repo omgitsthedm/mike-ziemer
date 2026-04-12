@@ -51,15 +51,15 @@ export function layout({
   cspNonce = '',
 }) {
   const pageTitle = title
-    ? (/\bDeckspace\b/i.test(title) ? title : `${title} | Deckspace`)
-    : 'Deckspace';
+    ? (/\bDeckSpace\b/i.test(title) ? title : `${title} | DeckSpace`)
+    : 'DeckSpace';
   const themeId = user?.profiles?.theme_id || 'classic';
   const bodyClass = ['theme-' + themeId, themeClass].filter(Boolean).join(' ');
   const origin = currentUrl ? new URL(currentUrl).origin : '';
   const canonicalHref = canonicalUrl || normalizeCanonicalUrl(currentUrl) || '';
   const socialImage = ogImageUrl || (origin ? `${origin}/images/deckspace-social.svg` : '/images/deckspace-social.svg');
   const metaDescription = description || defaultMetaDescription(title, sailing);
-  const heading = pageHeading || title || 'Deckspace';
+  const heading = pageHeading || title || 'DeckSpace';
   const robotsContent = buildRobotsContent(currentUrl, noIndex);
   const schemaBlocks = buildSchemaBlocks({
     currentUrl,
@@ -85,7 +85,7 @@ export function layout({
   ${canonicalHref ? `<link rel="canonical" href="${esc(canonicalHref)}">` : ''}
   ${origin ? `<link rel="sitemap" type="application/xml" title="XML Sitemap" href="${esc(origin)}/sitemap.xml">` : ''}
   <meta property="og:type" content="website">
-  <meta property="og:site_name" content="Deckspace">
+  <meta property="og:site_name" content="DeckSpace">
   <meta property="og:title" content="${esc(pageTitle)}">
   <meta property="og:description" content="${esc(metaDescription)}">
   ${canonicalHref ? `<meta property="og:url" content="${esc(canonicalHref)}">` : ''}
@@ -220,7 +220,7 @@ function renderNav(user, activeNav, notifCount, csrfToken = '') {
 
   return `<nav id="ds-nav" role="navigation" aria-label="Main navigation">
   <div id="ds-nav-inner">
-    <a href="/" id="ds-logo" aria-label="Deckspace home">
+    <a href="/" id="ds-logo" aria-label="DeckSpace home">
       <img src="/images/deckspace-mark.png" alt="" class="ds-brand-wordmark" width="28" height="28">
       <span class="ds-brand-lockup">
         <span class="ds-brand-name">DeckSpace</span>
@@ -269,7 +269,7 @@ function renderArchiveBanner(sailing) {
 
   return `<div class="archive-banner">
   <strong>The sailing has ended.</strong>
-  The ship has docked, but your Deckspace page is still here in read-only mode for a little while longer.
+  The ship has docked, but your DeckSpace page is still here in read-only mode for a little while longer.
   ${countdownLine}
   New posts, wall comments, and RSVPs are closed.
 </div>`;
@@ -306,12 +306,12 @@ export function layoutCtx(c, opts) {
 
 function defaultMetaDescription(title, sailing) {
   if (sailing?.name && sailing?.ship_name) {
-    return `Deckspace is the shared cruise page for ${sailing.name} on ${sailing.ship_name}. Meet people, follow plans, share photos, and keep a short trip archive.`;
+    return `DeckSpace is the shared cruise page for ${sailing.name} on ${sailing.ship_name}. Meet people, follow plans, share photos, and keep a short trip archive.`;
   }
   if (title) {
-    return `${title} on Deckspace, the shared cruise page for meeting people, following plans, sharing photos, and keeping a short trip archive.`;
+    return `${title} on DeckSpace, the shared cruise page for meeting people, following plans, sharing photos, and keeping a short trip archive.`;
   }
-  return 'Deckspace is the shared cruise page for meeting people, following plans, sharing photos, and keeping a short trip archive.';
+  return 'DeckSpace is the shared cruise page for meeting people, following plans, sharing photos, and keeping a short trip archive.';
 }
 
 function normalizeCanonicalUrl(url) {
@@ -487,7 +487,7 @@ function humanizeSlug(value) {
 
 function stripDeckspaceSuffix(value) {
   return String(value || 'DeckSpace')
-    .replace(/\s*\|\s*Deckspace$/i, '')
+    .replace(/\s*\|\s*DeckSpace$/i, '')
     .split('|')[0]
     .trim();
 }
@@ -501,7 +501,7 @@ function renderFooter() {
   <div class="ds-footer-inner">
     <div class="ds-footer-brand">
       <div class="ds-footer-brand-row">
-        <a href="/" class="ds-footer-logo-link" aria-label="Deckspace home">
+        <a href="/" class="ds-footer-logo-link" aria-label="DeckSpace home">
           <img src="/images/deckspace-mark.png" alt="" class="ds-footer-logo" width="24" height="24">
         </a>
         <div class="ds-footer-copy">

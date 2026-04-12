@@ -54,13 +54,15 @@ home.get('/', async (c) => {
   // Guard: no Supabase config → show full demo landing page (works on preview deploys)
   if (!c.env.SUPABASE_URL || !c.env.SUPABASE_SERVICE_KEY) {
     return c.html(layout({
-      title: 'Deckspace — A Place for Friends on the High Seas',
-      description: 'Deckspace is the shared cruise page for meeting passengers, checking what is happening tonight, sharing photos, and keeping a short post-cruise archive.',
+      title: 'DeckSpace — A Place for Friends on the High Seas',
+      description: 'DeckSpace is the shared cruise page for meeting passengers, checking what is happening tonight, sharing photos, and keeping a short post-cruise archive.',
       body:  landingPage({ sailing: DEMO_SAILING, cdnBase: '', newPeople: [], weather: null, tonightEvents: [], siteKey: c.env.TURNSTILE_SITE_KEY || '' }),
       notifCount: 0,
       csrfToken:  '',
       currentUrl: c.req.url,
+      canonicalUrl: new URL('/', c.req.url).toString(),
       showPageHeading: false,
+      structuredData: homeLandingStructuredData(c.req.url, DEMO_SAILING, []),
     }));
   }
 
@@ -97,10 +99,12 @@ home.get('/', async (c) => {
     ]);
 
     return c.html(layoutCtx(c, {
-      title: 'Deckspace — A Place for Friends on the High Seas',
-      description: `Join Deckspace for ${sailing?.name || 'your sailing'} on ${sailing?.ship_name || 'your ship'} to meet passengers, follow tonight's events, and share photos during the trip.`,
+      title: 'DeckSpace — A Place for Friends on the High Seas',
+      description: `Join DeckSpace for ${sailing?.name || 'your sailing'} on ${sailing?.ship_name || 'your ship'} to meet passengers, follow tonight's events, and share photos during the trip.`,
       body: landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents, siteKey: c.env.TURNSTILE_SITE_KEY || '' }),
+      canonicalUrl: new URL('/', c.req.url).toString(),
       showPageHeading: false,
+      structuredData: homeLandingStructuredData(c.req.url, sailing, tonightEvents),
     }));
   }
 
@@ -168,11 +172,13 @@ home.get('/', async (c) => {
 
   return c.html(layoutCtx(c, {
     title: 'Home',
-    description: `Check tonight's events, social activity, photos, and who's online right now for ${sailing?.name || 'this sailing'} on Deckspace.`,
+    description: `Check tonight's events, social activity, photos, and who's online right now for ${sailing?.name || 'this sailing'} on DeckSpace.`,
     user,
     sailing,
     activeNav: 'home',
     body,
+    canonicalUrl: new URL('/', c.req.url).toString(),
+    noIndex: true,
   }));
 });
 
@@ -226,6 +232,27 @@ function weatherWidget(weather) {
   });
 }
 
+function homeLandingStructuredData(url, sailing, tonightEvents = []) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    url: new URL(url).toString(),
+    name: sailing?.name ? `${sailing.name} on DeckSpace` : 'DeckSpace',
+    description: sailing?.ship_name
+      ? `Join DeckSpace for ${sailing.name || 'this sailing'} on ${sailing.ship_name}.`
+      : 'Join DeckSpace to follow events, people, and photos during the sailing.',
+    mainEntity: {
+      '@type': 'ItemList',
+      itemListElement: tonightEvents.slice(0, 4).map((event, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        url: new URL(`/events/${event.id}`, url).toString(),
+        name: event.title,
+      })),
+    },
+  };
+}
+
 /* ============================================================
    HOME PAGE TEMPLATE
    ============================================================ */
@@ -239,7 +266,7 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
   const commandDeck = `<section class="home-command-deck">
   <div class="home-command-copy">
     <div class="home-command-kicker">${ic.shipWheel(13)} Welcome back, ${esc(firstName)}</div>
-    <div class="home-command-brandline">Deckspace on deck for ${esc(sailing?.ship_name || 'the sailing')}</div>
+    <div class="home-command-brandline">DeckSpace on deck for ${esc(sailing?.ship_name || 'the sailing')}</div>
     <h2 class="home-command-title">Everything happening on ${esc(sailing?.ship_name || 'the ship')}, in one place.</h2>
     <p class="home-command-sub">Check tonight&rsquo;s plans, see who is around, read wall notes, and keep up with recent photo uploads.</p>
     <div class="home-command-links">
@@ -499,14 +526,14 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [],
       <p class="landing-hero-sub">${esc(sailName)} &mdash; the shared page for everyone on board</p>
       <p class="landing-hero-copy">
         Meet the people on this cruise, see what&rsquo;s happening tonight, share photos from every stop,
-        and leave notes on each other&rsquo;s pages. After the trip, Deckspace may stay up in read-only mode for a short time.
+        and leave notes on each other&rsquo;s pages. After the trip, DeckSpace may stay up in read-only mode for a short time.
       </p>
       <div class="landing-hero-actions">
         <a href="/register" class="ds-btn ds-btn-orange">Join the Cruise &rarr;</a>
         <a href="/login" class="landing-hero-secondary">Already a member? Sign in</a>
       </div>
     </div>
-    <div class="landing-signal-strip" aria-label="Deckspace quick facts">
+    <div class="landing-signal-strip" aria-label="DeckSpace quick facts">
       <div class="landing-signal-item">
         <strong>${esc(String(tonightCount))}</strong>
         <span>things happening tonight</span>
@@ -565,7 +592,7 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [],
 
   <section class="landing-boarding-panel">
     <div class="landing-logo-wrap">
-      <img src="/images/deckspace-logo.png" alt="Deckspace" class="landing-brand-logo" width="120" height="120">
+      <img src="/images/deckspace-logo.png" alt="DeckSpace" class="landing-brand-logo" width="120" height="120">
       <div class="landing-logo-sub">your cruise, your crew, your page</div>
     </div>
     <p class="landing-boarding-copy">

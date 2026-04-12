@@ -38,8 +38,8 @@ auth.get('/login', async (c) => {
     ? 'Your account is ready. Sign in with your new username and password.'
     : null;
   return c.html(layoutCtx(c, {
-    title: 'Sign In to Your Deckspace Sailing',
-    description: 'Sign in to Deckspace to view your sailing community, browse passenger profiles, check events, post on walls, and share photos during the voyage.',
+    title: 'Sign In to Your DeckSpace Sailing',
+    description: 'Sign in to DeckSpace to view your sailing community, browse passenger profiles, check events, post on walls, and share photos during the voyage.',
     body: loginForm({ next, siteKey: c.env.TURNSTILE_SITE_KEY, flash }),
   }));
 });
@@ -55,8 +55,8 @@ auth.post('/login', async (c) => {
   const ip = c.req.header('cf-connecting-ip') || '';
 
   const showLogin = (error, status = 400) => c.html(layoutCtx(c, {
-    title: 'Sign In to Your Deckspace Sailing',
-    description: 'Sign in to Deckspace to view your sailing community, browse passenger profiles, check events, post on walls, and share photos during the voyage.',
+    title: 'Sign In to Your DeckSpace Sailing',
+    description: 'Sign in to DeckSpace to view your sailing community, browse passenger profiles, check events, post on walls, and share photos during the voyage.',
     body: loginForm({ next, siteKey: c.env.TURNSTILE_SITE_KEY, error }),
   }), status);
 
@@ -86,7 +86,7 @@ auth.post('/login', async (c) => {
     // Check sailing access window
     const sailing = await getSailing(db, sailingId).catch(() => null);
     if (sailing && !isSailingAccessible(sailing)) {
-      return showLogin('Deckspace is not open for this sailing right now.', 403);
+      return showLogin('DeckSpace is not open for this sailing right now.', 403);
     }
 
     // Activate account if pending (first login)
@@ -113,8 +113,8 @@ auth.get('/register', async (c) => {
   if (existingUser) return c.redirect('/');
 
   return c.html(layoutCtx(c, {
-    title: 'Create Your Deckspace Sailing Account',
-    description: 'Create a Deckspace account for your sailing to meet people, RSVP to plans, share photos, and join the shared ship page.',
+    title: 'Create Your DeckSpace Sailing Account',
+    description: 'Create a DeckSpace account for your sailing to meet people, RSVP to plans, share photos, and join the shared ship page.',
     body: registerForm({ siteKey: c.env.TURNSTILE_SITE_KEY }),
   }));
 });
@@ -132,8 +132,8 @@ auth.post('/register', async (c) => {
   const password2   = (form.get('password2') || '').toString();
 
   const showRegister = (error, status = 400) => c.html(layoutCtx(c, {
-    title: 'Create Your Deckspace Sailing Account',
-    description: 'Create a Deckspace account for your sailing to meet people, RSVP to plans, share photos, and join the shared ship page.',
+    title: 'Create Your DeckSpace Sailing Account',
+    description: 'Create a DeckSpace account for your sailing to meet people, RSVP to plans, share photos, and join the shared ship page.',
     body: registerForm({ siteKey: c.env.TURNSTILE_SITE_KEY, error, values: { displayName, username, email } }),
   }), status);
 
@@ -214,8 +214,8 @@ auth.get('/onboarding', async (c) => {
   if (!user) return c.redirect('/login');
 
   return c.html(layoutCtx(c, {
-    title: 'Set Up Your Deckspace Profile',
-    description: 'Finish your Deckspace profile with your hometown, interests, and public profile details for the sailing.',
+    title: 'Set Up Your DeckSpace Profile',
+    description: 'Finish your DeckSpace profile with your hometown, interests, and public profile details for the sailing.',
     user,
     body: onboardingForm(c.get('csrfToken') || ''),
   }));
@@ -318,7 +318,7 @@ function registerForm({ siteKey, error, values = {} }) {
       Everyone on your sailing can see it. No ads. No private messages. Easy to use.
     </div>
     <div class="ds-module">
-      <div class="ds-module-header">Make Your Deckspace Page</div>
+      <div class="ds-module-header">Make Your DeckSpace Page</div>
       <div class="ds-module-body">
         <div class="reg-time-note">Takes about 2 minutes &bull; Free to join &bull; No email needed</div>
         ${error ? `<div class="ds-flash error" style="margin-bottom:8px">${esc(error)}</div>` : ''}
@@ -351,7 +351,7 @@ function registerForm({ siteKey, error, values = {} }) {
           </div>
         </form>
         <p class="text-small text-muted mt-8 text-center">
-          Already have a page? <a href="/login">Sign in to Deckspace</a>
+          Already have a page? <a href="/login">Sign in to DeckSpace</a>
         </p>
       </div>
     </div>
@@ -359,11 +359,11 @@ function registerForm({ siteKey, error, values = {} }) {
 
   <div class="reg-right">
     <div class="ds-module">
-      <div class="ds-module-header">Why Deckspace?</div>
+      <div class="ds-module-header">Why DeckSpace?</div>
       <div class="ds-module-body reg-why-body">
         <p class="reg-why-intro">
           You&rsquo;re on a cruise. You&rsquo;re about to meet a lot of people.
-          <strong>Deckspace keeps the ship schedule and community in one place.</strong>
+          <strong>DeckSpace keeps the ship schedule and community in one place.</strong>
         </p>
         <ul class="reg-why-list">
           <li>${ic.users(11)} <strong>Meet people fast</strong> &mdash; See who is on the ship and add friends right away.</li>
