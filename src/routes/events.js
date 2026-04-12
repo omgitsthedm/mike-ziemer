@@ -462,6 +462,27 @@ function teaser(text = '', fallback = '') {
   return source.length > 120 ? `${source.slice(0, 117).trim()}...` : source;
 }
 
+function eventPosterSeed(ev) {
+  return encodeURIComponent(`${ev.id || ev.title || 'deckspace-event'}-${ev.category || 'other'}`);
+}
+
+function eventPosterImage(ev) {
+  return `https://picsum.photos/seed/${eventPosterSeed(ev)}/240/320`;
+}
+
+function eventPosterMarkup(ev, cdnBase, { width = 96, height = 96, className = '' } = {}) {
+  const coverUrl = ev.cover_image_url ? absUrl(cdnBase, ev.cover_image_url) : eventPosterImage(ev);
+  const kicker = ev.event_type === 'official' ? 'Official Event' : 'Passenger Plan';
+  return `<div class="ss-event-poster ${eventCategoryClass(ev.category)}${className ? ` ${className}` : ''}">
+    <img src="${esc(coverUrl)}" alt="Poster-style art for ${esc(ev.title)}" width="${width}" height="${height}" class="ss-event-cover-image" loading="lazy">
+    <div class="ss-event-poster-overlay">
+      <span class="ss-event-poster-kicker">${esc(kicker)}</span>
+      <strong class="ss-event-poster-title">${esc(ev.title)}</strong>
+      <span class="ss-event-poster-category">${esc(eventCategoryLabel(ev.category))}</span>
+    </div>
+  </div>`;
+}
+
 function viewLabel(view) {
   const labels = {
     all: 'Everything',
@@ -684,9 +705,7 @@ function eventsSchedulePage({ viewer, sailing, days, activeCategory = '', active
       const desc = teaser(ev.description, ev.event_type === 'official'
         ? 'Official ship programming with a cleaner clock and a clearer plan.'
         : 'Passenger-created plan. Public and open to people on this sailing.');
-      const cover = ev.cover_image_url
-        ? `<img src="${esc(absUrl(cdnBase, ev.cover_image_url))}" alt="Event art for ${esc(ev.title)}" width="96" height="96" class="ss-event-cover-image" loading="lazy">`
-        : `<div class="ss-event-cover-fallback ${eventCategoryClass(ev.category)}">${icon()}</div>`;
+      const cover = eventPosterMarkup(ev, cdnBase, { width: 96, height: 96 });
       const attendeePreview = attendeesByEvent[ev.id] || [];
       const attendeeLead = attendeePreview[0]?.display_name || attendeePreview[0]?.username || '';
       const attendeeCopy = attendeePreview.length
@@ -721,7 +740,10 @@ function eventsSchedulePage({ viewer, sailing, days, activeCategory = '', active
     </div>
     <div class="ss-event-social-row">
       ${attendeeFaces ? `<div class="ss-event-attendees">${attendeeFaces}</div>` : ''}
-      <div class="ss-event-attendance-copy">${attendeeCopy}</div>
+      <div class="ss-event-attendance-copy">
+        <strong>People attending</strong>
+        <span>${attendeeCopy}</span>
+      </div>
     </div>
   </div>
   <div class="ss-event-action">
@@ -770,9 +792,7 @@ function eventsSchedulePage({ viewer, sailing, days, activeCategory = '', active
    ============================================================ */
 function eventDetailPage({ event, comments, userRsvp, attendees, viewer, sailing, readOnly, isCreator, page, hasMore, cdnBase, csrfToken }) {
   const creator = event.users;
-  const coverImg = event.cover_image_url
-    ? `<img src="${esc(absUrl(cdnBase, event.cover_image_url))}" alt="Cover image for ${esc(event.title)}" width="720" height="360" class="event-detail-cover-image">`
-    : `<div class="event-detail-cover-fallback ${eventCategoryClass(event.category)}">${(CAT_ICONS[event.category] || CAT_ICONS.other)(34)}</div>`;
+  const coverImg = eventPosterMarkup(event, cdnBase, { width: 720, height: 360, className: 'event-detail-poster' });
 
   // RSVP state
   let rsvpHtml = '';

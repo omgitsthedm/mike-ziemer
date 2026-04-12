@@ -1542,11 +1542,46 @@ input[type="button"] {
   color: var(--ds-navy);
   overflow: hidden;
 }
+.ss-event-poster {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #10264d;
+}
 .ss-event-cover-image {
   width: 100%;
   height: 100%;
   display: block;
   object-fit: cover;
+}
+.ss-event-poster::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(14, 30, 63, 0.08) 0%, rgba(14, 30, 63, 0.82) 100%);
+  pointer-events: none;
+}
+.ss-event-poster-overlay {
+  position: absolute;
+  inset: auto 0 0 0;
+  z-index: 1;
+  display: grid;
+  gap: 2px;
+  padding: 8px 7px 7px;
+  color: #fff;
+}
+.ss-event-poster-kicker,
+.ss-event-poster-category {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.86);
+}
+.ss-event-poster-title {
+  font-size: 12px;
+  line-height: 1.15;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.28);
 }
 .ss-event-cover-fallback {
   width: 100%;
@@ -1618,14 +1653,16 @@ input[type="button"] {
   gap: 4px;
 }
 .ss-event-social-row {
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
   gap: 8px;
   margin-top: 8px;
 }
 .ss-event-attendees {
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: repeat(3, 24px);
+  gap: 4px;
   flex-shrink: 0;
 }
 .ss-event-attendee-face {
@@ -1634,16 +1671,23 @@ input[type="button"] {
   border-radius: 50%;
   border: 2px solid #fff;
   box-shadow: 0 0 0 1px #c7d3e4;
-  margin-left: -6px;
   background: #eef4ff;
 }
-.ss-event-attendees .ss-event-attendee-face:first-child {
-  margin-left: 0;
-}
 .ss-event-attendance-copy {
+  display: grid;
+  gap: 2px;
   font-size: 10px;
   color: #5d6d84;
   line-height: 1.4;
+}
+.ss-event-attendance-copy strong {
+  font-size: 9px;
+  color: #7a4a00;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.ss-event-attendance-copy span {
+  display: block;
 }
 .ss-event-action {
   display: flex;
@@ -1804,6 +1848,22 @@ input[type="button"] {
   max-height: 300px;
   object-fit: cover;
 }
+.event-detail-poster {
+  min-height: 300px;
+}
+.event-detail-poster .ss-event-poster-overlay {
+  padding: 16px 16px 14px;
+  gap: 4px;
+}
+.event-detail-poster .ss-event-poster-kicker,
+.event-detail-poster .ss-event-poster-category {
+  font-size: 11px;
+}
+.event-detail-poster .ss-event-poster-title {
+  font-size: 28px;
+  line-height: 1.05;
+  max-width: 16ch;
+}
 .event-detail-cover-fallback {
   display: flex;
   align-items: center;
@@ -1888,10 +1948,10 @@ input[type="button"] {
   gap: 8px;
 }
 .event-attendee-wrap {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  align-items: center;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+  gap: 8px;
+  align-items: start;
 }
 .event-facts-list {
   display: grid;
@@ -2003,7 +2063,10 @@ input[type="button"] {
     justify-content: flex-start;
   }
   .ss-event-social-row {
-    flex-wrap: wrap;
+    grid-template-columns: 1fr;
+  }
+  .ss-event-attendees {
+    grid-template-columns: repeat(4, 24px);
   }
   .ss-day-summary {
     width: 100%;
@@ -3928,6 +3991,9 @@ a.ds-btn-orange:hover {
   .photo-board-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  .voyage-postcards {
+    grid-template-columns: 1fr;
+  }
   /* Photo grid: 3 cols on mobile */
   .photo-grid {
     grid-template-columns: repeat(3, 1fr);
@@ -3952,6 +4018,12 @@ a.ds-btn-orange:hover {
   }
   .voyage-day-toggle {
     grid-column: 2;
+  }
+  .voyage-day-layout {
+    grid-template-columns: 1fr;
+  }
+  .voyage-day-visual img {
+    min-height: 180px;
   }
 
   /* Full-width buttons on mobile */
@@ -4672,6 +4744,63 @@ a.ds-btn-orange:hover {
   transform: translateY(1px) scale(0.985);
   box-shadow: var(--shadow-press);
 }
+.voyage-postcards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.voyage-postcard {
+  display: grid;
+  color: inherit;
+  text-decoration: none;
+  background: #fff;
+  border: 1px solid #c9d7ec;
+  overflow: hidden;
+  transition:
+    transform var(--dur-instant) var(--ease-out-quart),
+    box-shadow var(--dur-fast) var(--ease-out-quart),
+    border-color var(--dur-fast) var(--ease-out-quart);
+}
+.voyage-postcard:hover,
+.voyage-postcard.active {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lift);
+  border-color: #d7be6d;
+}
+.voyage-postcard-image {
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: #dfeaff;
+}
+.voyage-postcard-image img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+.voyage-postcard-copy {
+  display: grid;
+  gap: 3px;
+  padding: 10px;
+}
+.voyage-postcard-label {
+  font-size: 9px;
+  color: #d15d00;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+}
+.voyage-postcard-copy strong {
+  font-size: 14px;
+  color: var(--ds-navy);
+  line-height: 1.2;
+}
+.voyage-postcard-copy span:last-child {
+  font-size: 11px;
+  color: #5f6f85;
+  line-height: 1.45;
+}
 .voyage-schedule {
   padding: 0;
 }
@@ -4738,6 +4867,42 @@ a.ds-btn-orange:hover {
 }
 .voyage-day-body {
   padding: 0 10px 10px 54px;
+}
+.voyage-day-layout {
+  display: grid;
+  grid-template-columns: 168px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+.voyage-day-visual {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #cedbed;
+  background: #dfeaff;
+}
+.voyage-day-visual img {
+  width: 100%;
+  height: 100%;
+  min-height: 124px;
+  display: block;
+  object-fit: cover;
+}
+.voyage-day-mood {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  display: inline-flex;
+  min-height: 24px;
+  align-items: center;
+  padding: 0 8px;
+  background: rgba(14, 30, 63, 0.82);
+  color: #fff;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.voyage-day-details {
+  min-width: 0;
 }
 .voyage-times {
   font-size: 10px;

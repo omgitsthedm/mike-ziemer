@@ -26,6 +26,18 @@ const DAY_TYPE_LABEL = {
   disembarkation: 'Disembarkation Day',
 };
 
+function voyageMoodLabel(day) {
+  if (day.day_type === 'embarkation') return 'Boarding energy';
+  if (day.day_type === 'disembarkation') return 'Last look';
+  if (day.day_type === 'sea') return 'Open-water reset';
+  return 'Shore day';
+}
+
+function voyageImage(day, index) {
+  const seed = encodeURIComponent(`${day.port_name || day.day_type || 'voyage'}-${day.day_date || index}`);
+  return `https://picsum.photos/seed/${seed}/720/480`;
+}
+
 voyage.get('/voyage', async (c) => {
   const viewer  = await resolveSession(c.env, c.req.raw);
   const db      = getDb(c.env);
@@ -38,12 +50,15 @@ voyage.get('/voyage', async (c) => {
   const seaDays = days.filter((day) => day.day_type === 'sea').length;
   const portDays = days.filter((day) => day.day_type === 'port').length;
   const openAnchor = todayIndex >= 0 ? `voyage-${today}` : (days[0] ? `voyage-${days[0].day_date}` : '');
+  const voyagePostcardDays = days.slice(todayIndex >= 0 ? todayIndex : 0, (todayIndex >= 0 ? todayIndex : 0) + 3);
 
   const scheduleHtml = days.length
     ? days.map((day, index) => {
         const isToday = day.day_date === today;
         const typeLbl = DAY_TYPE_LABEL[day.day_type] || day.day_type;
         const typeIcon = DAY_TYPE_ICON[day.day_type] ? DAY_TYPE_ICON[day.day_type]() : '';
+        const scenicImage = voyageImage(day, index);
+        const moodLabel = voyageMoodLabel(day);
         const timeHtml = (day.arrive_time || day.depart_time)
           ? `<div class="voyage-times">
               ${day.arrive_time ? `<span>${ic.anchor(11)} In ${day.arrive_time}</span>` : ''}
@@ -59,8 +74,16 @@ voyage.get('/voyage', async (c) => {
     <div class="voyage-day-toggle">${day.arrive_time || day.depart_time ? 'Times' : 'Details'}</div>
   </summary>
   <div class="voyage-day-body">
-    ${timeHtml}
-    ${day.notes ? `<div class="voyage-day-notes">${esc(day.notes)}</div>` : `<div class="voyage-day-notes">No extra notes are posted for this stop.</div>`}
+    <div class="voyage-day-layout">
+      <div class="voyage-day-visual">
+        <img src="${esc(scenicImage)}" alt="Scenic image for ${esc(day.port_name)}" width="240" height="160" loading="lazy">
+        <span class="voyage-day-mood">${esc(moodLabel)}</span>
+      </div>
+      <div class="voyage-day-details">
+        ${timeHtml}
+        ${day.notes ? `<div class="voyage-day-notes">${esc(day.notes)}</div>` : `<div class="voyage-day-notes">No extra notes are posted for this stop.</div>`}
+      </div>
+    </div>
   </div>
 </details>`;
       }).join('')
@@ -73,7 +96,7 @@ voyage.get('/voyage', async (c) => {
         <div class="voyage-command-copy">
           <div class="voyage-ship">${ic.ship(16)} ${esc(sailing.ship_name)}</div>
           <div class="voyage-name">${esc(sailing.name)}</div>
-          <p class="voyage-command-sub">Sea days, port stops, and the quick trip details people usually need during the sailing.</p>
+          <p class="voyage-command-sub">Track every sea day, port stop, and timing update with a warmer view of the trip instead of a plain list.</p>
         </div>
         <div class="voyage-command-stats">
           <div class="voyage-command-stat"><strong>${days.length}</strong><span>days in the plan</span></div>
@@ -82,6 +105,21 @@ voyage.get('/voyage', async (c) => {
           <div class="voyage-command-stat"><strong>${nextPort ? esc(nextPort.port_name) : 'TBD'}</strong><span>next port</span></div>
         </div>
       </section>` : '';
+
+  const voyagePostcards = voyagePostcardDays.length
+    ? `<section class="voyage-postcards">
+        ${voyagePostcardDays.map((day, index) => `<a href="#voyage-${day.day_date}" class="voyage-postcard${day.day_date === today ? ' active' : ''}">
+          <div class="voyage-postcard-image">
+            <img src="${esc(voyageImage(day, index))}" alt="Postcard view for ${esc(day.port_name)}" width="240" height="160" loading="lazy">
+          </div>
+          <div class="voyage-postcard-copy">
+            <span class="voyage-postcard-label">${esc(DAY_TYPE_LABEL[day.day_type] || day.day_type)}</span>
+            <strong>${esc(day.port_name)}</strong>
+            <span>${esc(day.notes || voyageMoodLabel(day))}</span>
+          </div>
+        </a>`).join('')}
+      </section>`
+    : '';
 
   const voyageStrip = days.length
     ? `<div class="voyage-strip">
@@ -92,7 +130,7 @@ voyage.get('/voyage', async (c) => {
       </div>`
     : '';
 
-  const body = `${sailingInfo}${voyageStrip}
+  const body = `${sailingInfo}${voyagePostcards}${voyageStrip}
 ${module({
   header: `${ic.shipWheel(12)} Voyage Schedule`,
   body: `<div class="voyage-schedule">${scheduleHtml}</div>`
