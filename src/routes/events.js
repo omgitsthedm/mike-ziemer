@@ -18,6 +18,7 @@ import { requireAuth, resolveSession, isSailingReadOnly } from '../lib/auth.js';
 import { layout, layoutCtx, esc, fmtDate, relTime, csrfField } from '../templates/layout.js';
 import { module, eventCard, commentEntry, paginator, absUrl, pixelAvatarImg, isLegacyAvatarUrl } from '../templates/components.js';
 import { ic } from '../templates/icons.js';
+import { eventPosterDataUri } from '../lib/demo-art.js';
 
 const events = new Hono();
 
@@ -475,14 +476,21 @@ function eventPosterSeed(ev) {
 }
 
 function eventPosterImage(ev) {
-  return `https://picsum.photos/seed/${eventPosterSeed(ev)}/240/320`;
+  return eventPosterDataUri({
+    title: ev.title,
+    category: ev.category,
+    kicker: ev.event_type === 'official' ? 'Official Event' : 'Passenger Plan',
+    width: 240,
+    height: 320,
+    seed: eventPosterSeed(ev),
+  });
 }
 
 function eventPosterMarkup(ev, cdnBase, { width = 96, height = 96, className = '' } = {}) {
   const coverUrl = ev.cover_image_url ? absUrl(cdnBase, ev.cover_image_url) : eventPosterImage(ev);
   const kicker = ev.event_type === 'official' ? 'Official Event' : 'Passenger Plan';
   return `<div class="ss-event-poster ${eventCategoryClass(ev.category)}${className ? ` ${className}` : ''}">
-    <img src="${esc(coverUrl)}" alt="Poster-style art for ${esc(ev.title)}" width="${width}" height="${height}" class="ss-event-cover-image" loading="lazy">
+    <img src="${esc(coverUrl)}" alt="Poster-style art for ${esc(ev.title)}" width="${width}" height="${height}" class="ss-event-cover-image" loading="lazy" decoding="async">
     <div class="ss-event-poster-overlay">
       <span class="ss-event-poster-kicker">${esc(kicker)}</span>
       <strong class="ss-event-poster-title">${esc(ev.title)}</strong>
@@ -723,7 +731,7 @@ function eventsSchedulePage({ viewer, sailing, days, activeCategory = '', active
         ? attendeePreview.map((person) => {
             const thumbUrl = absUrl(cdnBase, person?.profiles?.avatar_thumb_url);
             return thumbUrl && !isLegacyAvatarUrl(thumbUrl)
-              ? `<img src="${esc(thumbUrl)}" width="24" height="24" alt="${esc(person?.display_name || person?.username || 'Passenger')}" class="ss-event-attendee-face" loading="lazy">`
+              ? `<img src="${esc(thumbUrl)}" width="24" height="24" alt="${esc(person?.display_name || person?.username || 'Passenger')}" class="ss-event-attendee-face" loading="lazy" decoding="async">`
               : pixelAvatarImg(person?.display_name || 'Passenger', person?.username || person?.display_name || '', 24, 'ss-event-attendee-face ss-event-attendee-pixel');
           }).join('')
         : '';
@@ -829,7 +837,7 @@ function eventDetailPage({ event, comments, userRsvp, attendees, viewer, sailing
         const thumbUrl = absUrl(cdnBase, a.users?.profiles?.avatar_thumb_url);
         return `<a href="/profile/${esc(a.users?.username || '')}" title="${esc(a.users?.display_name || '')}" aria-label="View ${esc(a.users?.display_name || 'this passenger')}'s profile">
           ${thumbUrl && !isLegacyAvatarUrl(thumbUrl)
-            ? `<img src="${esc(thumbUrl)}" width="32" height="32" alt="${esc(a.users?.display_name || 'Passenger')}" loading="lazy" style="border:1px solid #ccc">`
+            ? `<img src="${esc(thumbUrl)}" width="32" height="32" alt="${esc(a.users?.display_name || 'Passenger')}" loading="lazy" decoding="async" style="border:1px solid #ccc">`
             : pixelAvatarImg(a.users?.display_name || 'Passenger', a.users?.username || a.users?.display_name || '', 32, 'event-attendee-pixel-avatar')}
         </a>`;
       }).join(' ')

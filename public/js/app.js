@@ -299,9 +299,10 @@
     var links = document.getElementById('ds-nav-links');
     if (!btn || !links) return;
     var body = document.body;
+    var compactNavQuery = window.matchMedia ? window.matchMedia('(max-width: 900px)') : null;
 
     function isCompactNav() {
-      return window.innerWidth <= 640;
+      return compactNavQuery ? compactNavQuery.matches : window.innerWidth <= 900;
     }
 
     function lockScroll() {
@@ -442,26 +443,18 @@
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       return;
     }
+    if (window.matchMedia && window.matchMedia('(pointer: coarse) and (max-width: 900px)').matches) {
+      return;
+    }
 
     var selector = [
       '.ds-module',
-      '.profile-photo-block',
-      '.contact-box',
       '.event-card',
-      '.photo-thumb-item',
       '.person-row',
-      '.comment-entry',
-      '.friend-grid-item',
-      '.profile-plan-card',
-      '.profile-recent-photo',
-      '.voyage-strip-stop',
       '.admin-action-card',
-      '.admin-bridge-flag',
-      '.admin-stat-card',
       '.photo-board-stat',
       '.photo-board-spotlight',
       '.home-spotlight-card',
-      '.home-ship-desk-card',
       '.voyage-command-stat'
     ].join(',');
 

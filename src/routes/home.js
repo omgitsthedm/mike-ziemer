@@ -14,6 +14,7 @@ import { resolveSession } from '../lib/auth.js';
 import { layout, layoutCtx, esc, fmtDate, relTime } from '../templates/layout.js';
 import { module, eventCard, photoThumb, absUrl, pixelAvatarImg, isLegacyAvatarUrl } from '../templates/components.js';
 import { ic } from '../templates/icons.js';
+import { eventPosterDataUri } from '../lib/demo-art.js';
 
 const home = new Hono();
 
@@ -351,7 +352,7 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
     ? recentPeople.slice(0, 6).map(p => {
         const thumbUrl = absUrl(cdnBase, p.profiles?.avatar_thumb_url);
         const img = thumbUrl && !isLegacyAvatarUrl(thumbUrl)
-          ? `<img src="${esc(thumbUrl)}" width="44" height="44" alt="${esc(p.display_name)}" loading="lazy">`
+          ? `<img src="${esc(thumbUrl)}" width="44" height="44" alt="${esc(p.display_name)}" loading="lazy" decoding="async">`
           : pixelAvatarImg(p.display_name || '?', p.username || p.display_name || '', 44, 'home-member-pixel-avatar');
         return `<div class="home-member-item">
   <a href="/profile/${esc(p.username)}" aria-label="View ${esc(p.display_name || 'this passenger')}'s profile">${img}</a>
@@ -390,7 +391,7 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
         const thumb = absUrl(cdnBase, u.profiles?.avatar_thumb_url);
         return `<a href="/profile/${esc(u.username)}" title="${esc(u.display_name)}" aria-label="View ${esc(u.display_name || 'this passenger')}'s profile">
           ${thumb && !isLegacyAvatarUrl(thumb)
-            ? `<img src="${esc(thumb)}" width="28" height="28" alt="${esc(u.display_name)}" loading="lazy">`
+            ? `<img src="${esc(thumb)}" width="28" height="28" alt="${esc(u.display_name)}" loading="lazy" decoding="async">`
             : pixelAvatarImg(u.display_name || '?', u.username || u.display_name || '', 28, 'online-face-pixel-avatar')}
         </a>`;
       }).join('')}</div>
@@ -455,13 +456,20 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [],
     <div class="ds-module-body">
       <div class="landing-events-list landing-events-list-rich">
         ${eventsToShow.map((e, index) => {
-          const imageUrl = e.image || `https://picsum.photos/seed/${encodeURIComponent(`landing-event-${index + 1}`)}/220/160`;
+          const imageUrl = e.image || eventPosterDataUri({
+            title: e.title,
+            category: e.category,
+            kicker: e.event_type === 'official' ? 'Official Event' : 'Passenger Plan',
+            width: 220,
+            height: 160,
+            seed: `landing-event-${index + 1}`,
+          });
           const attendance = typeof e.rsvp === 'number'
             ? `${e.rsvp} going`
             : 'See who is going';
           return `<a href="/register" class="landing-event-card">
             <div class="landing-event-art">
-              <img src="${esc(imageUrl)}" alt="" width="110" height="78" loading="lazy">
+              <img src="${esc(imageUrl)}" alt="" width="110" height="78" loading="lazy" decoding="async">
             </div>
             <div class="landing-event-copy">
               <span class="landing-event-time">${esc(e.time)}</span>
@@ -508,7 +516,7 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [],
         const thumbUrl = absUrl(cdnBase, p.profiles?.avatar_thumb_url);
         const label = duplicateCounts[p.display_name] > 1 ? `${p.display_name} (@${p.username})` : p.display_name;
         const img = thumbUrl && !isLegacyAvatarUrl(thumbUrl)
-          ? `<img src="${esc(thumbUrl)}" width="60" height="60" alt="${esc(label)}" loading="lazy">`
+          ? `<img src="${esc(thumbUrl)}" width="60" height="60" alt="${esc(label)}" loading="lazy" decoding="async">`
           : pixelAvatarImg(label || '?', p.username || label || '', 60, 'landing-person-pixel-avatar');
         return `<div class="landing-person-item">
   <a href="/profile/${esc(p.username)}" aria-label="View ${esc(label || 'this passenger')}'s profile">${img}</a>
@@ -592,7 +600,7 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [],
 
   <section class="landing-boarding-panel">
     <div class="landing-logo-wrap">
-      <img src="/images/deckspace-logo.png" alt="DeckSpace" class="landing-brand-logo" width="120" height="120">
+      <img src="/images/deckspace-logo.png" alt="DeckSpace" class="landing-brand-logo" width="120" height="120" decoding="async">
       <div class="landing-logo-sub">your cruise, your crew, your page</div>
     </div>
     <p class="landing-boarding-copy">

@@ -17,7 +17,7 @@ import { processPhotoUpload, cdnUrl, pickUploadedFile } from '../lib/media.js';
 import { layout, layoutCtx, esc, relTime, fmtDate, csrfField } from '../templates/layout.js';
 import { ic } from '../templates/icons.js';
 import {
-  module, profilePhotoBlock, contactBox, detailsTable, songModule, vibeTagsModule, friendSpaceModule, wallModule, paginator
+  module, profilePhotoBlock, contactBox, detailsTable, songModule, vibeTagsModule, friendSpaceModule, wallModule, paginator, absUrl
 } from '../templates/components.js';
 
 const profile = new Hono();
@@ -363,13 +363,13 @@ function profilePage({ target, profile, viewer, topFriends, friendCount, friendS
 
   const photos = module({
     header: `${ic.camera(12)} Recent Photos`,
-    body: recentPhotos.length
+        body: recentPhotos.length
       ? `<div class="profile-recent-photos">${recentPhotos.map((photo) => {
           const thumb = photo.thumb_key || photo.medium_key || '';
           if (!thumb) return '';
-          const src = thumb.startsWith('http') ? thumb : `${cdnBase}/${thumb}`;
+          const src = absUrl(cdnBase, thumb);
           const alt = photo.caption ? esc(photo.caption) : 'Recent photo';
-          return `<a href="/photos/${esc(photo.id)}" class="profile-recent-photo"><img src="${esc(src)}" alt="${alt}" width="92" height="92" loading="lazy"></a>`;
+          return `<a href="/photos/${esc(photo.id)}" class="profile-recent-photo"><img src="${esc(src)}" alt="${alt}" width="92" height="92" loading="lazy" decoding="async"></a>`;
         }).join('')}</div>`
       : `<div class="ds-empty-state">${isOwn ? 'Upload a few photos to fill out this page.' : 'No photos on this page yet.'}</div>`
   });

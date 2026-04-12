@@ -16,7 +16,7 @@ import { requireAuth, resolveSession, isSailingReadOnly } from '../lib/auth.js';
 import { processPhotoUpload, cdnUrl, pickUploadedFile } from '../lib/media.js';
 import { layout, layoutCtx, esc, relTime, fmtDate, csrfField } from '../templates/layout.js';
 import { ic } from '../templates/icons.js';
-import { module, photoThumb, commentEntry, paginator } from '../templates/components.js';
+import { module, photoThumb, commentEntry, paginator, absUrl } from '../templates/components.js';
 
 const photos = new Hono();
 const PHOTO_VIEWS = ['all', 'events', 'captions'];
@@ -281,12 +281,12 @@ photos.get('/photos/:id', async (c) => {
 
   const mediumKey = photo.medium_key || photo.storage_key;
   const mediumUrl = mediumKey
-    ? (mediumKey.startsWith('http') ? mediumKey : `${cdnBase}/${mediumKey}`)
+    ? absUrl(cdnBase, mediumKey)
     : null;
 
   const avatarKey = photo.users?.profiles?.avatar_thumb_url;
   const uploaderThumbUrl = avatarKey
-    ? (avatarKey.startsWith('http') ? avatarKey : `${cdnBase}/${avatarKey}`)
+    ? absUrl(cdnBase, avatarKey)
     : null;
 
   const csrf = c.get('csrfToken') || '';
@@ -335,7 +335,7 @@ photos.get('/photos/:id', async (c) => {
   <div class="photo-view-shell">
     <div class="photo-view-img">
       ${mediumUrl
-        ? `<img src="${esc(mediumUrl)}" alt="${esc(photo.caption || `Photo uploaded by ${photo.users?.display_name || 'a passenger'}`)}" width="800" height="600">`
+        ? `<img src="${esc(mediumUrl)}" alt="${esc(photo.caption || `Photo uploaded by ${photo.users?.display_name || 'a passenger'}`)}" width="800" height="600" decoding="async">`
         : `<div class="ds-empty-state photo-view-unavailable">This image is not available right now.</div>`}
     </div>
     <div class="photo-view-side">
@@ -514,7 +514,7 @@ function photoViewDescription(view, userFilter) {
 function photoCardImageUrl(photo, cdnBase) {
   const key = photo.thumb_key || photo.storage_key;
   if (!key) return null;
-  return key.startsWith('http') ? key : `${cdnBase}/${key}`;
+  return absUrl(cdnBase, key);
 }
 
 function photoBoardCard({ photo, cdnBase, eager = false }) {
@@ -522,7 +522,7 @@ function photoBoardCard({ photo, cdnBase, eager = false }) {
   if (!url) return '';
   return `<article class="photo-board-card">
   <a href="/photos/${esc(photo.id)}" class="photo-board-media">
-    <img src="${esc(url)}" alt="${esc(photo.caption || `Photo shared by ${photo.users?.display_name || 'a passenger'}`)}" width="320" height="320" loading="${eager ? 'eager' : 'lazy'}">
+    <img src="${esc(url)}" alt="${esc(photo.caption || `Photo shared by ${photo.users?.display_name || 'a passenger'}`)}" width="320" height="320" loading="${eager ? 'eager' : 'lazy'}" decoding="async">
   </a>
   <div class="photo-board-meta">
     <div class="photo-board-tags">
@@ -540,7 +540,7 @@ function photoSpotlightCard({ photo, cdnBase }) {
   if (!url) return '';
   return `<article class="photo-spotlight-card">
   <a href="/photos/${esc(photo.id)}" class="photo-spotlight-image">
-    <img src="${esc(url)}" alt="${esc(photo.caption || `Photo shared by ${photo.users?.display_name || 'a passenger'}`)}" width="480" height="320" loading="lazy">
+    <img src="${esc(url)}" alt="${esc(photo.caption || `Photo shared by ${photo.users?.display_name || 'a passenger'}`)}" width="480" height="320" loading="lazy" decoding="async">
   </a>
   <div class="photo-spotlight-copy">
     <div class="photo-spotlight-tag">${photo.events ? 'Linked to event' : 'Recent upload'}</div>

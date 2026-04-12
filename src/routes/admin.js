@@ -19,6 +19,7 @@ import { getDb, getReports, getSailing, q, logAudit } from '../lib/db.js';
 import { requireAuth, requireAdmin, hashPassword } from '../lib/auth.js';
 import { layout, layoutCtx, esc, relTime, fmtDate, csrfField } from '../templates/layout.js';
 import { module, paginator } from '../templates/components.js';
+import { eventPosterDataUri, memoryPhotoDataUri } from '../lib/demo-art.js';
 
 const admin = new Hono();
 
@@ -661,7 +662,14 @@ const DEMO_PROMO_IMAGES = [
 function demoEventImage(seed, index = 0) {
   if (index === 0) return DEMO_PROMO_IMAGES[0];
   if (index === 1) return DEMO_PROMO_IMAGES[1];
-  return `https://picsum.photos/seed/${encodeURIComponent(`shattered-shores-event-${seed}`)}/1200/760`;
+  return eventPosterDataUri({
+    title: String(seed || 'Shattered Shores').replace(/[-_]+/g, ' '),
+    category: 'theme',
+    kicker: 'Shattered Shores',
+    width: 1200,
+    height: 760,
+    seed: `shattered-shores-event-${seed}`,
+  });
 }
 
 function demoSeedKey(sailingId) {
@@ -976,9 +984,9 @@ function buildPhotoRows(passengers, userMap, sailingId, eventRows) {
       user_id: userMap[passenger.username],
       sailing_id: sailingId,
       event_id: i % 2 === 0 ? event?.id || null : null,
-      storage_key: `https://picsum.photos/seed/${seed}/1200/900`,
-      thumb_key: `https://picsum.photos/seed/${seed}/400/400`,
-      medium_key: `https://picsum.photos/seed/${seed}/900/700`,
+      storage_key: memoryPhotoDataUri({ caption: `${passenger.display_name} on DeckSpace`, seed: `${seed}-full`, width: 1200, height: 900 }),
+      thumb_key: memoryPhotoDataUri({ caption: `${passenger.display_name}`, seed: `${seed}-thumb`, width: 400, height: 400 }),
+      medium_key: memoryPhotoDataUri({ caption: `${passenger.display_name} memory`, seed: `${seed}-medium`, width: 900, height: 700 }),
       width: 1200,
       height: 900,
       file_size_bytes: 450000 + i * 2300,

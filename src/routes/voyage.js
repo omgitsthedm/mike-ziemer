@@ -10,6 +10,7 @@ import { resolveSession } from '../lib/auth.js';
 import { layout, layoutCtx, esc, fmtDate } from '../templates/layout.js';
 import { module } from '../templates/components.js';
 import { ic } from '../templates/icons.js';
+import { voyageSceneDataUri } from '../lib/demo-art.js';
 
 const voyage = new Hono();
 
@@ -34,8 +35,14 @@ function voyageMoodLabel(day) {
 }
 
 function voyageImage(day, index) {
-  const seed = encodeURIComponent(`${day.port_name || day.day_type || 'voyage'}-${day.day_date || index}`);
-  return `https://picsum.photos/seed/${seed}/720/480`;
+  return voyageSceneDataUri({
+    portName: day.port_name || 'At Sea',
+    dayType: day.day_type || 'sea',
+    note: day.notes || '',
+    width: 720,
+    height: 480,
+    seed: `${day.port_name || day.day_type || 'voyage'}-${day.day_date || index}`,
+  });
 }
 
 voyage.get('/voyage', async (c) => {
@@ -76,7 +83,7 @@ voyage.get('/voyage', async (c) => {
   <div class="voyage-day-body">
     <div class="voyage-day-layout">
       <div class="voyage-day-visual">
-        <img src="${esc(scenicImage)}" alt="Scenic image for ${esc(day.port_name)}" width="240" height="160" loading="lazy">
+        <img src="${esc(scenicImage)}" alt="Scenic image for ${esc(day.port_name)}" width="240" height="160" loading="lazy" decoding="async">
         <span class="voyage-day-mood">${esc(moodLabel)}</span>
       </div>
       <div class="voyage-day-details">
@@ -110,7 +117,7 @@ voyage.get('/voyage', async (c) => {
     ? `<section class="voyage-postcards">
         ${voyagePostcardDays.map((day, index) => `<a href="#voyage-${day.day_date}" class="voyage-postcard${day.day_date === today ? ' active' : ''}">
           <div class="voyage-postcard-image">
-            <img src="${esc(voyageImage(day, index))}" alt="Postcard view for ${esc(day.port_name)}" width="240" height="160" loading="lazy">
+            <img src="${esc(voyageImage(day, index))}" alt="Postcard view for ${esc(day.port_name)}" width="240" height="160" loading="lazy" decoding="async">
           </div>
           <div class="voyage-postcard-copy">
             <span class="voyage-postcard-label">${esc(DAY_TYPE_LABEL[day.day_type] || day.day_type)}</span>

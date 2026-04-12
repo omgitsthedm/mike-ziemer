@@ -55,6 +55,8 @@
   --dur-enter: 420ms;
   --shadow-press: inset 0 1px 0 rgba(255,255,255,0.15);
   --shadow-lift: 0 6px 14px rgba(17, 68, 170, 0.14);
+  --touch-target: 44px;
+  --page-gutter: clamp(8px, 2.2vw, 16px);
 }
 
 html {
@@ -71,6 +73,8 @@ body {
   background: var(--ds-bg);
   min-height: 100vh;
   overscroll-behavior-y: contain;
+  overflow-x: hidden;
+  text-rendering: optimizeLegibility;
 }
 body.nav-open {
   overflow: hidden;
@@ -125,6 +129,29 @@ img {
   height: auto;
 }
 
+input,
+textarea,
+select,
+button {
+  font: inherit;
+}
+
+.ds-module-body,
+.person-meta,
+.event-meta,
+.ss-event-description,
+.landing-hero-copy,
+.voyage-day-notes,
+.home-command-sub,
+.photo-board-card-byline,
+.notif-body,
+.comment-text,
+.activity-body,
+.landing-event-title,
+.landing-event-loc {
+  overflow-wrap: anywhere;
+}
+
 ul {
   list-style: none;
 }
@@ -150,6 +177,21 @@ input[type="button"] {
 [data-motion].is-visible {
   opacity: 1;
   transform: none;
+}
+
+@supports (content-visibility: auto) {
+  .ss-day-module,
+  .voyage-day,
+  .photo-board-card,
+  .person-row,
+  .notif-item,
+  .activity-item,
+  .landing-event-card,
+  .comment-entry,
+  .friend-grid-item {
+    content-visibility: auto;
+    contain-intrinsic-size: 0 180px;
+  }
 }
 
 /* ============================================================
@@ -320,7 +362,7 @@ input[type="button"] {
 #ds-page {
   max-width: 960px;
   margin: 0 auto;
-  padding: 5px 4px;
+  padding: 8px var(--page-gutter) 12px;
 }
 
 /* Full-width override */
@@ -336,7 +378,7 @@ input[type="button"] {
 .ds-footer-inner {
   max-width: 960px;
   margin: 0 auto;
-  padding: 10px 8px 14px;
+  padding: 12px var(--page-gutter) 16px;
   display: flex;
   gap: 18px;
   justify-content: space-between;
@@ -2598,7 +2640,7 @@ input[type="button"] {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 5px 6px;
+  padding: 8px 8px;
   border-bottom: 1px solid #eeeeee;
   transition:
     transform var(--dur-instant) var(--ease-out-quart),
@@ -2662,7 +2704,7 @@ input[type="button"] {
   padding: 0;
 }
 .notif-item {
-  padding: 5px 8px;
+  padding: 8px 10px;
   border-bottom: 1px solid #eeeeee;
   font-size: 11px;
   display: flex;
@@ -3132,7 +3174,7 @@ a.ds-btn-orange:hover {
 .activity-item {
   display: flex;
   gap: 6px;
-  padding: 5px 6px;
+  padding: 8px 8px;
   border-bottom: 1px solid #eeeeee;
   font-size: 11px;
   align-items: flex-start;
@@ -3933,6 +3975,141 @@ a.ds-btn-orange:hover {
 }
 
 /* ============================================================
+   RESPONSIVE — Tablet shell and nav
+   Give tablets the compact nav and stack the heaviest dual-column
+   layouts earlier so the interface stays readable before phone size.
+   ============================================================ */
+@media (max-width: 900px) {
+  #ds-nav-inner {
+    padding-left: max(var(--page-gutter), env(safe-area-inset-left));
+    padding-right: max(var(--page-gutter), env(safe-area-inset-right));
+    flex-wrap: nowrap;
+    position: relative;
+  }
+  #nav-toggle {
+    display: block;
+  }
+  #ds-nav-links {
+    display: flex;
+    position: absolute;
+    top: calc(100% + 2px);
+    left: max(var(--page-gutter), env(safe-area-inset-left));
+    right: max(var(--page-gutter), env(safe-area-inset-right));
+    max-height: min(70vh, calc(100vh - 60px - env(safe-area-inset-bottom)));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    background: rgba(17, 68, 170, 0.98);
+    border: 1px solid rgba(6, 26, 75, 0.52);
+    border-radius: 10px;
+    z-index: 99;
+    flex-direction: column;
+    gap: 0;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translate3d(0, -10px, 0);
+    transform-origin: top center;
+    transition:
+      opacity var(--dur-fast) var(--ease-out-quart),
+      transform var(--dur-fast) var(--ease-out-expo),
+      visibility 0s linear var(--dur-fast);
+    box-shadow: 0 16px 32px rgba(0, 18, 70, 0.32);
+    padding: 6px 0 max(6px, env(safe-area-inset-bottom));
+  }
+  #ds-nav-links.open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: none;
+    transition-delay: 0s;
+  }
+  #ds-nav-links a,
+  .nav-mobile-button {
+    min-height: 50px;
+    padding: 12px 14px;
+    font-size: 12px;
+  }
+  #ds-nav-right {
+    display: none;
+  }
+  #ds-logo {
+    min-width: 0;
+    flex: 1;
+  }
+  .home-grid,
+  .landing-wrap,
+  .home-command-deck,
+  .photo-board-shell,
+  .voyage-command,
+  .admin-bridge,
+  .photo-view-shell {
+    grid-template-columns: 1fr;
+  }
+  .landing-support-grid,
+  .landing-howto,
+  .home-spotlight-strip,
+  .photo-board-spotlights,
+  .admin-action-deck,
+  .voyage-postcards {
+    grid-template-columns: 1fr;
+  }
+  .landing-side-stack {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .home-command-stats,
+  .voyage-command-stats,
+  .photo-board-stats,
+  .admin-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .ss-day-jumps-inline,
+  .voyage-strip {
+    flex-wrap: nowrap;
+  }
+}
+
+@media (pointer: coarse) {
+  .ds-btn,
+  .ds-btn-sm,
+  .contact-btn,
+  .reaction-btn,
+  .nav-link-subtle,
+  .nav-link-admin,
+  .nav-link-signin,
+  .ss-view-pill,
+  .event-cat-pill,
+  .photo-board-pill,
+  .ds-tab,
+  .ss-day-jump-pill,
+  .voyage-strip-stop,
+  .landing-hero-actions a,
+  .landing-login-btn,
+  .landing-signup-btn {
+    min-height: var(--touch-target);
+  }
+  .ds-input,
+  .ds-textarea,
+  .ds-select {
+    min-height: var(--touch-target);
+    font-size: 16px;
+    padding: 10px 12px;
+  }
+  .person-row,
+  .notif-item,
+  .activity-item {
+    min-height: 60px;
+  }
+  .ss-event-link,
+  .home-command-links a,
+  .home-ship-links a {
+    min-height: 40px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+}
+
+/* ============================================================
    PROFILE THEMES (class on .profile-wrap parent)
    ============================================================ */
 .theme-ocean .ds-module-header          { background: linear-gradient(to bottom, #1188aa 0%, #006688 100%); }
@@ -3960,15 +4137,15 @@ a.ds-btn-orange:hover {
     display: flex;
     position: absolute;
     top: 100%;
-    left: 0;
-    right: 0;
+    left: max(var(--page-gutter), env(safe-area-inset-left));
+    right: max(var(--page-gutter), env(safe-area-inset-right));
     max-height: calc(100vh - 54px - env(safe-area-inset-bottom));
     overflow-y: auto;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
     background: rgba(17, 68, 170, 0.97);
-    border-top: 1px solid #001166;
-    border-bottom: 2px solid #001166;
+    border: 1px solid rgba(6, 26, 75, 0.52);
+    border-radius: 10px;
     z-index: 99;
     flex-direction: column;
     gap: 0;
@@ -3983,11 +4160,6 @@ a.ds-btn-orange:hover {
       visibility 0s linear var(--dur-fast);
     box-shadow: 0 14px 24px rgba(0, 18, 70, 0.28);
     padding-bottom: max(4px, env(safe-area-inset-bottom));
-  }
-  @supports (backdrop-filter: blur(12px)) {
-    #ds-nav-links {
-      backdrop-filter: blur(12px) saturate(1.08);
-    }
   }
   #ds-nav-links.open {
     opacity: 1;
@@ -4269,8 +4441,8 @@ a.ds-btn-orange:hover {
     grid-template-columns: 1fr;
   }
   #ds-nav-links a {
-    font-size: 9px;
-    padding: 5px 4px;
+    font-size: 11px;
+    padding: 10px 12px;
   }
 }
 
@@ -4378,8 +4550,8 @@ a.ds-btn-orange:hover {
   margin-left: auto;
   border-radius: 2px;
   line-height: 1;
-  min-width: 38px;
-  min-height: 38px;
+  min-width: 40px;
+  min-height: 40px;
   transition:
     background var(--dur-fast) var(--ease-out-quart),
     color var(--dur-fast) var(--ease-out-quart),
@@ -4770,7 +4942,7 @@ a.ds-btn-orange:hover {
   align-items: center;
   gap: 3px;
   border-radius: 2px;
-  min-height: 22px;
+  min-height: 28px;
   transition:
     transform var(--dur-instant) var(--ease-out-quart),
     background var(--dur-fast) var(--ease-out-quart),

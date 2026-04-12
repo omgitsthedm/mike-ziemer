@@ -221,7 +221,7 @@ function renderNav(user, activeNav, notifCount, csrfToken = '') {
   return `<nav id="ds-nav" role="navigation" aria-label="Main navigation">
   <div id="ds-nav-inner">
     <a href="/" id="ds-logo" aria-label="DeckSpace home">
-      <img src="/images/deckspace-mark.png" alt="" class="ds-brand-wordmark" width="28" height="28">
+      <img src="/images/deckspace-mark.png" alt="" class="ds-brand-wordmark" width="28" height="28" decoding="async">
       <span class="ds-brand-lockup">
         <span class="ds-brand-name">DeckSpace</span>
         <span class="ds-brand-tag">Cruise Social</span>
@@ -502,7 +502,7 @@ function renderFooter() {
     <div class="ds-footer-brand">
       <div class="ds-footer-brand-row">
         <a href="/" class="ds-footer-logo-link" aria-label="DeckSpace home">
-          <img src="/images/deckspace-mark.png" alt="" class="ds-footer-logo" width="24" height="24">
+          <img src="/images/deckspace-mark.png" alt="" class="ds-footer-logo" width="24" height="24" decoding="async">
         </a>
         <div class="ds-footer-copy">
           <strong class="ds-footer-title">DeckSpace</strong>

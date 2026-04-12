@@ -8,6 +8,7 @@
 
 import { esc, relTime, fmtDate, csrfField } from './layout.js';
 import { ic } from './icons.js';
+import { eventPosterDataUri } from '../lib/demo-art.js';
 
 /* ============================================================
    MODULE WRAPPER
@@ -15,7 +16,9 @@ import { ic } from './icons.js';
    ============================================================ */
 export function absUrl(cdnBase, key) {
   if (!key) return null;
-  return key.startsWith('http') ? key : `${cdnBase || ''}/${key}`;
+  return /^(https?:)?\/\//.test(key) || key.startsWith('data:')
+    ? key
+    : `${cdnBase || ''}/${key}`;
 }
 
 export function isLegacyAvatarUrl(url = '') {
@@ -147,7 +150,7 @@ function pixelAvatarDataUri(displayName = '', seedHint = '') {
 
 export function pixelAvatarImg(displayName, seedHint = '', size = 40, className = '') {
   const src = pixelAvatarDataUri(displayName, seedHint);
-  return `<img src="${src}" alt="" aria-hidden="true" width="${size}" height="${size}" loading="${size >= 120 ? 'eager' : 'lazy'}" class="pixel-avatar${className ? ' ' + className : ''}">`;
+  return `<img src="${src}" alt="" aria-hidden="true" width="${size}" height="${size}" loading="${size >= 120 ? 'eager' : 'lazy'}" decoding="async" class="pixel-avatar${className ? ' ' + className : ''}">`;
 }
 
 export function module({ header, headerRight = '', body, headerStyle = '', id = '' }) {
@@ -166,7 +169,7 @@ export function module({ header, headerRight = '', body, headerStyle = '', id = 
 export function avatar(url, displayName, size = 'thumb', extra = '') {
   const dim = size === 'thumb' ? 40 : (size === 'large' ? 160 : 60);
   if (url && !isLegacyAvatarUrl(url)) {
-    return `<img src="${esc(url)}" srcset="${densitySrcset(url)}" alt="${esc(displayName)}" width="${dim}" height="${dim}" loading="${size === 'large' ? 'eager' : 'lazy'}"${extra ? ' ' + extra : ''}>`;
+    return `<img src="${esc(url)}" srcset="${densitySrcset(url)}" alt="${esc(displayName)}" width="${dim}" height="${dim}" loading="${size === 'large' ? 'eager' : 'lazy'}" decoding="async"${extra ? ' ' + extra : ''}>`;
   }
   return pixelAvatarImg(displayName, displayName, dim, size === 'large' ? 'pixel-avatar-large' : '');
 }
@@ -177,7 +180,7 @@ export function avatar(url, displayName, size = 'thumb', extra = '') {
 export function profilePhotoBlock({ user, profile, isOwn, isOnline, cdnBase }) {
   const avatarUrl = profile?.avatar_url ? absUrl(cdnBase, profile.avatar_url) : null;
   const img = avatarUrl && !isLegacyAvatarUrl(avatarUrl)
-    ? `<img class="avatar" src="${esc(avatarUrl)}" srcset="${densitySrcset(avatarUrl)}" alt="Profile photo of ${esc(user.display_name)}" width="160" height="160">`
+    ? `<img class="avatar" src="${esc(avatarUrl)}" srcset="${densitySrcset(avatarUrl)}" alt="Profile photo of ${esc(user.display_name)}" width="160" height="160" decoding="async">`
     : pixelAvatarImg(user.display_name, user.username, 160, 'avatar');
 
   const onlineHtml = isOnline
@@ -313,7 +316,7 @@ export function friendSpaceModule({ topFriends, friendCount, cdnBase }) {
       ? absUrl(cdnBase, friend.profiles.avatar_thumb_url)
       : null;
     const imgHtml = thumbUrl && !isLegacyAvatarUrl(thumbUrl)
-      ? `<img src="${esc(thumbUrl)}" srcset="${densitySrcset(thumbUrl)}" alt="${esc(friend.display_name)}" width="60" height="60" loading="lazy">`
+      ? `<img src="${esc(thumbUrl)}" srcset="${densitySrcset(thumbUrl)}" alt="${esc(friend.display_name)}" width="60" height="60" loading="lazy" decoding="async">`
       : pixelAvatarImg(friend?.display_name || '?', friend?.username || friend?.display_name || '', 60, 'friend-pixel-avatar');
     return `<div class="friend-grid-item">
   <a href="/profile/${esc(friend?.username || '')}" aria-label="View ${esc(friend?.display_name || 'this passenger')}'s profile">${imgHtml}</a>
@@ -384,7 +387,7 @@ export function commentEntry({ authorUser, body, time, id, viewerUser, deleteAct
     ? absUrl(cdnBase, authorUser.profiles.avatar_thumb_url)
     : null;
   const imgHtml = thumbUrl && !isLegacyAvatarUrl(thumbUrl)
-    ? `<img src="${esc(thumbUrl)}" srcset="${densitySrcset(thumbUrl)}" alt="${esc(authorUser?.display_name || '')}" width="40" height="40" loading="lazy">`
+    ? `<img src="${esc(thumbUrl)}" srcset="${densitySrcset(thumbUrl)}" alt="${esc(authorUser?.display_name || '')}" width="40" height="40" loading="lazy" decoding="async">`
     : pixelAvatarImg(authorUser?.display_name || '?', authorUser?.username || authorUser?.display_name || '', 40, 'comment-pixel-avatar');
 
   const deleteHtml = canDelete
@@ -426,11 +429,10 @@ function timeOfDayIcon(dateStr) {
 }
 
 export function eventCard({ event, cdnBase }) {
-  const imageSeed = encodeURIComponent(`${event.id || event.title || 'deckspace-event'}-${event.category || 'other'}`);
   const imageUrl = event.cover_image_url
     ? absUrl(cdnBase, event.cover_image_url)
-    : `https://picsum.photos/seed/${imageSeed}/160/160`;
-  const thumbHtml = `<img src="${esc(imageUrl)}" alt="Poster-style image for ${esc(event.title)}" width="50" height="50" loading="lazy">`;
+    : eventPosterDataUri({ title: event.title, category: event.category, kicker: event.event_type === 'official' ? 'Official Event' : 'Passenger Plan', width: 160, height: 160, seed: event.id || event.title });
+  const thumbHtml = `<img src="${esc(imageUrl)}" alt="Poster-style image for ${esc(event.title)}" width="50" height="50" loading="lazy" decoding="async">`;
 
   const typeBadge = event.event_type === 'official'
     ? `<span class="event-official-badge">Official</span>`
@@ -474,14 +476,12 @@ function categoryIcon(cat) {
    ============================================================ */
 export function photoThumb({ photo, cdnBase, eager = false }) {
   const key = photo.thumb_key || photo.storage_key;
-  const url = key
-    ? (key.startsWith('http') ? key : absUrl(cdnBase, key))
-    : null;
+  const url = key ? absUrl(cdnBase, key) : null;
 
   if (!url) return '';
   return `<div class="photo-thumb-item">
   <a href="/photos/${esc(photo.id)}">
-    <img src="${esc(url)}" alt="${esc(photo.caption || `Photo shared on Deckspace`)}" width="300" height="200" loading="${eager ? 'eager' : 'lazy'}">
+    <img src="${esc(url)}" alt="${esc(photo.caption || `Photo shared on DeckSpace`)}" width="300" height="200" loading="${eager ? 'eager' : 'lazy'}" decoding="async">
     ${photo.caption ? `<div class="photo-caption-overlay">${esc(photo.caption.slice(0, 40))}</div>` : ''}
   </a>
 </div>`;
@@ -495,7 +495,7 @@ export function personRow({ user, profile, viewerUser, friendStatus, cdnBase, cs
     ? absUrl(cdnBase, profile.avatar_thumb_url)
     : null;
   const imgHtml = thumbUrl && !isLegacyAvatarUrl(thumbUrl)
-    ? `<img class="person-thumb" src="${esc(thumbUrl)}" srcset="${densitySrcset(thumbUrl)}" alt="${esc(user.display_name)}" width="44" height="44" loading="lazy">`
+    ? `<img class="person-thumb" src="${esc(thumbUrl)}" srcset="${densitySrcset(thumbUrl)}" alt="${esc(user.display_name)}" width="44" height="44" loading="lazy" decoding="async">`
     : pixelAvatarImg(user.display_name || '?', user.username || user.display_name || '', 44, 'person-pixel-avatar');
   const label = displayLabel || user.display_name;
 
