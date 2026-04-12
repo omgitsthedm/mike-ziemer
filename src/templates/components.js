@@ -426,9 +426,11 @@ function timeOfDayIcon(dateStr) {
 }
 
 export function eventCard({ event, cdnBase }) {
-  const thumbHtml = event.cover_image_url
-    ? `<img src="${esc(absUrl(cdnBase, event.cover_image_url))}" alt="Cover image for ${esc(event.title)}" width="50" height="50" loading="lazy">`
-    : `<div class="event-cat-icon-block">${categoryIcon(event.category)}</div>`;
+  const imageSeed = encodeURIComponent(`${event.id || event.title || 'deckspace-event'}-${event.category || 'other'}`);
+  const imageUrl = event.cover_image_url
+    ? absUrl(cdnBase, event.cover_image_url)
+    : `https://picsum.photos/seed/${imageSeed}/160/160`;
+  const thumbHtml = `<img src="${esc(imageUrl)}" alt="Poster-style image for ${esc(event.title)}" width="50" height="50" loading="lazy">`;
 
   const typeBadge = event.event_type === 'official'
     ? `<span class="event-official-badge">Official</span>`

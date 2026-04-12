@@ -282,7 +282,7 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
     : `<div class="ds-empty-state">Tonight is still open. <a href="/events/create">Post a plan.</a></div>`;
 
   const tonightModule = module({
-    header: `${ic.calendar(12)} Tonight's Pull`,
+    header: `${ic.calendar(12)} Tonight's Events`,
     headerRight: `<a href="/events">All Events</a>`,
     body: `<div class="event-list">${tonightHtml}</div>`
   });
