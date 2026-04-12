@@ -648,27 +648,468 @@ admin.post('/admin/weather/clear', async (c) => {
 });
 
 /* ============================================================
-   DEMO SETUP — one-click KV seed for presentations
-   Seeds weather + ship bulletin with Shattered Shores defaults.
-   Safe to re-run; does not touch the database.
+   DEMO SETUP — reversible Shattered Shores client demo
    ============================================================ */
+const DEMO_CREW_USERNAME = 'shattered_shores_crew';
+const DEMO_PASSWORD = 'demo1234';
+const DEMO_META_VERSION = 'shattered-shores-2027-v2';
+const DEMO_PROMO_IMAGES = [
+  'https://www.edmtunes.com/wp-content/uploads/2026/02/5111.png',
+  'https://booking.whettravel.com/Booking/Styles/WhetTravel/images/GC_EMO2.jpg',
+];
+
+function demoSeedKey(sailingId) {
+  return `sailing:${sailingId}:demo_meta`;
+}
+
+function demoBaseDate() {
+  const base = new Date();
+  base.setHours(0, 0, 0, 0);
+  return base;
+}
+
+function isoForDemo(base, dayOffset, hour, minute = 0) {
+  const d = new Date(base);
+  d.setDate(d.getDate() + dayOffset);
+  d.setHours(hour, minute, 0, 0);
+  return d.toISOString();
+}
+
+function dateForDemo(base, dayOffset) {
+  const d = new Date(base);
+  d.setDate(d.getDate() + dayOffset);
+  return d.toISOString().slice(0, 10);
+}
+
+function buildCoreDemoPassengers() {
+  return [
+    { username: 'sarah_k', display_name: 'Sarah K.', hometown: 'Miami, FL', vibe_tags: ['pool','dancing','music'], status_text: 'already on deck before noon', about_me: 'Miami local, heavy on pool time and late sets. Usually with an iced coffee and a running list of who is going where.', who_id_like_to_meet: 'People who want to go out and people who know where the quiet deck is after.', social_intent: 'Meet people, go to the big events, and keep the page active.', song_title: 'Ocean Avenue', song_artist: 'Yellowcard', theme_id: 'classic' },
+    { username: 'marco_v', display_name: 'Marco Villanueva', hometown: 'Austin, TX', vibe_tags: ['trivia','poker','nightlife'], status_text: 'building a trivia team by dinner', about_me: 'Austin guy, solid at trivia, better at meeting people once the first drink kicks in. I am here for the full week.', who_id_like_to_meet: 'Trivia people, poker people, and anybody who is still awake after midnight.', social_intent: 'Stay social and fill the board with plans.', song_title: 'The Middle', song_artist: 'Jimmy Eat World', theme_id: 'night' },
+    { username: 'jenna_b', display_name: 'Jenna Bridges', hometown: 'Nashville, TN', vibe_tags: ['karaoke','music','comedy'], status_text: 'yes, i signed up for karaoke already', about_me: 'Nashville songwriter on vacation. I will absolutely drag people to karaoke and I make no apologies for that.', who_id_like_to_meet: 'Karaoke volunteers, acoustic set people, and anyone with a song request.', social_intent: 'Make fast friends and keep the music side busy.', song_title: 'Hands Down', song_artist: 'Dashboard Confessional', theme_id: 'retro-pink' },
+    { username: 'derek_w', display_name: 'Derek Walsh', hometown: 'Chicago, IL', vibe_tags: ['gym','adventure','sea day'], status_text: 'already found the gym and the quiet coffee spot', about_me: 'Chicago guy. I like a packed itinerary during the day and a slower deck hang at night.', who_id_like_to_meet: 'Excursion people and anyone who wants to plan around the port stops.', social_intent: 'Keep moving and meet people along the way.', song_title: 'Sugar, We’re Goin Down', song_artist: 'Fall Out Boy', theme_id: 'ocean' },
+    { username: 'tasha_m', display_name: 'Tasha Monroe', hometown: 'Atlanta, GA', vibe_tags: ['dancing','nightlife','foodie'], status_text: 'already picked out tonight’s outfit', about_me: 'ATL energy. I like the big party stuff, the themed nights, and finding the best late food on the ship.', who_id_like_to_meet: 'Dance floor people, dinner plans people, and anyone with good timing.', social_intent: 'Keep the late-night side of the cruise moving.', song_title: 'Misery Business', song_artist: 'Paramore', theme_id: 'sunset' },
+    { username: 'kevin_r', display_name: 'Kevin Reyes', hometown: 'Los Angeles, CA', vibe_tags: ['photos','pool','music'], status_text: 'camera charged, finally', about_me: 'LA photographer on break. I will probably end up documenting half the trip whether I mean to or not.', who_id_like_to_meet: 'People who want photos, sunset deck people, and anyone with a good eye for details.', social_intent: 'Capture the trip and keep up with the board.', song_title: 'Only One', song_artist: 'Yellowcard', theme_id: 'classic' },
+    { username: 'amber_h', display_name: 'Amber Howell', hometown: 'Denver, CO', vibe_tags: ['excursion','adventure','sea day'], status_text: 'snorkeling sign-up complete', about_me: 'Colorado person who signed up for the active stuff first. I like port days, planning ahead, and being outside whenever possible.', who_id_like_to_meet: 'People doing shore days and anyone who wants a walk instead of another lounge.', social_intent: 'See the ports and keep the trip moving.', song_title: 'Check Yes Juliet', song_artist: 'We The Kings', theme_id: 'ocean' },
+    { username: 'carlos_p', display_name: 'Carlos Perez', hometown: 'Houston, TX', vibe_tags: ['poker','trivia','comedy'], status_text: 'currently accepting trivia ringers', about_me: 'Houston native. I like poker tables, comedy sets, and any conversation that turns into a group plan.', who_id_like_to_meet: 'Trivia teams, card-table regulars, and comedy-night people.', social_intent: 'Stay busy and keep the message board useful.', song_title: 'Cute Without the E', song_artist: 'Taking Back Sunday', theme_id: 'classic' },
+    { username: 'lisa_ng', display_name: 'Lisa Ng', hometown: 'San Francisco, CA', vibe_tags: ['foodie','music','chill'], status_text: 'keeping notes on the menus', about_me: 'SF foodie and music person. I like the slower corners of a cruise just as much as the louder ones.', who_id_like_to_meet: 'Dinner-table people, acoustic set people, and anyone who wants to compare notes.', social_intent: 'Take it all in without rushing.', song_title: 'Vindicated', song_artist: 'Dashboard Confessional', theme_id: 'sunset' },
+    { username: 'tyler_j', display_name: 'Tyler James', hometown: 'Dallas, TX', vibe_tags: ['karaoke','dancing','nightlife'], status_text: 'if there’s a mic, i’m there', about_me: 'Dallas born, very social once the night gets going. Karaoke, dance floor, repeat.', who_id_like_to_meet: 'Outgoing people, bar crowd regulars, and anyone who wants a loud night.', social_intent: 'Make the party side feel full.', song_title: 'I Write Sins Not Tragedies', song_artist: 'Panic! At The Disco', theme_id: 'retro-pink' },
+    { username: 'maya_s', display_name: 'Maya Singh', hometown: 'New York, NY', vibe_tags: ['chill','sea day','music'], status_text: 'reading by the rail for a bit', about_me: 'NYC lawyer taking an actual vacation. I like the quiet windows between the big events.', who_id_like_to_meet: 'People who like real conversations and a slower pace.', social_intent: 'Meet a few good people and skip the noise when needed.', song_title: 'The Quiet Things That No One Ever Knows', song_artist: 'Brand New', theme_id: 'night' },
+    { username: 'ben_f', display_name: 'Ben Forsyth', hometown: 'Boston, MA', vibe_tags: ['trivia','poker','comedy'], status_text: 'still confident about trivia', about_me: 'Boston guy. Quick to join a group plan, quicker to overestimate my trivia skills.', who_id_like_to_meet: 'Competitive people who still know how to keep it fun.', social_intent: 'Keep something on the schedule every day.', song_title: 'A Decade Under the Influence', song_artist: 'Taking Back Sunday', theme_id: 'classic' },
+    { username: 'rachel_t', display_name: 'Rachel Torres', hometown: 'Orlando, FL', vibe_tags: ['dancing','pool','excursion'], status_text: 'birthday week energy', about_me: 'On board for a birthday trip and fully committed to making the most of it.', who_id_like_to_meet: 'People who say yes to plans quickly and mean it.', social_intent: 'Keep the group plans lively.', song_title: 'Grand Theft Autumn', song_artist: 'Fall Out Boy', theme_id: 'retro-pink' },
+    { username: 'jake_m', display_name: 'Jake Miller', hometown: 'Seattle, WA', vibe_tags: ['adventure','excursion','sea day'], status_text: 'trying to do every port stop right', about_me: 'Pacific Northwest outdoors person. I like the deck, the port days, and a plan with a start time.', who_id_like_to_meet: 'People who want to explore and actually show up on time.', social_intent: 'Make the shore-day side easy to follow.', song_title: 'Swing, Swing', song_artist: 'The All-American Rejects', theme_id: 'ocean' },
+    { username: 'priya_v', display_name: 'Priya Varma', hometown: 'Phoenix, AZ', vibe_tags: ['foodie','music','chill'], status_text: 'already ranking the snack options', about_me: 'Phoenix foodie and amateur chef. I like comparing notes, finding the good stuff, and letting the week unfold.', who_id_like_to_meet: 'Good dinner company, low-pressure people, and music lovers.', social_intent: 'Keep things social without overdoing it.', song_title: 'Ocean Breathes Salty', song_artist: 'Modest Mouse', theme_id: 'sunset' },
+  ];
+}
+
+function buildGeneratedDemoPassengers(count = 50) {
+  const firstNames = ['Avery','Mason','Harper','Julian','Nina','Evan','Paige','Leo','Brooke','Adrian','Skylar','Logan','Naomi','Owen','Mila','Gavin','Chloe','Elias','Sophie','Miles','Ruby','Connor','Jade','Wes','Ariana'];
+  const lastNames = ['Mercer','Vale','Torres','Holloway','Bennett','Rowe','Sinclair','Ramirez','Dawson','Quinn','Parker','Wilder','Santos','Marlow','Ellis','Cruz','Monroe','Flynn','Reyes','Barlow','Griffin','Nolan','Hayes','Morales','Vega'];
+  const hometowns = ['Brooklyn, NY','Tempe, AZ','Tampa, FL','Austin, TX','Columbus, OH','San Diego, CA','Raleigh, NC','Detroit, MI','Newark, NJ','Richmond, VA','Louisville, KY','Madison, WI','Portland, ME','Long Beach, CA','Burlington, VT'];
+  const tagSets = [
+    ['music','late-night','deck'],
+    ['pool','photos','nightlife'],
+    ['karaoke','friends','drinks'],
+    ['trivia','comedy','coffee'],
+    ['excursion','adventure','port day'],
+    ['acoustic','lyrics','quiet deck'],
+    ['tattoos','photos','people watching'],
+    ['dancing','nightlife','pool'],
+    ['food','music','sea day'],
+    ['sunset','deck','conversation'],
+  ];
+  const statusOptions = [
+    'currently deciding between pool deck and lounge',
+    'already found the photo spots',
+    'looking for tonight’s plan',
+    'just made it to the top deck',
+    'keeping it simple and staying out late',
+    'signed up for more than one thing already',
+    'running on coffee and a playlist',
+    'trying not to miss the sunset set',
+  ];
+  const aboutTemplates = [
+    'Here for the week, keeping things social, and trying not to miss the good sets.',
+    'Mostly interested in meeting people, finding the right events, and getting off my phone a little.',
+    'I like a mix of loud nights and quiet deck time, ideally with good conversation in both.',
+    'Using Deckspace the right way: making plans early and following through later.',
+    'Happy to join group plans, especially if they involve music, photos, or a late walk around the ship.',
+  ];
+  const meetTemplates = [
+    'People who are easy to make plans with.',
+    'Anybody into music, late-night walks, or deck time.',
+    'Friendly people who actually use the event board.',
+    'Good dinner company and people who show up on time.',
+    'Anyone who wants a full week instead of staying in one lane.',
+  ];
+  const intentTemplates = [
+    'Meet people and keep the week moving.',
+    'Use the board for plans instead of guessing.',
+    'Balance quiet time with the bigger events.',
+    'Stay social, keep things easy, and see where the week goes.',
+    'Find the right group and make the most of the sailing.',
+  ];
+  const songs = [
+    ['Helena', 'My Chemical Romance'],
+    ['Ocean Avenue', 'Yellowcard'],
+    ['MakeDamnSure', 'Taking Back Sunday'],
+    ['Sugar, We’re Goin Down', 'Fall Out Boy'],
+    ['The Great Escape', 'Boys Like Girls'],
+    ['Everything Is Alright', 'Motion City Soundtrack'],
+    ['Until the Day I Die', 'Story of the Year'],
+    ['Hands Down', 'Dashboard Confessional'],
+    ['Dear Maria, Count Me In', 'All Time Low'],
+    ['Ohio Is for Lovers', 'Hawthorne Heights'],
+  ];
+  const themes = ['classic', 'ocean', 'sunset', 'night', 'retro-pink'];
+
+  return Array.from({ length: count }, (_, index) => {
+    const first = firstNames[index % firstNames.length];
+    const last = lastNames[Math.floor(index / firstNames.length) % lastNames.length];
+    const username = `${first.toLowerCase()}_${last.toLowerCase()}${index + 1}`;
+    const vibe_tags = tagSets[index % tagSets.length];
+    const [song_title, song_artist] = songs[index % songs.length];
+    return {
+      username,
+      display_name: `${first} ${last}`,
+      hometown: hometowns[index % hometowns.length],
+      vibe_tags,
+      status_text: statusOptions[index % statusOptions.length],
+      about_me: `${aboutTemplates[index % aboutTemplates.length]} Usually somewhere between ${vibe_tags[0]} and ${vibe_tags[1]} mode.`,
+      who_id_like_to_meet: meetTemplates[index % meetTemplates.length],
+      social_intent: intentTemplates[index % intentTemplates.length],
+      song_title,
+      song_artist,
+      theme_id: themes[index % themes.length],
+    };
+  });
+}
+
+function buildDemoPassengers() {
+  return [...buildCoreDemoPassengers(), ...buildGeneratedDemoPassengers(50)];
+}
+
+function buildDemoVoyageDays(base) {
+  return [
+    { day_date: dateForDemo(base, 0), port_name: 'Miami, Florida', day_type: 'embarkation', arrive_time: null, depart_time: '17:00', sort_order: 1, notes: 'Embarkation day for the Shattered Shores client demo.' },
+    { day_date: dateForDemo(base, 1), port_name: 'At Sea', day_type: 'sea', arrive_time: null, depart_time: null, sort_order: 2, notes: 'Full sea day with onboard sets, meetups, and late-night programming.' },
+    { day_date: dateForDemo(base, 2), port_name: 'Havana, Cuba', day_type: 'port', arrive_time: '09:00', depart_time: '23:00', sort_order: 3, notes: 'Port day in Havana for the client demo itinerary.' },
+    { day_date: dateForDemo(base, 3), port_name: 'At Sea', day_type: 'sea', arrive_time: null, depart_time: null, sort_order: 4, notes: 'Return-to-sea day focused on events, photos, and wall activity.' },
+    { day_date: dateForDemo(base, 4), port_name: 'At Sea', day_type: 'sea', arrive_time: null, depart_time: null, sort_order: 5, notes: 'Sea day built around social events and public group plans.' },
+    { day_date: dateForDemo(base, 5), port_name: 'At Sea', day_type: 'sea', arrive_time: null, depart_time: null, sort_order: 6, notes: 'Final full day before return to Miami.' },
+    { day_date: dateForDemo(base, 6), port_name: 'Miami, Florida', day_type: 'disembarkation', arrive_time: '07:00', depart_time: null, sort_order: 7, notes: 'Return to Miami and disembarkation morning.' },
+  ];
+}
+
+function buildOfficialDemoEvents(base) {
+  const templates = [
+    { day: 0, hour: 16, minute: 0, category: 'social', title: 'Boarding Check-In & Deckspace Welcome', location: 'Port Terminal', description: 'Check in, get settled, and start meeting people before sail away.', cover_image_url: DEMO_PROMO_IMAGES[0] },
+    { day: 0, hour: 18, minute: 30, category: 'music', title: 'Sail Away Sad Songs', location: 'Pool Deck', description: 'Opening-night music as the ship leaves Miami.' },
+    { day: 0, hour: 21, minute: 0, category: 'theme', title: 'Top 8 Originals Mixer', location: 'Atrium Lounge', description: 'Meet early arrivals, compare plans, and get the social board moving.' },
+    { day: 0, hour: 23, minute: 30, category: 'karaoke', title: 'Midnight Emo Karaoke', location: 'Moon Pool Stage', description: 'Late-night singalong for the people who are not done yet.' },
+    { day: 1, hour: 10, minute: 30, category: 'other', title: 'Coffee & Liner Notes', location: 'Cafe Static', description: 'A slower morning meet-up with coffee and lyric-book energy.' },
+    { day: 1, hour: 14, minute: 0, category: 'social', title: 'Blind Faith Mafia Meet-Up', location: 'Top Deck Lounge', description: 'A presale-themed social hour for the early believers.' },
+    { day: 1, hour: 17, minute: 30, category: 'trivia', title: 'Former Scene Kid Trivia', location: 'Crow Bar', description: 'Public trivia with a heavy focus on music, internet history, and chaos.' },
+    { day: 1, hour: 22, minute: 30, category: 'music', title: 'Acoustic After Dark Set', location: 'Outer Deck', description: 'A quieter late-night set for the people still walking the rails.' },
+    { day: 2, hour: 9, minute: 30, category: 'excursion', title: 'Havana Port Meet-Up', location: 'Gangway', description: 'Public meetup for guests heading into Havana together.' },
+    { day: 2, hour: 13, minute: 0, category: 'social', title: 'Old Camera Photo Walk', location: 'Havana Waterfront', description: 'A photo-friendly group walk for port-day memories.' },
+    { day: 2, hour: 19, minute: 30, category: 'dinner', title: 'Havana Return Dinner', location: 'Main Dining Room', description: 'A shared dinner block for people getting back from port.' },
+    { day: 2, hour: 23, minute: 0, category: 'music', title: 'Love Hurts, Waves Heal Main Set', location: 'Main Theater', description: 'The big themed night built around the Shattered Shores visual identity.', cover_image_url: DEMO_PROMO_IMAGES[1] },
+    { day: 3, hour: 11, minute: 0, category: 'other', title: 'Deckspace Profile Photo Hour', location: 'Atrium Photo Booth', description: 'Fresh profile photos and quick page updates.' },
+    { day: 3, hour: 15, minute: 0, category: 'social', title: 'Friend Space Swap', location: 'Blue Room', description: 'Meet people, add friends, and sort out your Top 8.' },
+    { day: 3, hour: 20, minute: 30, category: 'theme', title: 'Black Parade Prom Night', location: 'Grand Ballroom', description: 'The most styled-out night on the schedule.' },
+    { day: 3, hour: 23, minute: 45, category: 'deck', title: 'Late Deck Walk', location: 'Forward Deck', description: 'A low-pressure late-night group walk and talk.' },
+    { day: 4, hour: 10, minute: 0, category: 'other', title: 'Recovery Brunch', location: 'Garden Cafe', description: 'Coffee, carbs, and a soft landing after the late night.' },
+    { day: 4, hour: 13, minute: 30, category: 'social', title: 'Bracelet & Patch Trade', location: 'Promenade', description: 'A casual trade and meet-up for keepsakes and merch.' },
+    { day: 4, hour: 18, minute: 0, category: 'theme', title: 'Pool Deck Heartbreak Hour', location: 'Pool Deck', description: 'A themed sunset block with music and open meetups.' },
+    { day: 4, hour: 23, minute: 15, category: 'music', title: 'Lyric Swap Late Set', location: 'Aft Lounge', description: 'Pass the mic, trade a lyric, and keep the room going.' },
+    { day: 5, hour: 11, minute: 30, category: 'other', title: 'Cabin Door Polaroid Crawl', location: 'Deck 9', description: 'A roaming photo hour that fills the photo board quickly.' },
+    { day: 5, hour: 16, minute: 0, category: 'trivia', title: 'Deep Cut Trivia Finals', location: 'Crow Bar', description: 'One more shot at a strong trivia finish.' },
+    { day: 5, hour: 20, minute: 30, category: 'theme', title: 'Shattered Shores Formal', location: 'Grand Ballroom', description: 'The biggest dressed-up social night of the sailing.' },
+    { day: 5, hour: 23, minute: 59, category: 'deck', title: '3 AM Outer Deck Check-In', location: 'Outer Deck', description: 'For the guests who always end up outside before sleep.' },
+    { day: 6, hour: 8, minute: 0, category: 'other', title: 'Farewell Breakfast & Final Wall Notes', location: 'Main Dining Room', description: 'Last notes, last photos, and an easy close to the week.' },
+  ];
+
+  return templates.map((item) => ({
+    ...item,
+    event_type: 'official',
+    visibility: 'public',
+    moderation_status: 'visible',
+    start_at: isoForDemo(base, item.day, item.hour, item.minute),
+    end_at: isoForDemo(base, item.day, item.hour + 1, item.minute),
+  }));
+}
+
+function buildPassengerDemoEvents(base, passengers) {
+  const hosts = passengers.slice(0, 18);
+  const templates = [
+    ['Vinyl Listening Hang', 'music', 'Cabin 9412', 'Bring one track you would actually defend.'],
+    ['Pool Deck Eyeliner Repair Station', 'social', 'Pool Deck', 'Not official. Very useful.'],
+    ['Photo Wall Caption Workshop', 'other', 'Atrium', 'Turn your best photo into a post people will actually click.'],
+    ['Late-Night Lyric Trade', 'music', 'Moon Deck', 'Swap favorite lines and build an accidental group plan.'],
+    ['Port Day Coffee Group', 'social', 'Cafe Static', 'Small group, early start, actually leaving on time.'],
+    ['Friend Space Refresh', 'social', 'Blue Room', 'Add people, sort your Top 8, and compare notes.'],
+    ['After-Hours Piano Bar Run', 'drinks', 'Piano Bar', 'For anyone still up and not ready to call it.'],
+    ['Deck Photo Meetup', 'other', 'Forward Deck', 'Golden hour photos and quick profile updates.'],
+    ['Poolside Pop-Punk Hang', 'music', 'Pool Deck', 'Easy afternoon group plan with music and no pressure.'],
+    ['Merch & Patch Table Meetup', 'theme', 'Promenade', 'Show what you brought or just browse.'],
+    ['Cabin Bracelet Circle', 'theme', 'Deck 8 Lounge', 'Low-key craft table and conversation.'],
+    ['Open Deck Conversation Group', 'deck', 'Aft Deck', 'No fixed topic. Just public conversation and a good view.'],
+    ['Midnight Snack Run', 'social', 'Buffet', 'Meet at the buffet. Keep expectations realistic.'],
+    ['Post-Port Story Swap', 'social', 'Atrium Steps', 'Talk through the day and sort the photos.'],
+  ];
+
+  return templates.map((template, index) => {
+    const [title, category, location, description] = template;
+    const host = hosts[index % hosts.length];
+    const day = index % 6;
+    const hour = [12, 15, 17, 19, 21, 23][index % 6];
+    return {
+      creator_username: host.username,
+      event_type: 'user',
+      category,
+      title,
+      description,
+      location,
+      visibility: 'public',
+      moderation_status: 'visible',
+      start_at: isoForDemo(base, day, hour, index % 2 ? 30 : 0),
+      end_at: isoForDemo(base, day, hour + 1, index % 2 ? 30 : 0),
+    };
+  });
+}
+
+function buildFriendshipRows(passengers, userMap) {
+  const rows = [];
+  const seen = new Set();
+  for (let i = 0; i < passengers.length; i += 1) {
+    for (let offset = 1; offset <= 4; offset += 1) {
+      const j = (i + offset) % passengers.length;
+      const a = Math.min(i, j);
+      const b = Math.max(i, j);
+      const key = `${a}:${b}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const requester = passengers[a];
+      const addressee = passengers[b];
+      rows.push({
+        requester_id: userMap[requester.username],
+        addressee_id: userMap[addressee.username],
+        status: 'accepted',
+        created_at: new Date(Date.now() - (rows.length + 1) * 3600000).toISOString(),
+        responded_at: new Date(Date.now() - (rows.length + 1) * 3000000).toISOString(),
+      });
+    }
+  }
+  return rows;
+}
+
+function buildTopFriendsRows(passengers, userMap) {
+  const rows = [];
+  passengers.forEach((passenger, index) => {
+    for (let position = 1; position <= 8; position += 1) {
+      const friend = passengers[(index + position) % passengers.length];
+      rows.push({
+        user_id: userMap[passenger.username],
+        friend_user_id: userMap[friend.username],
+        position,
+        created_at: new Date(Date.now() - position * 7200000).toISOString(),
+      });
+    }
+  });
+  return rows;
+}
+
+function buildWallPostRows(passengers, userMap) {
+  const templates = [
+    'Saving you a spot at the later set if you are still going.',
+    'Your page looks solid now. Adding you before I forget.',
+    'Meet at the pool deck in 20? A few of us are heading up.',
+    'Glad you posted that plan because I was going to make the same one.',
+    'If you are still doing the port meetup, count me in.',
+    'Your Top 8 is already causing conversation in the lounge.',
+    'That photo you uploaded is exactly why this board works.',
+    'Checking if you are still going to the late-night hang.',
+  ];
+  const rows = [];
+  passengers.forEach((target, index) => {
+    const authors = [
+      passengers[(index + 1) % passengers.length],
+      passengers[(index + 5) % passengers.length],
+    ];
+    authors.forEach((author, inner) => {
+      rows.push({
+        profile_user_id: userMap[target.username],
+        author_user_id: userMap[author.username],
+        body: templates[(index + inner) % templates.length],
+        moderation_status: 'visible',
+        created_at: new Date(Date.now() - (index * 25 + inner * 8 + 1) * 600000).toISOString(),
+      });
+    });
+  });
+  return rows;
+}
+
+function buildPhotoRows(passengers, userMap, sailingId, eventRows) {
+  const photos = [];
+  for (let i = 0; i < 30; i += 1) {
+    const passenger = passengers[i % passengers.length];
+    const event = eventRows[i % eventRows.length] || null;
+    const seed = `shattered-shores-${i + 1}`;
+    photos.push({
+      user_id: userMap[passenger.username],
+      sailing_id: sailingId,
+      event_id: i % 2 === 0 ? event?.id || null : null,
+      storage_key: `https://picsum.photos/seed/${seed}/1200/900`,
+      thumb_key: `https://picsum.photos/seed/${seed}/400/400`,
+      medium_key: `https://picsum.photos/seed/${seed}/900/700`,
+      width: 1200,
+      height: 900,
+      file_size_bytes: 450000 + i * 2300,
+      caption: [
+        'Late set on deck.',
+        'Pool deck before sunset.',
+        'Group photo before dinner.',
+        'Havana port day.',
+        'Atrium lights looked too good not to post.',
+        'Proof that people actually showed up.',
+      ][i % 6],
+      moderation_status: 'visible',
+      created_at: new Date(Date.now() - (i + 1) * 2700000).toISOString(),
+    });
+  }
+  return photos;
+}
+
+function buildEventRsvpRows(passengers, userMap, eventRows) {
+  const rows = [];
+  eventRows.forEach((event, eventIndex) => {
+    const attendeeCount = event.event_type === 'official' ? 14 + (eventIndex % 8) : 7 + (eventIndex % 4);
+    for (let i = 0; i < attendeeCount; i += 1) {
+      const passenger = passengers[(eventIndex * 3 + i) % passengers.length];
+      rows.push({
+        event_id: event.id,
+        user_id: userMap[passenger.username],
+        status: i < attendeeCount - 2 ? 'going' : 'interested',
+        created_at: new Date(Date.now() - (eventIndex + i + 1) * 1800000).toISOString(),
+      });
+    }
+  });
+  return rows;
+}
+
+function buildNotificationRows(wallPosts, eventRows, rsvps) {
+  const rows = [];
+  wallPosts.slice(0, 60).forEach((post) => {
+    if (post.profile_user_id === post.author_user_id) return;
+    rows.push({
+      user_id: post.profile_user_id,
+      type: 'wall_post',
+      object_type: 'wall_post',
+      object_id: null,
+      actor_id: post.author_user_id,
+      message: 'posted on your wall.',
+      created_at: post.created_at,
+    });
+  });
+
+  const eventById = Object.fromEntries(eventRows.map((event) => [event.id, event]));
+  rsvps.slice(0, 80).forEach((rsvp) => {
+    const event = eventById[rsvp.event_id];
+    if (!event || event.creator_user_id === rsvp.user_id) return;
+    rows.push({
+      user_id: event.creator_user_id,
+      type: 'rsvp',
+      object_type: 'event',
+      object_id: event.id,
+      actor_id: rsvp.user_id,
+      message: `RSVPed to your event: ${event.title}`,
+      created_at: rsvp.created_at,
+    });
+  });
+
+  return rows;
+}
+
+async function clearDemoState(db, env, sailingId, expectedUsernames = []) {
+  let meta = null;
+  const metaJson = await env.KV?.get(demoSeedKey(sailingId)).catch(() => null);
+  if (metaJson) {
+    try { meta = JSON.parse(metaJson); } catch (_) {}
+  }
+
+  const usernames = [...new Set([DEMO_CREW_USERNAME, ...expectedUsernames, ...(meta?.usernames || [])])];
+  if (usernames.length) {
+    const { data: demoUsers } = await db.from('users')
+      .select('id, username')
+      .eq('sailing_id', sailingId)
+      .in('username', usernames);
+    const ids = (demoUsers || []).map((user) => user.id);
+
+    if (ids.length) {
+      await db.from('notifications').delete().in('actor_id', ids).catch(() => {});
+      await db.from('audit_logs').delete().in('actor_user_id', ids).catch(() => {});
+      await db.from('reports').delete().in('reporter_user_id', ids).catch(() => {});
+      await db.from('users').delete().in('id', ids).catch(() => {});
+    }
+  }
+
+  if (meta?.voyageDates?.length) {
+    await db.from('voyage_days')
+      .delete()
+      .eq('sailing_id', sailingId)
+      .in('day_date', meta.voyageDates)
+      .catch(() => {});
+  }
+
+  await Promise.all([
+    env.KV?.delete(`sailing:${sailingId}:weather`).catch(() => {}),
+    env.KV?.delete(`sailing:${sailingId}:bulletin`).catch(() => {}),
+    env.KV?.delete(demoSeedKey(sailingId)).catch(() => {}),
+  ]);
+}
+
 admin.get('/admin/demo', async (c) => {
   const user    = c.get('user');
   const db      = getDb(c.env);
   const sailing = await getSailing(db, c.env.SAILING_ID).catch(() => null);
   const csrf    = c.get('csrfToken') || '';
+  const demoPassengers = buildDemoPassengers();
+  const demoUsernames = demoPassengers.map((passenger) => passenger.username);
 
-  const [wxJson, bulletinJson] = await Promise.all([
+  const [wxJson, bulletinJson, metaJson] = await Promise.all([
     c.env.KV?.get(`sailing:${c.env.SAILING_ID}:weather`).catch(() => null),
     c.env.KV?.get(`sailing:${c.env.SAILING_ID}:bulletin`).catch(() => null),
+    c.env.KV?.get(demoSeedKey(c.env.SAILING_ID)).catch(() => null),
   ]);
+  const demoMeta = metaJson ? JSON.parse(metaJson) : null;
 
-  const { count: demoCount } = await db.from('users')
-    .select('id', { count: 'exact', head: true })
+  const { data: demoUsers } = await db.from('users')
+    .select('id, username')
     .eq('sailing_id', c.env.SAILING_ID)
-    .in('username', ['sarah_k','marco_v','jenna_b','derek_w','tasha_m','kevin_r','amber_h','carlos_p','lisa_ng','tyler_j','maya_s','ben_f','rachel_t','jake_m','priya_v']);
+    .in('username', [DEMO_CREW_USERNAME, ...demoUsernames]);
+  const demoIds = (demoUsers || []).map((entry) => entry.id);
+  const demoPassengerIds = (demoUsers || []).filter((entry) => entry.username !== DEMO_CREW_USERNAME).map((entry) => entry.id);
 
-  const demoUserLine = `<div style="margin-bottom:4px">${(demoCount || 0) > 0 ? `&#x2713; Demo passengers: ${demoCount}/15 created` : '&#x25CB; Demo passengers: none'}</div>`;
+  let demoEventsRes = { count: 0 };
+  let demoWallsRes = { count: 0 };
+  let demoPhotosRes = { count: 0 };
+  if (demoIds.length) {
+    [demoEventsRes, demoWallsRes, demoPhotosRes] = await Promise.all([
+      db.from('events').select('id', { count: 'exact', head: true }).in('creator_user_id', demoIds),
+      db.from('wall_posts').select('id', { count: 'exact', head: true }).or(`author_user_id.in.(${demoIds.join(',')}),profile_user_id.in.(${demoIds.join(',')})`),
+      db.from('photos').select('id', { count: 'exact', head: true }).in('user_id', demoPassengerIds.length ? demoPassengerIds : demoIds),
+    ]);
+  }
+
+  const { count: voyageCount } = await db.from('voyage_days')
+    .select('id', { count: 'exact', head: true })
+    .eq('sailing_id', c.env.SAILING_ID);
+
+  const demoUserLine = `<div style="margin-bottom:4px">${demoPassengerIds.length > 0 ? `&#x2713; Demo passengers: ${demoPassengerIds.length}/${demoPassengers.length} created` : '&#x25CB; Demo passengers: none'}</div>`;
+  const demoEventLine = `<div style="margin-bottom:4px">${demoEventsRes?.count ? `&#x2713; Demo events: ${demoEventsRes.count}` : '&#x25CB; Demo events: none'}</div>`;
+  const demoWallLine = `<div style="margin-bottom:4px">${demoWallsRes?.count ? `&#x2713; Wall posts: ${demoWallsRes.count}` : '&#x25CB; Wall posts: none'}</div>`;
+  const demoPhotoLine = `<div style="margin-bottom:4px">${demoPhotosRes?.count ? `&#x2713; Demo photos: ${demoPhotosRes.count}` : '&#x25CB; Demo photos: none'}</div>`;
+  const demoVoyageLine = `<div style="margin-bottom:4px">${voyageCount ? `&#x2713; Voyage days: ${voyageCount}` : '&#x25CB; Voyage days: none'}</div>`;
 
   const body = module({
     header: 'Demo Setup',
@@ -676,15 +1117,24 @@ admin.get('/admin/demo', async (c) => {
       <div style="margin-bottom:4px">${wxJson ? '&#x2713; Weather: set' : '&#x25CB; Weather: using demo fallback'}</div>
       <div style="margin-bottom:4px">${bulletinJson ? '&#x2713; Bulletin: active' : '&#x25CB; Bulletin: none'}</div>
       ${demoUserLine}
+      ${demoEventLine}
+      ${demoWallLine}
+      ${demoPhotoLine}
+      ${demoVoyageLine}
     </div>
     <p style="font-size:12px;margin-bottom:10px;line-height:1.5">
-      Seeds the site with Caribbean weather, a ship bulletin, and <strong>15 demo passengers</strong>
-      with profiles, interest tags, and wall posts between them. Demo login password is <code>demo1234</code>.
-      Safe to re-run &mdash; skips users that already exist.
+      Builds a full Shattered Shores client demo: <strong>${demoPassengers.length} demo passengers</strong>,
+      seeded friendships, Top 8 lists, wall posts, photos, RSVPs, notifications, and a 7-day Miami to Havana round-trip itinerary.
+      Demo login password is <code>${DEMO_PASSWORD}</code>. Re-running resets the demo cohort first so the client demo returns to a known state.
     </p>
-    <form method="POST" action="/admin/demo/seed">
+    ${demoMeta ? `<p style="font-size:11px;margin:0 0 10px;color:#666">Last seeded ${relTime(demoMeta.seeded_at)} &middot; ${esc(demoMeta.version || DEMO_META_VERSION)}</p>` : ''}
+    <form method="POST" action="/admin/demo/seed" style="display:inline-block;margin-right:6px">
       ${csrfField(csrf)}
-      <button type="submit" class="ds-btn ds-btn-orange">Seed Demo Data &raquo;</button>
+      <button type="submit" class="ds-btn ds-btn-orange">Reset &amp; Seed Demo &raquo;</button>
+    </form>
+    <form method="POST" action="/admin/demo/clear" style="display:inline-block" onsubmit="return confirm('Clear all seeded demo passengers, events, photos, and voyage days?');">
+      ${csrfField(csrf)}
+      <button type="submit" class="ds-btn ds-btn-sm">Clear Demo Data</button>
     </form>
     <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
       <a href="/admin/weather" class="ds-btn ds-btn-sm">Edit Weather</a>
@@ -699,20 +1149,27 @@ admin.post('/admin/demo/seed', async (c) => {
   const db        = getDb(c.env);
   const sailingId = c.env.SAILING_ID;
   const now       = new Date().toISOString();
+  const baseDate  = demoBaseDate();
+  const demoPassengers = buildDemoPassengers();
+  const demoUsernames = demoPassengers.map((passenger) => passenger.username);
+  const voyageDays = buildDemoVoyageDays(baseDate);
 
-  /* ---- KV: weather + bulletin ---- */
+  await clearDemoState(db, c.env, sailingId, demoUsernames);
+
   const weather = {
-    temp_f: 84, temp_c: 29,
-    conditions: 'Partly Cloudy',
-    wind_knots: 12, wind_dir: 'ENE',
-    wave_ft: '2\u20133',
-    icon: 'cloud',
-    location: 'Caribbean Sea',
+    temp_f: 82,
+    temp_c: 28,
+    conditions: 'Warm Seas',
+    wind_knots: 11,
+    wind_dir: 'ESE',
+    wave_ft: '2-4',
+    icon: 'sun',
+    location: 'Straits of Florida',
     updated_at: now,
   };
   const bulletin = {
-    text: 'Tonight: Main Stage at 11PM. The outer deck is open all night \u2014 see you out there.',
-    author: 'Cruise Crew',
+    text: 'Welcome to Shattered Shores. Tonight: Sail Away Sad Songs on the Pool Deck, Top 8 Originals Mixer in the Atrium Lounge, and Midnight Emo Karaoke after hours.',
+    author: 'Shattered Shores Crew',
     created_at: now,
   };
   await Promise.all([
@@ -720,123 +1177,128 @@ admin.post('/admin/demo/seed', async (c) => {
     c.env.KV?.put(`sailing:${sailingId}:bulletin`, JSON.stringify(bulletin), { expirationTtl: 86400 * 7 }).catch(() => {}),
   ]);
 
-  /* ---- Demo passengers ---- */
-  const DEMO_USERS = [
-    { username: 'sarah_k',   display_name: 'Sarah K.',         hometown: 'Miami, FL',         vibe_tags: ['dancing','pool','foodie'],         status_text: 'living for this Caribbean sun',    about_me: "Miami girl born and raised! This is my 4th cruise and I never get tired of it. Find me at the pool or on the dance floor way too late." },
-    { username: 'marco_v',   display_name: 'Marco Villanueva', hometown: 'Austin, TX',        vibe_tags: ['trivia','poker','nightlife'],       status_text: 'trivia night champion (self-titled)', about_me: "Came for the poker tables, staying for the sunsets. Ask me about the best BBQ in Texas. I will talk about it for too long." },
-    { username: 'jenna_b',   display_name: 'Jenna Bridges',    hometown: 'Nashville, TN',     vibe_tags: ['karaoke','music','comedy'],         status_text: 'mic drop incoming',                about_me: "Nashville songwriter on vacation (sort of). I will 100% challenge you to karaoke. You've been warned." },
-    { username: 'derek_w',   display_name: 'Derek Walsh',      hometown: 'Chicago, IL',       vibe_tags: ['gym','adventure','sea day'],        status_text: 'already found the gym on this ship', about_me: "Chicago guy. Personal trainer by day, cruise person by also day. Looking to explore every port stop on this trip." },
-    { username: 'tasha_m',   display_name: 'Tasha Monroe',     hometown: 'Atlanta, GA',       vibe_tags: ['dancing','nightlife','foodie'],     status_text: 'this buffet is undefeated',         about_me: "ATL in the house! Event planner in real life so I take cruise activities very seriously. Let's actually have fun out here." },
-    { username: 'kevin_r',   display_name: 'Kevin Reyes',      hometown: 'Los Angeles, CA',   vibe_tags: ['chill','pool','music'],             status_text: 'golden hour photos > everything',  about_me: "LA photographer on a much-needed break from screens. Except my camera. But that's it." },
-    { username: 'amber_h',   display_name: 'Amber Howell',     hometown: 'Denver, CO',        vibe_tags: ['excursion','adventure','sea day'],  status_text: 'snorkeling tomorrow I am SO ready', about_me: "Colorado girl who needs her adventure fix even on vacation. First cruise ever — I've signed up for every single excursion." },
-    { username: 'carlos_p',  display_name: 'Carlos Perez',     hometown: 'Houston, TX',       vibe_tags: ['poker','trivia','comedy'],          status_text: 'offline (finally)',                about_me: "Houston native. Software engineer who deleted Slack for this trip. The comedy show last night was actually really good." },
-    { username: 'lisa_ng',   display_name: 'Lisa Ng',          hometown: 'San Francisco, CA', vibe_tags: ['foodie','chill','music'],           status_text: 'the ceviche in Nassau was unreal',  about_me: "SF foodie and music nerd. Cruise goal: eat everything, hear everything, stress about nothing. So far so good." },
-    { username: 'tyler_j',   display_name: 'Tyler James',      hometown: 'Dallas, TX',        vibe_tags: ['karaoke','dancing','nightlife'],    status_text: 'just closed down the karaoke bar',  about_me: "Dallas born, always late to the party but I make up for it. Karaoke is my love language. Yes I know all the words to everything." },
-    { username: 'maya_s',    display_name: 'Maya Singh',       hometown: 'New York, NY',      vibe_tags: ['chill','sea day','music'],          status_text: 'do not disturb',                   about_me: "NYC lawyer finally taking a real vacation. My plan is to do nothing. Nothing at all. Thank you for understanding." },
-    { username: 'ben_f',     display_name: 'Ben Forsyth',      hometown: 'Boston, MA',        vibe_tags: ['trivia','poker','comedy'],          status_text: 'found 3 other Sox fans on board',  about_me: "Boston guy. Red Sox fan. Yes I brought a jersey. No I'm not sorry. Let's play trivia — I actually know things." },
-    { username: 'rachel_t',  display_name: 'Rachel Torres',    hometown: 'Orlando, FL',       vibe_tags: ['dancing','pool','excursion'],       status_text: 'birthday cruise lets gooo',         about_me: "Orlando local here with my sister for a birthday trip! First real vacation in two years. Very ready for this." },
-    { username: 'jake_m',    display_name: 'Jake Miller',      hometown: 'Seattle, WA',       vibe_tags: ['adventure','excursion','sea day'],  status_text: 'it is 84 degrees and I am losing it', about_me: "Pacific Northwest hiking guy on his first Caribbean trip. How is the weather this good? I don't understand and I love it." },
-    { username: 'priya_v',   display_name: 'Priya Varma',      hometown: 'Phoenix, AZ',       vibe_tags: ['foodie','music','chill'],           status_text: 'eating my way through the Caribbean', about_me: "Phoenix foodie and amateur chef. I'm taking notes on every dish I eat on this ship. The buffet selection is my new religion." },
-  ];
+  const demoHash = await hashPassword(DEMO_PASSWORD);
 
-  // Hash the demo password once, reuse for all demo users
-  const demoHash = await hashPassword('demo1234');
+  const { data: crewRows } = await db.from('users').insert([{
+    sailing_id: sailingId,
+    username: DEMO_CREW_USERNAME,
+    display_name: 'Shattered Shores Crew',
+    password_hash: demoHash,
+    account_status: 'active',
+    activation_status: 'active',
+    role: 'moderator',
+    last_active_at: now,
+    created_at: new Date(Date.now() - 3 * 86400000).toISOString(),
+  }]).select('id, username');
+  const crewId = crewRows?.[0]?.id;
 
-  // Find which demo usernames already exist for this sailing
-  const { data: existing } = await db.from('users')
-    .select('username')
-    .eq('sailing_id', sailingId)
-    .in('username', DEMO_USERS.map(u => u.username));
-  const existingSet = new Set((existing || []).map(u => u.username));
-  const toCreate = DEMO_USERS.filter(u => !existingSet.has(u.username));
+  await db.from('profiles').upsert({
+    user_id: crewId,
+    about_me: 'Official host account for the Shattered Shores client demo. This account posts public bulletins and runs official programming.',
+    hometown: 'On Board',
+    vibe_tags: ['official','updates','schedule'],
+    social_intent: 'Public host account for demo content',
+    status_text: 'posting tonight’s update',
+    song_title: 'The Sharpest Lives',
+    song_artist: 'My Chemical Romance',
+    theme_id: 'night',
+  }, { onConflict: 'user_id' }).catch(() => {});
 
-  // Insert new users in one batch
-  let createdUsers = [];
-  if (toCreate.length) {
-    const { data } = await db.from('users').insert(
-      toCreate.map(u => ({
-        sailing_id:        sailingId,
-        username:          u.username,
-        display_name:      u.display_name,
-        password_hash:     demoHash,
-        account_status:    'active',
-        activation_status: 'active',
-        role:              'passenger',
-      }))
-    ).select('id, username');
-    createdUsers = data || [];
-  }
+  await db.from('users').insert(
+    demoPassengers.map((passenger, index) => ({
+      sailing_id: sailingId,
+      username: passenger.username,
+      display_name: passenger.display_name,
+      password_hash: demoHash,
+      account_status: 'active',
+      activation_status: 'active',
+      role: 'passenger',
+      last_active_at: new Date(Date.now() - (index < 18 ? (index + 1) * 60000 : (index + 4) * 540000)).toISOString(),
+      created_at: new Date(Date.now() - ((index % 9) + 1) * 86400000).toISOString(),
+    }))
+  ).select('id').catch(() => {});
 
-  // Fetch ALL demo user IDs (both newly created and pre-existing)
   const { data: allDemoUsers } = await db.from('users')
     .select('id, username')
     .eq('sailing_id', sailingId)
-    .in('username', DEMO_USERS.map(u => u.username));
-  const userMap = Object.fromEntries((allDemoUsers || []).map(u => [u.username, u.id]));
+    .in('username', [DEMO_CREW_USERNAME, ...demoUsernames]);
+  const userMap = Object.fromEntries((allDemoUsers || []).map((row) => [row.username, row.id]));
 
-  // Upsert profiles for newly created users
-  if (createdUsers.length) {
-    const profileData = createdUsers.map(u => {
-      const demo = DEMO_USERS.find(d => d.username === u.username);
-      return {
-        user_id:     u.id,
-        about_me:    demo?.about_me    || null,
-        hometown:    demo?.hometown    || null,
-        vibe_tags:   demo?.vibe_tags   || null,
-        status_text: demo?.status_text || null,
-        theme_id:    'classic',
-      };
-    });
-    await db.from('profiles').upsert(profileData, { onConflict: 'user_id' }).catch(() => {});
-  }
+  await db.from('profiles').upsert(
+    demoPassengers.map((passenger) => ({
+      user_id: userMap[passenger.username],
+      about_me: passenger.about_me,
+      hometown: passenger.hometown,
+      vibe_tags: passenger.vibe_tags,
+      who_id_like_to_meet: passenger.who_id_like_to_meet,
+      social_intent: passenger.social_intent,
+      status_text: passenger.status_text,
+      song_title: passenger.song_title,
+      song_artist: passenger.song_artist,
+      theme_id: passenger.theme_id || 'classic',
+      updated_at: now,
+    })),
+    { onConflict: 'user_id' }
+  ).catch(() => {});
 
-  // Wall posts between demo users (only insert if wall is empty)
-  const WALL_POSTS = [
-    { from: 'marco_v',  to: 'sarah_k',  body: "Great meeting you at the pool! Still can't believe you beat me at shuffleboard 😅" },
-    { from: 'sarah_k',  to: 'marco_v',  body: "Practice makes perfect!! You coming to trivia tonight?" },
-    { from: 'jenna_b',  to: 'tyler_j',  body: "That karaoke set last night was incredible. We're doing a duet tonight and that's final." },
-    { from: 'tyler_j',  to: 'jenna_b',  body: "Already picked the song. Don't let me down, Nashville 🎤" },
-    { from: 'derek_w',  to: 'amber_h',  body: "Nice meeting you at the excursion desk! The snorkeling is gonna be amazing." },
-    { from: 'amber_h',  to: 'derek_w',  body: "SO pumped!! Don't judge me if I scream into my mask a little bit" },
-    { from: 'carlos_p', to: 'ben_f',    body: "Trivia rematch tonight. I looked up everything I got wrong last time 📚" },
-    { from: 'ben_f',    to: 'carlos_p', body: "I have been studying 90s movies since 2PM. Come prepared." },
-    { from: 'tasha_m',  to: 'rachel_t', body: "Happy early birthday!! Meet by the main stage at 9 — trust me 🎉" },
-    { from: 'rachel_t', to: 'tasha_m',  body: "You are literally the nicest person on this whole ship omg 😭 YES 9PM!!" },
-    { from: 'lisa_ng',  to: 'priya_v',  body: "Someone told me you're a chef?? I need your honest rating of the sushi situation on this ship" },
-    { from: 'priya_v',  to: 'lisa_ng',  body: "Solid 7/10 given we're in the middle of the ocean. The ceviche however? Absolutely undefeated." },
-    { from: 'maya_s',   to: 'kevin_r',  body: "Those photos you posted from Nassau are stunning!! What camera do you use?" },
-    { from: 'kevin_r',  to: 'maya_s',   body: "Thanks!! Sony A7 IV. Happy to give you a quick lesson if you want — I'm usually at the pool deck in the AM." },
-    { from: 'jake_m',   to: 'derek_w',  body: "Fellow outdoor person spotted 🙌 You doing the Great Stirrup Cay beach thing? Looks incredible." },
-    { from: 'derek_w',  to: 'jake_m',   body: "100% in — meeting at the gangway at 8:30. The more the merrier!" },
-    { from: 'priya_v',  to: 'tasha_m',  body: "The spicy tuna roll at the sushi counter is SO worth the wait by the way. Just saying." },
-    { from: 'marco_v',  to: 'carlos_p', body: "Poker room, 10PM tonight. I need to win back my dignity from last night." },
-  ];
+  await db.from('voyage_days').upsert(
+    voyageDays.map((day) => ({ sailing_id: sailingId, ...day })),
+    { onConflict: 'sailing_id,day_date' }
+  ).catch(() => {});
 
-  // Only post walls for newly created users to avoid duplicates on re-seed
-  const newUsernames = new Set(createdUsers.map(u => u.username));
-  const wallsToPost = WALL_POSTS.filter(p => newUsernames.has(p.from) || newUsernames.has(p.to));
+  const friendshipRows = buildFriendshipRows(demoPassengers, userMap);
+  if (friendshipRows.length) await db.from('friendships').insert(friendshipRows).catch(() => {});
 
-  if (wallsToPost.length) {
-    // Stagger timestamps over the last 48 hours
-    const wallRows = wallsToPost.map((p, i) => {
-      const authorId  = userMap[p.from];
-      const profileId = userMap[p.to];
-      if (!authorId || !profileId) return null;
-      const msAgo = (wallsToPost.length - i) * 90 * 60 * 1000; // every ~90 min going back
-      return {
-        author_user_id:  authorId,
-        profile_user_id: profileId,
-        body:            p.body,
-        created_at:      new Date(Date.now() - msAgo).toISOString(),
-        moderation_status: 'visible',
-      };
-    }).filter(Boolean);
+  const topFriendRows = buildTopFriendsRows(demoPassengers, userMap);
+  if (topFriendRows.length) await db.from('top_friends').insert(topFriendRows).catch(() => {});
 
-    if (wallRows.length) {
-      await db.from('wall_posts').insert(wallRows).catch(() => {});
+  const wallPostRows = buildWallPostRows(demoPassengers, userMap);
+  if (wallPostRows.length) await db.from('wall_posts').insert(wallPostRows).catch(() => {});
+
+  const officialEvents = buildOfficialDemoEvents(baseDate).map((event) => ({ ...event, sailing_id: sailingId, creator_user_id: crewId }));
+  const passengerEvents = buildPassengerDemoEvents(baseDate, demoPassengers).map((event) => ({
+    ...event,
+    sailing_id: sailingId,
+    creator_user_id: userMap[event.creator_username],
+  }));
+  const allEventsToInsert = [...officialEvents, ...passengerEvents].map(({ creator_username, day, hour, minute, ...event }) => event);
+  const { data: createdEvents } = await db.from('events').insert(allEventsToInsert).select('id, title, creator_user_id, event_type, start_at');
+  const eventRows = createdEvents || [];
+
+  const rsvpRows = buildEventRsvpRows(demoPassengers, userMap, eventRows);
+  if (rsvpRows.length) await db.from('event_rsvps').insert(rsvpRows).catch(() => {});
+
+  const photoRows = buildPhotoRows(demoPassengers, userMap, sailingId, eventRows);
+  if (photoRows.length) await db.from('photos').insert(photoRows).catch(() => {});
+
+  const notificationRows = buildNotificationRows(wallPostRows, eventRows, rsvpRows);
+  if (notificationRows.length) await db.from('notifications').insert(notificationRows).catch(() => {});
+
+  await c.env.KV?.put(demoSeedKey(sailingId), JSON.stringify({
+    version: DEMO_META_VERSION,
+    seeded_at: now,
+    usernames: demoUsernames,
+    crew_username: DEMO_CREW_USERNAME,
+    voyageDates: voyageDays.map((day) => day.day_date),
+    counts: {
+      passengers: demoPassengers.length,
+      friendships: friendshipRows.length,
+      topFriends: topFriendRows.length,
+      wallPosts: wallPostRows.length,
+      events: allEventsToInsert.length,
+      rsvps: rsvpRows.length,
+      photos: photoRows.length,
+      notifications: notificationRows.length,
     }
-  }
+  }), { expirationTtl: 86400 * 14 }).catch(() => {});
 
+  return c.redirect('/admin/demo');
+});
+
+admin.post('/admin/demo/clear', async (c) => {
+  const db = getDb(c.env);
+  const demoPassengers = buildDemoPassengers();
+  await clearDemoState(db, c.env, c.env.SAILING_ID, demoPassengers.map((passenger) => passenger.username));
   return c.redirect('/admin/demo');
 });
 
