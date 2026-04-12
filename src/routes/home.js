@@ -407,6 +407,9 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [],
   const s        = sailing || DEMO_SAILING;
   const shipName = s.ship_name;
   const sailName = s.name;
+  const tonightCount = tonightEvents.length || DEMO_EVENTS.length;
+  const peopleCount = newPeople.length || 8;
+  const stopCount = DEMO_ITINERARY.length;
 
   // Tonight's Events — real if available, demo otherwise
   const eventsToShow = tonightEvents.length
@@ -475,22 +478,40 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [],
 
   const leftCol = `<div class="landing-left">
 
-  <div class="landing-hero">
-    <div class="landing-hero-eyebrow">${ic.shipWheel(13)} Welcome aboard <strong>${esc(shipName)}</strong></div>
-    <h1 class="landing-hero-title">A Place for Friends<br>on the High Seas</h1>
-    <p class="landing-hero-sub">${esc(sailName)} &mdash; Your cruise social network</p>
-    <p class="landing-hero-copy">
-      It&rsquo;s like having your own cool page &mdash; but just for your ship.
-      Meet the people on this cruise, see what&rsquo;s happening tonight, share photos
-      from every port, and write on each other&rsquo;s pages.
-      When the trip ends, the whole thing hangs around like a scrapbook for a little while.
-      <strong>Your people are already here!</strong>
-    </p>
+  <section class="landing-marquee">
+    <div class="landing-hero">
+      <div class="landing-hero-eyebrow">${ic.shipWheel(13)} Welcome aboard <strong>${esc(shipName)}</strong></div>
+      <h1 class="landing-hero-title">A Place for Friends<br>on the High Seas</h1>
+      <p class="landing-hero-sub">${esc(sailName)} &mdash; your public cruise social network</p>
+      <p class="landing-hero-copy">
+        Meet the people on this cruise, see what&rsquo;s happening tonight, share photos from every port,
+        and write on each other&rsquo;s pages. When the trip ends, Deckspace lingers like a scrapbook for a little while.
+      </p>
+      <div class="landing-hero-actions">
+        <a href="/register" class="ds-btn ds-btn-orange">Join the Cruise &rarr;</a>
+        <a href="/login" class="landing-hero-secondary">Already a member? Sign in</a>
+      </div>
+    </div>
+    <div class="landing-signal-strip" aria-label="Deckspace quick facts">
+      <div class="landing-signal-item">
+        <strong>${esc(String(tonightCount))}</strong>
+        <span>things happening tonight</span>
+      </div>
+      <div class="landing-signal-item">
+        <strong>${esc(String(peopleCount))}</strong>
+        <span>faces already on deck</span>
+      </div>
+      <div class="landing-signal-item">
+        <strong>${esc(String(stopCount))}</strong>
+        <span>voyage stops in the scrapbook</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="landing-support-grid">
+    ${eventsPreviewHtml}
+    ${venueHtml}
   </div>
-
-  ${eventsPreviewHtml}
-
-  ${venueHtml}
 
   <div class="landing-howto">
     <div class="landing-howto-step">
@@ -520,7 +541,7 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [],
     <div class="ds-module-header">${ic.users(12)} People on the Ship</div>
     <div class="ds-module-body">
       <div class="landing-people-grid">${peopleHtml}</div>
-      <div style="margin-top:8px;font-size:11px"><a href="/register">Sign up to see everyone! &raquo;</a></div>
+      <div class="landing-people-cta"><a href="/register">Sign up to see everyone! &raquo;</a></div>
     </div>
   </div>
 
@@ -528,16 +549,24 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [],
 
   const rightCol = `<div class="landing-right">
 
-  <div class="landing-logo-wrap">
-    <img src="/images/deckspace-logo.png" alt="Deckspace" class="landing-brand-logo" width="120" height="120">
-    <div class="landing-logo-sub">your cruise, your crew, your page</div>
-  </div>
+  <section class="landing-boarding-panel">
+    <div class="landing-logo-wrap">
+      <img src="/images/deckspace-logo.png" alt="Deckspace" class="landing-brand-logo" width="120" height="120">
+      <div class="landing-logo-sub">your cruise, your crew, your page</div>
+    </div>
+    <p class="landing-boarding-copy">
+      Make your page, find tonight&rsquo;s plans, and keep the ship in one place while everyone is actually on board.
+    </p>
+    <div class="landing-boarding-points">
+      <span>Public by design</span>
+      <span>No email needed</span>
+      <span>Built for this sailing</span>
+    </div>
 
-  <div class="ds-module landing-login-module">
-    <div class="ds-module-header">Already a Member? Sign In</div>
-    <div class="ds-module-body">
+    <div class="landing-login-shell">
+      <div class="landing-login-title">Already a member? Sign in.</div>
       <div class="login-instructions">
-        <strong>Been here before?</strong> Type your username and password below and you&rsquo;re in!
+        Type your username and password below and you&rsquo;re in.
       </div>
       <form method="POST" action="/login" class="landing-login-form" data-retry="true">
         <div class="landing-login-table">
@@ -563,18 +592,19 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [],
         <strong>Forgot your login?</strong> No worries! Head to the Guest Services desk and they can look you up.
       </div>
     </div>
-  </div>
 
-  <div class="landing-signup-box">
-    <div class="landing-signup-header">New Here?</div>
-    <p class="landing-signup-copy">
-      Make a free profile and connect with everyone on <strong>${esc(shipName)}</strong>.
-      Takes about 2 minutes &mdash; you don&rsquo;t even need an email!
-    </p>
-    <a href="/register" class="ds-btn ds-btn-orange landing-signup-btn">Join the Cruise &rarr;</a>
-  </div>
+    <div class="landing-signup-box">
+      <div class="landing-signup-header">New here?</div>
+      <p class="landing-signup-copy">
+        Make a free profile and connect with everyone on <strong>${esc(shipName)}</strong>.
+        Takes about two minutes.
+      </p>
+      <a href="/register" class="ds-btn ds-btn-orange landing-signup-btn">Join the Cruise &rarr;</a>
+    </div>
+  </section>
 
-  <div class="ds-module">
+  <div class="landing-side-stack">
+  <div class="ds-module landing-side-module">
     <div class="ds-module-header">${ic.ferry(12)} ${esc(shipName)} &mdash; Voyage</div>
     <div class="ds-module-body">
       <div class="landing-voyage-tagline">${esc(sailName)}</div>
@@ -595,7 +625,8 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [],
     </div>
   </div>
 
-  ${weatherWidget(weather)}
+  <div class="landing-side-module landing-weather-shell">${weatherWidget(weather)}</div>
+  </div>
 
 </div>`;
 

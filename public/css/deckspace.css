@@ -3240,38 +3240,104 @@ a.ds-btn-orange:hover {
    ============================================================ */
 .landing-wrap {
   display: grid;
-  grid-template-columns: 3fr 2fr;
-  gap: 10px;
+  grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.95fr);
+  gap: 14px;
   align-items: start;
 }
-.landing-left {}
-.landing-right {}
+.landing-left,
+.landing-right {
+  display: grid;
+  gap: 10px;
+}
 
 /* Hero block */
+.landing-marquee {
+  background:
+    linear-gradient(180deg, rgba(244, 248, 255, 0.96), rgba(232, 240, 255, 0.94)),
+    linear-gradient(120deg, rgba(255, 255, 255, 0.4), rgba(204, 220, 255, 0));
+  border: 1px solid #afc2e6;
+  padding: 16px;
+  display: grid;
+  gap: 14px;
+}
 .landing-hero {
-  background: var(--ds-blue-bg);
-  border: 1px solid #aabbdd;
-  padding: 12px;
-  margin-bottom: 8px;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
 }
 .landing-hero-title {
-  font-size: 20px;
+  font-size: 28px;
   font-weight: bold;
   color: var(--ds-navy);
-  margin: 0 0 6px 0;
-  line-height: 1.2;
+  margin: 0 0 8px 0;
+  line-height: 1.05;
+  letter-spacing: -0.4px;
 }
 .landing-hero-sub {
   font-size: 12px;
   font-weight: bold;
   color: #1752B0;
-  margin: 0 0 6px 0;
+  margin: 0 0 8px 0;
 }
 .landing-hero-copy {
   font-size: 12px;
-  color: #333;
-  line-height: 1.5;
+  color: #31435c;
+  line-height: 1.6;
   margin: 0;
+}
+.landing-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-top: 12px;
+}
+.landing-hero-secondary {
+  font-size: 12px;
+  font-weight: bold;
+  color: #2158b6;
+  text-decoration: none;
+}
+.landing-hero-secondary:hover {
+  color: #0f3d8b;
+  text-decoration: underline;
+}
+.landing-signal-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.landing-signal-item {
+  padding: 9px 10px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid #cfdbf4;
+  min-height: 56px;
+}
+.landing-signal-item strong {
+  display: block;
+  font-size: 20px;
+  line-height: 1;
+  color: #194a98;
+  margin-bottom: 4px;
+}
+.landing-signal-item span {
+  display: block;
+  font-size: 10px;
+  font-weight: bold;
+  letter-spacing: 0.35px;
+  text-transform: uppercase;
+  color: #5c7193;
+}
+
+.landing-support-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.landing-support-grid .ds-module {
+  margin: 0;
+  height: 100%;
 }
 
 /* Cool New People module */
@@ -3279,7 +3345,7 @@ a.ds-btn-orange:hover {
 .landing-people-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
+  gap: 8px;
 }
 .landing-person-item {
   text-align: center;
@@ -3312,26 +3378,73 @@ a.ds-btn-orange:hover {
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+.landing-people-cta {
+  margin-top: 10px;
+  font-size: 11px;
+}
 
-/* Right column: logo */
-.landing-logo-wrap {
-  text-align: center;
-  padding: 10px 0 8px;
+/* Right column / boarding panel */
+.landing-boarding-panel {
+  background: linear-gradient(180deg, #fffef8 0%, #f7f9ff 100%);
+  border: 1px solid #d7dced;
+  padding: 14px;
   display: grid;
-  justify-items: center;
+  gap: 12px;
+}
+.landing-logo-wrap {
+  text-align: left;
+  padding: 0;
+  display: grid;
+  justify-items: start;
+  gap: 4px;
 }
 .landing-brand-logo {
-  width: 112px;
+  width: 108px;
   height: auto;
 }
 .landing-logo-sub {
   font-size: 11px;
-  color: var(--ds-text-light);
-  margin-top: 2px;
+  color: #5a6f8f;
+  margin-top: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+.landing-boarding-copy {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.55;
+  color: #31435c;
+}
+.landing-boarding-points {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.landing-boarding-points span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 9px;
+  background: #edf3ff;
+  border: 1px solid #c8d6f2;
+  font-size: 10px;
+  font-weight: bold;
+  color: #3e5b86;
+  text-transform: uppercase;
+  letter-spacing: 0.45px;
 }
 
 /* Login box */
-.landing-login-module { margin-bottom: 8px; }
+.landing-login-shell {
+  border-top: 1px solid #dce4f7;
+  padding-top: 12px;
+}
+.landing-login-title {
+  font-size: 13px;
+  font-weight: bold;
+  color: var(--ds-navy);
+  margin-bottom: 5px;
+}
 .landing-login-form { width: 100%; }
 .landing-login-table {
   display: grid;
@@ -3361,8 +3474,8 @@ a.ds-btn-orange:hover {
 
 /* Sign up CTA box */
 .landing-signup-box {
-  background: #fffbe6;
-  border: 1px solid #e6c800;
+  background: linear-gradient(180deg, #fff6d7 0%, #fffbe9 100%);
+  border: 1px solid #e7c55a;
   padding: 10px;
 }
 .landing-signup-header {
@@ -3378,6 +3491,16 @@ a.ds-btn-orange:hover {
   margin: 0 0 8px 0;
 }
 .landing-signup-btn { width: 100%; text-align: center; }
+.landing-side-stack {
+  display: grid;
+  gap: 10px;
+}
+.landing-side-module {
+  margin: 0;
+}
+.landing-side-module > .ds-module {
+  margin: 0;
+}
 
 .landing-trust-module {
   margin-top: 8px;
@@ -3399,6 +3522,44 @@ a.ds-btn-orange:hover {
   margin-bottom: 4px;
 }
 
+.landing-howto {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.58);
+  border: 1px solid #d5dfef;
+  padding: 10px;
+}
+.landing-howto-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+.landing-howto-num {
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: #edf3ff;
+  border: 1px solid #cbd7ef;
+  color: #2053ad;
+}
+.landing-howto-step strong {
+  display: block;
+  font-size: 12px;
+  color: #123c7d;
+  margin-bottom: 2px;
+}
+.landing-howto-step span:last-child {
+  display: block;
+  font-size: 11px;
+  line-height: 1.45;
+  color: #4e617e;
+}
+
 /* Mobile: stack columns */
 @media (max-width: 640px) {
   .landing-wrap {
@@ -3406,6 +3567,24 @@ a.ds-btn-orange:hover {
   }
   .landing-right {
     order: -1; /* login box first on mobile */
+  }
+  .landing-marquee {
+    padding: 12px;
+  }
+  .landing-hero-title {
+    font-size: 22px;
+  }
+  .landing-signal-strip,
+  .landing-support-grid,
+  .landing-howto {
+    grid-template-columns: 1fr;
+  }
+  .landing-logo-wrap {
+    justify-items: center;
+    text-align: center;
+  }
+  .landing-brand-logo {
+    width: 92px;
   }
   .landing-people-grid {
     grid-template-columns: repeat(4, 1fr);
@@ -4677,52 +4856,6 @@ a.ds-btn-orange:hover {
   cursor: wait;
 }
 
-/* ============================================================
-   LANDING PAGE — HOW IT WORKS steps
-   ============================================================ */
-.landing-howto {
-  display: flex;
-  gap: 0;
-  margin-bottom: 8px;
-  border: 1px solid #aabbdd;
-  background: #f4f7fc;
-}
-.landing-howto-step {
-  flex: 1;
-  display: flex;
-  align-items: flex-start;
-  gap: 7px;
-  padding: 9px 8px;
-  border-right: 1px solid #aabbdd;
-  font-size: 11px;
-  line-height: 1.4;
-}
-.landing-howto-step:last-child {
-  border-right: none;
-}
-.landing-howto-num {
-  flex-shrink: 0;
-  width: 26px;
-  height: 26px;
-  background: var(--ds-navy);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: 1px;
-}
-.landing-howto-step > div strong {
-  display: block;
-  font-size: 11px;
-  color: var(--ds-navy);
-  margin-bottom: 2px;
-}
-.landing-howto-step > div span {
-  color: #555;
-  font-size: 10px;
-  line-height: 1.4;
-}
-
 /* Hero eyebrow line */
 .landing-hero-eyebrow {
   font-size: 11px;
@@ -4765,19 +4898,6 @@ a.ds-btn-orange:hover {
   font-size: 11px;
   color: #555;
   margin-top: 2px;
-}
-
-@media (max-width: 640px) {
-  .landing-howto {
-    flex-direction: column;
-  }
-  .landing-howto-step {
-    border-right: none;
-    border-bottom: 1px solid #aabbdd;
-  }
-  .landing-howto-step:last-child {
-    border-bottom: none;
-  }
 }
 
 /* ============================================================

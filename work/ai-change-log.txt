@@ -18,3 +18,4 @@
 2026-04-11 00:35:00 | modified: public/css/deckspace.css | reason: cut logo sizes far more aggressively in header, hero, and footer after the previous brand scale remained visually oversized
 2026-04-11 00:40:00 | modified: src/templates/layout.js, src/routes/home.js, public/css/deckspace.css | reason: hard-constrain brand image dimensions in markup and CSS so cached or conflicting styles cannot inflate the logo surfaces again
 2026-04-11 00:47:00 | modified: src/templates/layout.js, src/routes/home.js, public/css/deckspace.css | reason: replace ad hoc logo sizing with a proper brand hierarchy: readable header lockup, single public landing logo moment, and inline footer brand row
+2026-04-11 18:40:06 | modified: src/routes/home.js, public/css/deckspace.css | reason: restructure the public landing into a clearer hero, boarding panel, and lighter support sections for better desktop and iPhone hierarchy
