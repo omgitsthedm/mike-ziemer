@@ -5012,7 +5012,50 @@ a.ds-btn-orange:hover {
   font-size: 10px;
 }
 .landing-events-more a { color: #ffd; }
-.landing-events-list { padding: 0; }
+.landing-events-list {
+  padding: 0;
+}
+.landing-events-list-rich {
+  display: grid;
+  gap: 8px;
+}
+.landing-event-card {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 10px;
+  align-items: stretch;
+  padding: 8px;
+  border: 1px solid #d4ddf1;
+  background: #fff;
+  color: inherit;
+  text-decoration: none;
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+}
+.landing-event-card:hover,
+.landing-event-card:focus-visible {
+  transform: translateY(-1px);
+  border-color: #9fb6eb;
+  box-shadow: 0 8px 18px rgba(18, 52, 121, 0.1);
+}
+.landing-event-art {
+  width: 110px;
+  height: 78px;
+  overflow: hidden;
+  border: 1px solid #c9d5ee;
+  background: linear-gradient(180deg, #edf4ff 0%, #dfeaff 100%);
+}
+.landing-event-art img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.landing-event-copy {
+  min-width: 0;
+  display: grid;
+  align-content: center;
+  gap: 3px;
+}
 .landing-event-item {
   display: flex;
   align-items: baseline;
@@ -5025,20 +5068,37 @@ a.ds-btn-orange:hover {
 .landing-event-item:last-child { border-bottom: none; }
 .landing-event-time {
   font-size: 10px;
-  color: #666;
+  color: #6a7188;
   white-space: nowrap;
   min-width: 60px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 .landing-event-title {
   font-weight: bold;
   color: #1752B0;
   flex: 1;
+  line-height: 1.25;
+}
+.landing-event-card .landing-event-title {
+  display: block;
 }
 .landing-event-title:hover { color: #cc5200; }
 .landing-event-loc {
   font-size: 10px;
-  color: #888;
+  color: #6f778c;
   white-space: nowrap;
+}
+.landing-event-card .landing-event-loc {
+  white-space: normal;
+}
+.landing-event-attendance {
+  font-size: 10px;
+  color: #cc5200;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 .landing-events-cta {
   margin-top: 6px;
@@ -5472,6 +5532,21 @@ a.ds-btn-orange:hover {
     font-size: 13px;
   }
 
+  .landing-events-list-rich {
+    gap: 10px;
+  }
+
+  .landing-event-card {
+    grid-template-columns: 96px minmax(0, 1fr);
+    gap: 9px;
+    padding: 7px;
+  }
+
+  .landing-event-art {
+    width: 96px;
+    height: 72px;
+  }
+
   .landing-event-item {
     padding: 6px 0;
     font-size: 13px;
@@ -5481,6 +5556,12 @@ a.ds-btn-orange:hover {
   .landing-event-time {
     font-size: 12px;
     min-width: 72px;
+  }
+
+  .landing-event-card .landing-event-time,
+  .landing-event-attendance,
+  .landing-event-card .landing-event-loc {
+    font-size: 11px;
   }
 
   .landing-venue-table {

@@ -22,8 +22,8 @@ const home = new Hono();
    as fallback when the DB has no sailing / no events yet.
    ============================================================ */
 const DEMO_SAILING = {
-  ship_name: 'Norwegian Sun',
-  name:      'Eastern Caribbean Getaway',
+  ship_name: 'DeckSpace',
+  name:      'Shattered Shores 2027',
 };
 
 const DEMO_EVENTS = [
@@ -84,7 +84,7 @@ home.get('/', async (c) => {
     const [newPeople, tonightEvents] = await Promise.all([
       browsePeople(db, c.env.SAILING_ID, { limit: 8 }).catch(() => []),
       db.from('events')
-        .select('id, title, location, start_at, event_type, category')
+        .select('id, title, location, start_at, event_type, category, cover_image_url, rsvp_count')
         .eq('sailing_id', c.env.SAILING_ID)
         .eq('moderation_status', 'visible')
         .eq('visibility', 'public')
@@ -417,6 +417,8 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [],
         time:     e.start_at ? new Date(e.start_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '',
         title:    e.title,
         location: e.location || '',
+        image:    e.cover_image_url ? absUrl(cdnBase, e.cover_image_url) : '',
+        rsvp:     e.rsvp_count || 0,
       }))
     : DEMO_EVENTS;
   const eventsIsDemo = !tonightEvents.length;
@@ -424,12 +426,24 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [],
   const eventsPreviewHtml = `<div class="ds-module landing-events-module">
     <div class="ds-module-header">${ic.calendar(12)} Tonight on ${esc(shipName)} <span class="landing-events-more"><a href="/register">all events &raquo;</a></span></div>
     <div class="ds-module-body">
-      <div class="landing-events-list">
-        ${eventsToShow.map(e => `<div class="landing-event-item">
-          <span class="landing-event-time">${esc(e.time)}</span>
-          <a href="/register" class="landing-event-title">${esc(e.title)}</a>
-          ${e.location ? `<span class="landing-event-loc">${esc(e.location)}</span>` : ''}
-        </div>`).join('')}
+      <div class="landing-events-list landing-events-list-rich">
+        ${eventsToShow.map((e, index) => {
+          const imageUrl = e.image || `https://picsum.photos/seed/${encodeURIComponent(`landing-event-${index + 1}`)}/220/160`;
+          const attendance = typeof e.rsvp === 'number'
+            ? `${e.rsvp} going`
+            : 'See who is going';
+          return `<a href="/register" class="landing-event-card">
+            <div class="landing-event-art">
+              <img src="${esc(imageUrl)}" alt="" width="110" height="78" loading="lazy">
+            </div>
+            <div class="landing-event-copy">
+              <span class="landing-event-time">${esc(e.time)}</span>
+              <span class="landing-event-title">${esc(e.title)}</span>
+              ${e.location ? `<span class="landing-event-loc">${esc(e.location)}</span>` : ''}
+              <span class="landing-event-attendance">${esc(attendance)}</span>
+            </div>
+          </a>`;
+        }).join('')}
       </div>
       ${eventsIsDemo ? '<div class="landing-demo-note">Sample events — real schedule varies by sailing</div>' : ''}
       <div class="landing-events-cta"><a href="/register">Sign up to RSVP to events! &raquo;</a></div>

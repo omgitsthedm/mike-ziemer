@@ -363,5 +363,6 @@ function normalizeDeckspaceLabel(value) {
   if (!value) return value;
   const text = String(value).trim();
   if (/^ms\s+deckspace$/i.test(text)) return 'DeckSpace';
+  if (/^deckspace sailing$/i.test(text)) return 'Shattered Shores 2027';
   return text;
 }

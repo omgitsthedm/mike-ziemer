@@ -119,7 +119,7 @@ app.use('*', async (c, next) => {
     "default-src 'self'",
     "script-src 'self' https://challenges.cloudflare.com",
     "style-src 'self' 'unsafe-inline'",
-    `img-src 'self' data: ${c.env.R2_PUBLIC_URL || ''} https://ui-avatars.com https://picsum.photos https://fastly.picsum.photos`,
+    `img-src 'self' data: ${c.env.R2_PUBLIC_URL || ''} https://ui-avatars.com https://picsum.photos https://fastly.picsum.photos https://www.edmtunes.com https://booking.whettravel.com`,
     "frame-src https://challenges.cloudflare.com",
     "connect-src 'self'",
     "font-src 'self'",
