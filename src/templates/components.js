@@ -289,7 +289,7 @@ export function vibeTagsModule(profile) {
   if (!tags || !tags.length) return '';
   const chips = tags.map(t => `<span class="vibe-tag">${esc(t)}</span>`).join('');
   return module({
-    header: `${ic.star(12)} Vibes`,
+    header: `${ic.star(12)} Interests`,
     body: `<div class="vibe-tags">${chips}</div>`
   });
 }

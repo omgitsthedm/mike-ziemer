@@ -215,7 +215,7 @@ auth.get('/onboarding', async (c) => {
 
   return c.html(layoutCtx(c, {
     title: 'Set Up Your Deckspace Profile',
-    description: 'Finish your Deckspace profile with your vibe, hometown, interests, and public profile details for the sailing.',
+    description: 'Finish your Deckspace profile with your hometown, interests, and public profile details for the sailing.',
     user,
     body: onboardingForm(c.get('csrfToken') || ''),
   }));
@@ -280,8 +280,8 @@ function loginForm({ next, siteKey, error, flash }) {
     <div class="ds-module-header">Welcome Back</div>
     <div class="ds-module-body">
       <div class="login-instructions">
-        Use your <strong>username</strong> and <strong>password</strong> to jump back in.
-        New here? <a href="/register">Make your page. &raquo;</a>
+        Use your <strong>username</strong> and <strong>password</strong> to sign in.
+        New here? <a href="/register">Create your page. &raquo;</a>
       </div>
       <form method="POST" action="/login" class="ds-form" data-retry="true">
         <input type="hidden" name="next" value="${esc(next)}">
@@ -315,7 +315,7 @@ function registerForm({ siteKey, error, values = {} }) {
   return `<div class="reg-wrap">
   <div class="reg-left">
     <div class="reg-privacy-badge">
-      Everyone on your sailing can see it. No ads. No private side chats. No junk.
+      Everyone on your sailing can see it. No ads. No private messages. Easy to use.
     </div>
     <div class="ds-module">
       <div class="ds-module-header">Make Your Deckspace Page</div>
@@ -363,17 +363,17 @@ function registerForm({ siteKey, error, values = {} }) {
       <div class="ds-module-body reg-why-body">
         <p class="reg-why-intro">
           You&rsquo;re on a cruise. You&rsquo;re about to meet a lot of people.
-          <strong>Deckspace helps you keep up without missing the fun.</strong>
+          <strong>Deckspace keeps the ship schedule and community in one place.</strong>
         </p>
         <ul class="reg-why-list">
           <li>${ic.users(11)} <strong>Meet people fast</strong> &mdash; See who is on the ship and add friends right away.</li>
           <li>${ic.calendar(11)} <strong>See tonight&rsquo;s plans</strong> &mdash; Check what is happening and RSVP in one tap.</li>
-          <li>${ic.camera(11)} <strong>Share the trip</strong> &mdash; Post photos from every stop and see what everyone else is up to.</li>
-          <li>${ic.mail(11)} <strong>Leave wall notes</strong> &mdash; Drop a note on someone&rsquo;s page, old-school style.</li>
-          <li>${ic.bookOpen(11)} <strong>Keep the scrapbook</strong> &mdash; After the trip, the page sticks around for a short read-only goodbye.</li>
+          <li>${ic.camera(11)} <strong>Share photos</strong> &mdash; Post photos from the sailing and see what everyone else is sharing.</li>
+          <li>${ic.mail(11)} <strong>Leave wall notes</strong> &mdash; Write on someone&rsquo;s page in a public, easy-to-follow way.</li>
+          <li>${ic.bookOpen(11)} <strong>Keep a short archive</strong> &mdash; After the trip, the page may stay up in read-only mode for a short time.</li>
         </ul>
         <div class="reg-why-footer">
-          Free. Open to your sailing. No ads. No private side channels. Easy to use.
+          Free. Available to your sailing. No ads. No private messages. Easy to use.
         </div>
       </div>
     </div>
@@ -393,14 +393,14 @@ function onboardingForm(csrfToken = '') {
     <div class="ds-module-body">
       <div class="onboarding-intro">
         <strong>You&rsquo;re in.</strong><br>
-        Add a few quick details so people can find you, know your vibe, and say hi. You can change any of this later.
+        Add a few quick details so people can find you and say hi. You can change any of this later.
       </div>
       <form method="POST" action="/onboarding" class="ds-form">
         ${csrfField(csrfToken)}
         <div class="ds-form-row">
           <label for="ob-about">About Me <span class="reg-optional">(optional)</span></label>
           <textarea id="ob-about" name="about_me" class="ds-textarea" rows="4" maxlength="3000"
-            placeholder="Say a little about yourself. Keep it light, fun, or honest."></textarea>
+            placeholder="Say a little about yourself."></textarea>
         </div>
         <div class="ds-form-row">
           <label for="ob-hometown">Hometown <span class="reg-optional">(optional)</span></label>
@@ -408,13 +408,13 @@ function onboardingForm(csrfToken = '') {
           <div class="hint">Helps people place you fast</div>
         </div>
         <div class="ds-form-row">
-          <label>Your Vibes <span class="reg-optional">(optional)</span></label>
+          <label>Your Interests <span class="reg-optional">(optional)</span></label>
           <div data-tag-input>
             <input type="hidden" name="vibe_tags" value="">
             <div class="vibe-tags tag-chips" style="min-height:28px;border:1px solid #ccc;padding:3px;background:#fff;margin-bottom:4px"></div>
-            <input type="text" class="ds-input" placeholder="Type a vibe and press Enter — karaoke, trivia, chill, nightlife">
+            <input type="text" class="ds-input" placeholder="Type an interest and press Enter — karaoke, trivia, pool, music">
           </div>
-          <div class="hint">These show on your page so people with the same vibe can find you</div>
+          <div class="hint">These show on your page so people with shared interests can find you</div>
         </div>
         <div class="ds-form-row">
           <label for="ob-who">Who I&rsquo;d Like to Meet <span class="reg-optional">(optional)</span></label>
@@ -422,9 +422,9 @@ function onboardingForm(csrfToken = '') {
             placeholder="Trivia partners, late-night people, fellow foodies..."></textarea>
         </div>
         <div class="ds-form-row">
-          <label for="ob-intent">Cruise Vibe <span class="reg-optional">(optional)</span></label>
+          <label for="ob-intent">What You&rsquo;re Looking For <span class="reg-optional">(optional)</span></label>
           <input id="ob-intent" name="social_intent" type="text" class="ds-input" maxlength="200"
-            placeholder="Relaxing, nightlife, adventure, all of the above">
+            placeholder="Relaxing, meeting people, events, excursions">
         </div>
         <div class="ds-form-row mt-8">
           <button type="submit" class="ds-btn ds-btn-orange w-full">Save and Show My Page &raquo;</button>

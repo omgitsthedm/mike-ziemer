@@ -71,11 +71,11 @@ photos.get('/photos', async (c) => {
 
   const gridHtml = (photoList || []).length
     ? `<div class="photo-board-grid">${(photoList || []).map((p, index) => photoBoardCard({ photo: p, cdnBase, eager: index < 6 })).join('')}</div>`
-    : `<div class="ds-empty-state">No photos yet. ${viewer ? `<a href="/photos/upload">Start the scrapbook.</a>` : 'Check back after the first few camera rolls hit.'}</div>`;
+    : `<div class="ds-empty-state">No photos yet. ${viewer ? `<a href="/photos/upload">Upload the first one.</a>` : 'Check back after the first photos are shared.'}</div>`;
 
   const pager = paginator(page, hasMore, '/photos', userFilter ? `&user=${encodeURIComponent(userFilter)}` : '');
   const title = userFilter ? `Photos by ${userFilter}` : 'Shared Cruise Photos';
-  const boardHeader = userFilter ? `Photos by ${esc(userFilter)}` : 'The Cruise Scrapbook';
+  const boardHeader = userFilter ? `Photos by ${esc(userFilter)}` : 'Shared Photo Board';
   const spotlight = featured.length
     ? `<section class="photo-board-spotlights">
         ${featured.map((p) => photoSpotlightCard({ photo: p, cdnBase })).join('')}
@@ -95,7 +95,7 @@ photos.get('/photos', async (c) => {
       <div class="photo-board-stat"><strong>${totalPhotos}</strong><span>public drops</span></div>
       <div class="photo-board-stat"><strong>${linkedPhotos}</strong><span>linked to events</span></div>
       <div class="photo-board-stat"><strong>${captionedPhotos}</strong><span>captioned on this page</span></div>
-      <div class="photo-board-stat action">${uploadBtn || '<span>Browse the ship roll</span>'}</div>
+      <div class="photo-board-stat action">${uploadBtn || '<span>Browse the photo board</span>'}</div>
     </div>
   </section>`;
 
@@ -160,7 +160,7 @@ photos.get('/photos/upload', requireAuth, async (c) => {
         </div>
         <div class="ds-form-row">
           <label for="ph-caption">Caption <span style="font-weight:normal;color:#999">(optional)</span></label>
-          <input id="ph-caption" name="caption" type="text" class="ds-input" maxlength="300" placeholder="What is going on here?">
+          <input id="ph-caption" name="caption" type="text" class="ds-input" maxlength="300" placeholder="Add a short caption">
         </div>
         <div class="ds-form-row">
           <label for="ph-event">Link to Event <span style="font-weight:normal;color:#999">(optional)</span></label>
@@ -441,18 +441,18 @@ function photoQueryHref({ userFilter = null, view = 'all' }) {
 
 function photoViewLabel(view) {
   const labels = {
-    all: 'All Drops',
-    events: 'Event Shots',
+    all: 'All Photos',
+    events: 'Event Photos',
     captions: 'Captioned',
   };
-  return labels[view] || 'All Drops';
+  return labels[view] || 'All Photos';
 }
 
 function photoViewDescription(view, userFilter) {
   if (userFilter) return `A cleaner view of the public photos shared by ${userFilter}.`;
   if (view === 'events') return 'Just the photos tied directly to events and planned moments.';
   if (view === 'captions') return 'Photos with captions so people can tell what the moment actually was.';
-  return 'The ship roll, cleaned up into something you can browse without drowning in thumbnails.';
+  return 'Recent public photos from this sailing, organized to make them easier to browse.';
 }
 
 function photoCardImageUrl(photo, cdnBase) {
@@ -470,10 +470,10 @@ function photoBoardCard({ photo, cdnBase, eager = false }) {
   </a>
   <div class="photo-board-meta">
     <div class="photo-board-tags">
-      <span>${photo.events ? 'Event-linked' : 'Open moment'}</span>
+      <span>${photo.events ? 'Event-linked' : 'Shared photo'}</span>
       <span>${relTime(photo.created_at)}</span>
     </div>
-    <a href="/photos/${esc(photo.id)}" class="photo-board-card-title">${esc((photo.caption || 'Untitled photo drop').slice(0, 70))}</a>
+    <a href="/photos/${esc(photo.id)}" class="photo-board-card-title">${esc((photo.caption || 'Untitled photo').slice(0, 70))}</a>
     <div class="photo-board-card-byline">by ${esc(photo.users?.display_name || 'Unknown')}${photo.events ? ` &middot; <a href="/events/${esc(photo.events.id)}">${esc(photo.events.title)}</a>` : ''}</div>
   </div>
 </article>`;
@@ -487,8 +487,8 @@ function photoSpotlightCard({ photo, cdnBase }) {
     <img src="${esc(url)}" alt="${esc(photo.caption || `Photo shared by ${photo.users?.display_name || 'a passenger'}`)}" width="480" height="320" loading="lazy">
   </a>
   <div class="photo-spotlight-copy">
-    <div class="photo-spotlight-tag">${photo.events ? 'Linked to event' : 'Fresh off the ship roll'}</div>
-    <a href="/photos/${esc(photo.id)}" class="photo-spotlight-title">${esc((photo.caption || 'No caption, just proof it happened').slice(0, 80))}</a>
+    <div class="photo-spotlight-tag">${photo.events ? 'Linked to event' : 'Recent upload'}</div>
+    <a href="/photos/${esc(photo.id)}" class="photo-spotlight-title">${esc((photo.caption || 'Photo shared on Deckspace').slice(0, 80))}</a>
     <div class="photo-spotlight-meta">${esc(photo.users?.display_name || 'Unknown')}${photo.events ? ` &middot; ${esc(photo.events.title)}` : ''}</div>
   </div>
 </article>`;

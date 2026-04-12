@@ -13,7 +13,7 @@ import { module, personRow, paginator } from '../templates/components.js';
 
 const people = new Hono();
 
-// All known vibe tags for the pill strip (union of defaults + common ones)
+// Common interest tags for the pill strip
 const COMMON_VIBES = ['karaoke','trivia','poker','dancing','foodie','music','nightlife','chill','adventure','sea day','excursion','comedy','pool','gym'];
 
 people.get('/people', async (c) => {
@@ -84,7 +84,7 @@ people.get('/people', async (c) => {
 
   const listHtml = users.length
     ? rows
-    : `<div class="ds-empty-state">No people found${search ? ` for "${esc(search)}"` : ''}${vibeTag ? ` with the vibe "${esc(vibeTag)}"` : ''}. Try another search or clear the filter.</div>`;
+    : `<div class="ds-empty-state">No people found${search ? ` for "${esc(search)}"` : ''}${vibeTag ? ` with the interest "${esc(vibeTag)}"` : ''}. Try another search or clear the filter.</div>`;
 
   const extraParams = [
     search  ? `q=${encodeURIComponent(search)}`   : '',
@@ -93,7 +93,7 @@ people.get('/people', async (c) => {
 
   const pager = paginator(page, users.length === 30, '/people', extraParams ? `&${extraParams}` : '');
 
-  const header = vibeTag ? `${ic.star(12)} Vibe: ${esc(vibeTag)}` : search ? `${ic.users(12)} Search: "${esc(search)}"` : `${ic.users(12)} Everyone on This Sailing`;
+  const header = vibeTag ? `${ic.star(12)} Interest: ${esc(vibeTag)}` : search ? `${ic.users(12)} Search: "${esc(search)}"` : `${ic.users(12)} Everyone on This Sailing`;
 
   const body = `${searchForm}${module({
     header,
@@ -101,7 +101,7 @@ people.get('/people', async (c) => {
   })}`;
 
   const pageTitle = vibeTag
-    ? `People by Vibe: ${vibeTag}`
+    ? `People by Interest: ${vibeTag}`
     : search
     ? `People Search: ${search}`
     : 'People on This Sailing';
@@ -109,8 +109,8 @@ people.get('/people', async (c) => {
   return c.html(layoutCtx(c, {
     title: pageTitle,
     description: search || vibeTag
-      ? `Browse Deckspace passengers for this sailing${search ? ` matching ${search}` : ''}${vibeTag ? ` with the vibe ${vibeTag}` : ''}.`
-      : 'Browse Deckspace passengers on this sailing, discover shared vibes, follow profile activity, and connect through public profiles.',
+      ? `Browse Deckspace passengers for this sailing${search ? ` matching ${search}` : ''}${vibeTag ? ` with the interest ${vibeTag}` : ''}.`
+      : 'Browse Deckspace passengers on this sailing, discover shared interests, follow profile activity, and connect through public profiles.',
     user: viewer,
     sailing,
     activeNav: 'people',

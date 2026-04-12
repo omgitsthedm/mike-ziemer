@@ -55,7 +55,7 @@ home.get('/', async (c) => {
   if (!c.env.SUPABASE_URL || !c.env.SUPABASE_SERVICE_KEY) {
     return c.html(layout({
       title: 'Deckspace — A Place for Friends on the High Seas',
-      description: 'Deckspace is the cruise social site for meeting passengers, checking what is happening tonight, sharing photos, and keeping a short post-cruise scrapbook.',
+      description: 'Deckspace is the shared cruise page for meeting passengers, checking what is happening tonight, sharing photos, and keeping a short post-cruise archive.',
       body:  landingPage({ sailing: DEMO_SAILING, cdnBase: '', newPeople: [], weather: null, tonightEvents: [], siteKey: c.env.TURNSTILE_SITE_KEY || '' }),
       notifCount: 0,
       csrfToken:  '',
@@ -240,40 +240,40 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
   <div class="home-command-copy">
     <div class="home-command-kicker">${ic.shipWheel(13)} Welcome back, ${esc(firstName)}</div>
     <div class="home-command-brandline">Deckspace on deck for ${esc(sailing?.ship_name || 'the sailing')}</div>
-    <h2 class="home-command-title">Everything happening on ${esc(sailing?.ship_name || 'the ship')}, without the scramble.</h2>
-    <p class="home-command-sub">Check tonight&rsquo;s plans, see who is around, catch wall notes, and keep up with fresh photo drops in one place.</p>
+    <h2 class="home-command-title">Everything happening on ${esc(sailing?.ship_name || 'the ship')}, in one place.</h2>
+    <p class="home-command-sub">Check tonight&rsquo;s plans, see who is around, read wall notes, and keep up with recent photo uploads.</p>
     <div class="home-command-links">
-      <a href="/events">${ic.calendar(12)} Find tonight's move</a>
-      <a href="/photos/upload">${ic.camera(12)} Drop a photo</a>
+      <a href="/events">${ic.calendar(12)} See tonight's plans</a>
+      <a href="/photos/upload">${ic.camera(12)} Upload a photo</a>
       <a href="/people">${ic.users(12)} Meet your people</a>
       <a href="/voyage">${ic.ship(12)} Check the itinerary</a>
     </div>
   </div>
   <div class="home-command-stats">
     <div class="home-command-stat"><strong>${tonightEvents.length}</strong><span>happening tonight</span></div>
-    <div class="home-command-stat"><strong>${activePeopleCount}</strong><span>faces in the mix</span></div>
-    <div class="home-command-stat"><strong>${photoCount}</strong><span>new photo drops</span></div>
+    <div class="home-command-stat"><strong>${activePeopleCount}</strong><span>people active now</span></div>
+    <div class="home-command-stat"><strong>${photoCount}</strong><span>recent photos</span></div>
     <div class="home-command-stat"><strong>${activityCount}</strong><span>new wall notes</span></div>
   </div>
 </section>`;
 
   const plannerStrip = `<section class="home-spotlight-strip">
   <article class="home-spotlight-card">
-    <div class="home-spotlight-label">${ic.clock(12)} Next Pull</div>
+    <div class="home-spotlight-label">${ic.clock(12)} Next Event</div>
     ${nextEvent
       ? `<a href="/events/${esc(nextEvent.id)}" class="home-spotlight-title">${esc(nextEvent.title)}</a>
          <div class="home-spotlight-meta">${fmtDate(nextEvent.start_at, { time: true })}${nextEvent.location ? ` &middot; ${esc(nextEvent.location)}` : ''}</div>`
-      : `<div class="home-spotlight-empty">The board is quiet for a second. That probably won't last.</div>`}
+      : `<div class="home-spotlight-empty">No event is scheduled yet.</div>`}
   </article>
   <article class="home-spotlight-card">
-    <div class="home-spotlight-label">${ic.users(12)} Crowd Radar</div>
+    <div class="home-spotlight-label">${ic.users(12)} People Online</div>
     <div class="home-spotlight-title">${onlineUsers.length ? `${onlineUsers.length} people active now` : 'Quiet right now'}</div>
-    <div class="home-spotlight-meta">${onlineUsers.length ? 'Jump into profiles, wall notes, and tonight&rsquo;s plans while people are still around.' : 'Quiet for the moment. Good time to look around before the crowd shows up.'}</div>
+    <div class="home-spotlight-meta">${onlineUsers.length ? 'Open profiles, wall notes, and tonight&rsquo;s plans while people are active.' : 'Quiet for the moment. Good time to look around.'}</div>
   </article>
   <article class="home-spotlight-card">
-    <div class="home-spotlight-label">${ic.camera(12)} Scrapbook Pulse</div>
+    <div class="home-spotlight-label">${ic.camera(12)} Photo Board</div>
     <div class="home-spotlight-title">${recentPhotos.length ? `${recentPhotos.length} recent photos` : 'No new photos yet'}</div>
-    <div class="home-spotlight-meta">${recentPhotos.length ? 'Fresh shots are already landing on the photo board.' : 'The camera roll is quiet for now.'}</div>
+    <div class="home-spotlight-meta">${recentPhotos.length ? 'Recent uploads are already showing on the photo board.' : 'No recent uploads yet.'}</div>
   </article>
 </section>`;
 
@@ -334,7 +334,7 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
     : `<div class="ds-empty-state">No one has joined yet.</div>`;
 
   const peopleModule = module({
-    header: `${ic.users(12)} Fresh Faces`,
+    header: `${ic.users(12)} New Profiles`,
     headerRight: `<a href="/people">Browse All</a>`,
     body: `<div class="home-member-grid">${peopleHtml}</div>`
   });
@@ -342,10 +342,10 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
   // Recent photos module
   const photosHtml = recentPhotos.length
     ? `<div class="photo-grid">${recentPhotos.map(p => photoThumb({ photo: p, cdnBase })).join('')}</div>`
-    : `<div class="ds-empty-state">No photos yet. <a href="/photos">Start the scrapbook.</a></div>`;
+    : `<div class="ds-empty-state">No photos yet. <a href="/photos">Open the photo board.</a></div>`;
 
   const photosModule = module({
-    header: `${ic.camera(12)} Scrapbook Drops`,
+    header: `${ic.camera(12)} Recent Photos`,
     headerRight: `<a href="/photos">All Photos</a>`,
     body: photosHtml
   });
@@ -378,7 +378,7 @@ function homePage({ user, sailing, cdnBase, weather, tonightEvents, upcomingEven
 
   // Sailing info notice (first-time feel)
   const sailingNotice = sailing ? `<div class="home-sailing-note">
-    ${ic.shipWheel(13)} <strong>${esc(sailing.name)}</strong> on ${esc(sailing.ship_name)} is live. Build your page, join plans, and leave a paper trail worth keeping.
+    ${ic.shipWheel(13)} <strong>${esc(sailing.name)}</strong> on ${esc(sailing.ship_name)} is live. Build your page, join plans, and keep up with the sailing in one place.
   </div>` : '';
 
   const wx = weatherWidget(weather);
@@ -482,10 +482,10 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [],
     <div class="landing-hero">
       <div class="landing-hero-eyebrow">${ic.shipWheel(13)} Welcome aboard <strong>${esc(shipName)}</strong></div>
       <h1 class="landing-hero-title">A Place for Friends<br>on the High Seas</h1>
-      <p class="landing-hero-sub">${esc(sailName)} &mdash; your public cruise social network</p>
+      <p class="landing-hero-sub">${esc(sailName)} &mdash; the shared page for everyone on board</p>
       <p class="landing-hero-copy">
         Meet the people on this cruise, see what&rsquo;s happening tonight, share photos from every stop,
-        and leave notes on each other&rsquo;s pages. When the trip ends, Deckspace hangs around like a short scrapbook.
+        and leave notes on each other&rsquo;s pages. After the trip, Deckspace may stay up in read-only mode for a short time.
       </p>
       <div class="landing-hero-actions">
         <a href="/register" class="ds-btn ds-btn-orange">Join the Cruise &rarr;</a>
@@ -518,7 +518,7 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [],
       <span class="landing-howto-num" aria-hidden="true">${ic.user(14)}</span>
       <div>
         <strong>Make your page</strong>
-        <span>Pick a username, add a photo, and show your vibe. It takes about a minute.</span>
+        <span>Pick a username, add a photo, and add a few details. It takes about a minute.</span>
       </div>
     </div>
     <div class="landing-howto-step">
@@ -532,7 +532,7 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [],
       <span class="landing-howto-num" aria-hidden="true">${ic.bookOpen(14)}</span>
       <div>
         <strong>Keep the memories</strong>
-        <span>Photos and posts stick around like a short scrapbook after you get home.</span>
+        <span>Photos and posts may stay up in a short read-only archive after the trip.</span>
       </div>
     </div>
   </div>
@@ -558,7 +558,7 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [],
       Make your page, find tonight&rsquo;s plans, and keep up with the ship while everyone is actually on board.
     </p>
     <div class="landing-boarding-points">
-      <span>Open to your sailing</span>
+      <span>Available to your sailing</span>
       <span>No email needed</span>
       <span>Built for this sailing</span>
     </div>

@@ -227,14 +227,14 @@ function renderArchiveBanner(sailing) {
   });
 
   const countdownLine = daysLeft === 0
-    ? 'This is the last day. The lights go off tonight.'
+    ? 'This is the last day the archive will be available.'
     : daysLeft === 1
-    ? 'One day left. Take a last look around.'
-    : `The scrapbook closes in <strong>${daysLeft} days</strong> — on ${closeDateStr}.`;
+    ? 'One day remains before the archive closes.'
+    : `The archive closes in <strong>${daysLeft} days</strong> — on ${closeDateStr}.`;
 
   return `<div class="archive-banner">
   <strong>The sailing has ended.</strong>
-  The ship has docked, but your Deckspace is still here &mdash; read-only, just for a little while longer.
+  The ship has docked, but your Deckspace page is still here in read-only mode for a little while longer.
   ${countdownLine}
   New posts, wall comments, and RSVPs are closed.
 </div>`;
@@ -270,12 +270,12 @@ export function layoutCtx(c, opts) {
 
 function defaultMetaDescription(title, sailing) {
   if (sailing?.name && sailing?.ship_name) {
-    return `Deckspace is the shared cruise page for ${sailing.name} on ${sailing.ship_name}. Meet people, follow plans, share photos, and keep a short trip scrapbook.`;
+    return `Deckspace is the shared cruise page for ${sailing.name} on ${sailing.ship_name}. Meet people, follow plans, share photos, and keep a short trip archive.`;
   }
   if (title) {
-    return `${title} on Deckspace, the shared cruise page for meeting people, following plans, sharing photos, and keeping a short trip scrapbook.`;
+    return `${title} on Deckspace, the shared cruise page for meeting people, following plans, sharing photos, and keeping a short trip archive.`;
   }
-  return 'Deckspace is the shared cruise page for meeting people, following plans, sharing photos, and keeping a short trip scrapbook.';
+  return 'Deckspace is the shared cruise page for meeting people, following plans, sharing photos, and keeping a short trip archive.';
 }
 
 function renderFooter() {
@@ -287,7 +287,7 @@ function renderFooter() {
           <img src="/images/deckspace-mark.png" alt="" class="ds-footer-logo" width="24" height="24">
         </a>
         <div class="ds-footer-copy">
-          Deckspace is just for this sailing. After the trip, the scrapbook sticks around a little longer, then the lights go out.
+          Deckspace is for this sailing. After the trip, the page may stay available in read-only mode for a short time.
         </div>
       </div>
       <a href="https://littlefightnyc.com" class="ds-footer-credit" target="_blank" rel="noreferrer">Designed and Built by Little Fight NYC</a>

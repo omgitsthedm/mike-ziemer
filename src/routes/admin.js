@@ -679,7 +679,7 @@ admin.get('/admin/demo', async (c) => {
     </div>
     <p style="font-size:12px;margin-bottom:10px;line-height:1.5">
       Seeds the site with Caribbean weather, a ship bulletin, and <strong>15 demo passengers</strong>
-      with profiles, vibe tags, and wall posts between them. Demo login password is <code>demo1234</code>.
+      with profiles, interest tags, and wall posts between them. Demo login password is <code>demo1234</code>.
       Safe to re-run &mdash; skips users that already exist.
     </p>
     <form method="POST" action="/admin/demo/seed">

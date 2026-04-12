@@ -37,7 +37,7 @@ profile.get('/profile/edit', requireAuth, async (c) => {
 
   return c.html(layoutCtx(c, {
     title: 'Edit Your Deckspace Profile',
-    description: 'Update your Deckspace profile details, vibe tags, status, profile song, and public sailing identity.',
+    description: 'Update your Deckspace profile details, interests, status, profile song, and public sailing identity.',
     user,
     sailing,
     body: editProfileForm({ user, profile: prof, siteKey: c.env.TURNSTILE_SITE_KEY, csrfToken: c.get('csrfToken') || '' })
@@ -234,7 +234,7 @@ profile.get('/profile/:username', async (c) => {
     title: `${target.display_name}'s Deckspace Profile (@${target.username})`,
     description: profile?.about_me
       ? `View ${target.display_name} (@${target.username}) on Deckspace. ${profile.about_me.slice(0, 92)}`
-      : `View ${target.display_name} (@${target.username}) on Deckspace, including public wall posts, vibes, and sailing activity.`,
+      : `View ${target.display_name} (@${target.username}) on Deckspace, including public wall posts, interests, and sailing activity.`,
     user: viewer,
     sailing,
     activeNav: isOwn ? 'profile' : '',
@@ -341,7 +341,7 @@ function profilePage({ target, profile, viewer, topFriends, friendCount, friendS
     header: `${ic.clock(12)} Recent Activity`,
     body: recentActivity.length
       ? `<div class="profile-activity-list">${recentActivity.map((item) => `<div class="profile-activity-item"><strong>${esc(item.label)}</strong><span>${esc(item.detail)}</span></div>`).join('')}</div>`
-      : `<div class="ds-empty-state">${isOwn ? 'Post, RSVP, or upload a photo to wake this page up.' : 'Nothing new on this page yet.'}</div>`
+      : `<div class="ds-empty-state">${isOwn ? 'Post, RSVP, or upload a photo to add activity to this page.' : 'Nothing new on this page yet.'}</div>`
   });
 
   const plans = module({
@@ -368,7 +368,7 @@ function profilePage({ target, profile, viewer, topFriends, friendCount, friendS
           const alt = photo.caption ? esc(photo.caption) : 'Recent photo';
           return `<a href="/photos/${esc(photo.id)}" class="profile-recent-photo"><img src="${esc(src)}" alt="${alt}" width="92" height="92" loading="lazy"></a>`;
         }).join('')}</div>`
-      : `<div class="ds-empty-state">${isOwn ? 'Upload a few photos to fill out your scrapbook.' : 'No photos on this page yet.'}</div>`
+      : `<div class="ds-empty-state">${isOwn ? 'Upload a few photos to fill out this page.' : 'No photos on this page yet.'}</div>`
   });
 
   const friendSpace = friendSpaceModule({ topFriends, friendCount, cdnBase });
@@ -422,13 +422,13 @@ function editProfileForm({ user, profile, siteKey, csrfToken = '' }) {
           <input id="ed-hometown" name="hometown" type="text" class="ds-input" value="${esc(profile?.hometown || '')}" maxlength="100">
         </div>
         <div class="ds-form-row">
-          <label>Vibe Tags</label>
+          <label>Interest Tags</label>
           <div data-tag-input>
             <input type="hidden" name="vibe_tags" value="${esc((profile?.vibe_tags || []).join(','))}">
             <div class="vibe-tags tag-chips" style="min-height:28px;border:1px solid #ccc;padding:3px;background:#fff;margin-bottom:4px">
               ${(profile?.vibe_tags || []).map(t => `<span class="vibe-tag">${esc(t)} <button type="button" style="background:none;border:none;cursor:pointer;font-size:10px;color:#666;padding:0 0 0 3px">✕</button></span>`).join('')}
             </div>
-            <input type="text" class="ds-input" placeholder="Add vibes (press Enter)">
+            <input type="text" class="ds-input" placeholder="Add interests (press Enter)">
           </div>
         </div>
         <div class="ds-form-row">
@@ -440,7 +440,7 @@ function editProfileForm({ user, profile, siteKey, csrfToken = '' }) {
           <input id="ed-status" name="status_text" type="text" class="ds-input" value="${esc(profile?.status_text || '')}" maxlength="120" placeholder="What are you up to? (e.g. 'Plotting something at the pool bar')">
         </div>
         <div class="ds-form-row">
-          <label for="ed-intent">Cruise Vibe</label>
+          <label for="ed-intent">What You&rsquo;re Looking For</label>
           <input id="ed-intent" name="social_intent" type="text" class="ds-input" value="${esc(profile?.social_intent || '')}" maxlength="200">
         </div>
         <div class="ds-form-row">
@@ -518,7 +518,7 @@ function buildRecentActivity({ latestPhoto, latestWallNote, latestRsvp }) {
       label: 'Dropped a new photo',
       detail: latestPhoto.caption
         ? `${compactLine(latestPhoto.caption, 46)} · ${relTime(latestPhoto.created_at)}`
-        : `Updated the scrapbook ${relTime(latestPhoto.created_at)}`
+        : `Uploaded a photo ${relTime(latestPhoto.created_at)}`
     });
   }
 
@@ -526,7 +526,7 @@ function buildRecentActivity({ latestPhoto, latestWallNote, latestRsvp }) {
     items.push({
       time: latestWallNote.created_at,
       label: 'Got a wall note',
-      detail: `Wall still buzzing ${relTime(latestWallNote.created_at)}`
+      detail: `New wall note ${relTime(latestWallNote.created_at)}`
     });
   }
 

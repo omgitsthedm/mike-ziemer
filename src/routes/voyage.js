@@ -60,12 +60,12 @@ voyage.get('/voyage', async (c) => {
   </summary>
   <div class="voyage-day-body">
     ${timeHtml}
-    ${day.notes ? `<div class="voyage-day-notes">${esc(day.notes)}</div>` : `<div class="voyage-day-notes">No extra notes for this stop. Let the day reveal itself.</div>`}
+    ${day.notes ? `<div class="voyage-day-notes">${esc(day.notes)}</div>` : `<div class="voyage-day-notes">No extra notes are posted for this stop.</div>`}
   </div>
 </details>`;
       }).join('')
     : `<div class="ds-empty-state">
-        The voyage plan is not up yet. Stop back soon.
+        The voyage plan is not posted yet. Check back soon.
       </div>`;
 
   const sailingInfo = sailing
@@ -73,10 +73,10 @@ voyage.get('/voyage', async (c) => {
         <div class="voyage-command-copy">
           <div class="voyage-ship">${ic.ship(16)} ${esc(sailing.ship_name)}</div>
           <div class="voyage-name">${esc(sailing.name)}</div>
-          <p class="voyage-command-sub">Sea days, port stops, and the quick answers everyone ends up needing at least once.</p>
+          <p class="voyage-command-sub">Sea days, port stops, and the quick trip details people usually need during the sailing.</p>
         </div>
         <div class="voyage-command-stats">
-          <div class="voyage-command-stat"><strong>${days.length}</strong><span>days on deck</span></div>
+          <div class="voyage-command-stat"><strong>${days.length}</strong><span>days in the plan</span></div>
           <div class="voyage-command-stat"><strong>${portDays}</strong><span>port calls</span></div>
           <div class="voyage-command-stat"><strong>${seaDays}</strong><span>sea days</span></div>
           <div class="voyage-command-stat"><strong>${nextPort ? esc(nextPort.port_name) : 'TBD'}</strong><span>next port</span></div>

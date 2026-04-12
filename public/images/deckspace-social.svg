@@ -18,7 +18,7 @@
   <text x="94" y="250" font-family="Arial, Helvetica, sans-serif" font-size="78" font-weight="700" fill="#17335b">Your cruise.</text>
   <text x="94" y="332" font-family="Arial, Helvetica, sans-serif" font-size="78" font-weight="700" fill="#17335b">Your crew.</text>
   <text x="94" y="414" font-family="Arial, Helvetica, sans-serif" font-size="78" font-weight="700" fill="#17335b">Your page.</text>
-  <text x="94" y="487" font-family="Arial, Helvetica, sans-serif" font-size="28" fill="#4c607d">Events, profiles, photos, voyage updates, and a short post-cruise scrapbook.</text>
+  <text x="94" y="487" font-family="Arial, Helvetica, sans-serif" font-size="28" fill="#4c607d">Events, profiles, photos, voyage updates, and a short post-cruise archive.</text>
   <rect x="756" y="164" width="300" height="76" rx="8" fill="#ffefe3" stroke="#ff6600" stroke-width="3"/>
   <text x="782" y="211" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="700" fill="#a14000">Tonight on board</text>
   <rect x="756" y="268" width="300" height="208" rx="10" fill="#ffffff" stroke="#bfd0ee" stroke-width="3"/>

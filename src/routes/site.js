@@ -16,23 +16,23 @@ site.get('/about', async (c) => {
     module({
       header: `${ic.shipWheel(12)} About Deckspace`,
       body: `<p style="margin-bottom:8px">Deckspace is the shared social page for one sailing. It gives everyone on the ship a place to see what is happening, meet other passengers, RSVP to events, share photos, and leave wall notes while the trip is still going.</p>
-      <p style="margin-bottom:8px">The retro feel is on purpose. Deckspace borrows some 2006 social-web energy, but keeps things simple and safer for a cruise: no private messages, no hidden side chats, and no mystery feed.</p>
-      <p>When the trip ends, the page cools down into a short read-only scrapbook before it disappears.</p>`
+      <p style="margin-bottom:8px">The retro feel is on purpose. Deckspace borrows some 2006 social-web energy, but keeps things simple and easier to manage for a cruise: no private messages and no hidden activity feed.</p>
+      <p>When the trip ends, the page may stay up in a short read-only archive before it is removed.</p>`
     }),
     module({
       header: `${ic.shield(12)} Why Everyone Can See It`,
       body: `<ul style="margin-left:18px;line-height:1.6">
         <li>Everyone on the sailing sees the same shared page.</li>
-        <li>Crew can spot problems faster if something goes sideways.</li>
-        <li>You do not need to learn a private messaging system to join in.</li>
-        <li>The whole thing stays light, easy, and safer to manage.</li>
+        <li>Crew can review public activity more quickly when needed.</li>
+        <li>You do not need to learn a private messaging system to take part.</li>
+        <li>The whole system stays simple and easier to manage.</li>
       </ul>`
     })
   ].join('');
 
   return c.html(layoutCtx(c, {
     title: 'About the Deckspace Cruise Network',
-    description: 'Learn what Deckspace is: a temporary cruise social network for events, profiles, photos, and a short post-cruise scrapbook.',
+    description: 'Learn what Deckspace is: a temporary cruise community site for events, profiles, photos, and a short post-cruise archive.',
     canonicalUrl: new URL('/about', c.req.url).toString(),
     user,
     sailing,
@@ -60,7 +60,7 @@ site.get('/contact', async (c) => {
         <li>Login or sign-up problems</li>
         <li>Public content and safety concerns</li>
         <li>Wrong ship board, weather, or voyage info</li>
-        <li>Questions about how long the scrapbook stays up after the trip</li>
+        <li>Questions about how long the archive stays up after the trip</li>
       </ul>`
     })
   ].join('');
@@ -85,7 +85,7 @@ site.get('/privacy', async (c) => {
       header: `${ic.lock(12)} Privacy & Data`,
       body: `<p style="margin-bottom:8px"><strong>Deckspace is meant to be public to your sailing.</strong> Profiles, wall posts, RSVPs, and shared photos can be seen by other passengers on the same trip.</p>
       <p style="margin-bottom:8px">There is no private messaging. Keeping things out in the open makes moderation and onboard safety easier.</p>
-      <p>Your basic account details, page content, photos, and activity stay up for the sailing and its short read-only scrapbook window unless staff remove them sooner.</p>`
+      <p>Your basic account details, page content, photos, and activity stay up for the sailing and its short read-only archive window unless staff remove them sooner.</p>`
     }),
     module({
       header: `${ic.bookOpen(12)} How Long It Stays Up`,
@@ -117,7 +117,7 @@ site.get('/terms', async (c) => {
     module({
       header: `${ic.bookOpen(12)} Terms & Usage`,
       body: `<p style="margin-bottom:8px">Deckspace is for the people on this sailing. By using it, you agree to keep things public, respectful, and tied to the shared trip.</p>
-      <p style="margin-bottom:8px">Profiles, wall notes, RSVPs, comments, and photos are meant to be visible to other passengers and the staff helping run the sailing. Deckspace is not built for private messaging or hidden side channels.</p>
+      <p style="margin-bottom:8px">Profiles, wall notes, RSVPs, comments, and photos are meant to be visible to other passengers and the staff helping run the sailing. Deckspace is not built for private messaging or hidden communication channels.</p>
       <p>Staff may remove content, pause access, or switch the site into read-only mode when needed for safety, moderation, archive cleanup, or the end of the trip.</p>`
     }),
     module({
@@ -126,7 +126,7 @@ site.get('/terms', async (c) => {
         <li>No harassment, threats, impersonation, or targeted abuse.</li>
         <li>No posting of explicit, illegal, or non-consensual content.</li>
         <li>No spam, scams, or repeated unwanted promotion.</li>
-        <li>No trying to mess with the ship board, event page, or moderation tools.</li>
+        <li>No attempts to interfere with the ship board, event page, or moderation tools.</li>
         <li>Respect crew instructions and any onboard policies that apply to the voyage.</li>
       </ul>`
     })
