@@ -113,7 +113,12 @@ function renderNav(user, activeNav, notifCount, csrfToken = '') {
         { href: '/photos', label: 'Photos',  key: 'photos' },
         { href: '/voyage', label: 'Voyage',  key: 'voyage' },
       ]
-    : [];
+    : [
+        { href: '/events', label: 'Events', key: 'events' },
+        { href: '/voyage', label: 'Voyage', key: 'voyage' },
+        { href: '/about', label: 'About', key: 'about' },
+        { href: '/contact', label: 'Help', key: 'contact' },
+      ];
 
   const links = navLinks.map(n => {
     const iconFn = NAV_ICONS[n.key];
@@ -150,12 +155,20 @@ function renderNav(user, activeNav, notifCount, csrfToken = '') {
           isPost: true,
         }
       ]
-    : [{
-        href: '/login',
-        label: 'Sign In to Deckspace',
-        icon: ic.logIn(13),
-        className: 'nav-mobile-only nav-mobile-signin',
-      }];
+    : [
+        {
+          href: '/register',
+          label: 'Join DeckSpace',
+          icon: ic.userPlus(13),
+          className: 'nav-mobile-only nav-mobile-highlight',
+        },
+        {
+          href: '/login',
+          label: 'Sign In',
+          icon: ic.logIn(13),
+          className: 'nav-mobile-only nav-mobile-signin',
+        }
+      ];
 
   const mobileExtras = mobileLinks.length
     ? `<div class="nav-mobile-divider" aria-hidden="true"></div>${mobileLinks.map(link => link.isPost
@@ -180,7 +193,8 @@ function renderNav(user, activeNav, notifCount, csrfToken = '') {
         </form>
       </div>`
     : `<div id="ds-nav-right">
-        <a href="/login" class="nav-link-signin">Sign In to Deckspace</a>
+        <a href="/login" class="nav-link-subtle nav-link-public">${ic.logIn(12)} Sign In</a>
+        <a href="/register" class="nav-link-signin nav-link-join">${ic.userPlus(12)} Join DeckSpace</a>
       </div>`;
 
   return `<nav id="ds-nav" role="navigation" aria-label="Main navigation">
@@ -287,18 +301,26 @@ function renderFooter() {
           <img src="/images/deckspace-mark.png" alt="" class="ds-footer-logo" width="24" height="24">
         </a>
         <div class="ds-footer-copy">
-          Deckspace is for this sailing. After the trip, the page may stay available in read-only mode for a short time.
+          <strong class="ds-footer-title">DeckSpace</strong>
+          <span>DeckSpace is the shared page for this sailing. It stays useful during the trip and may remain in read-only mode for a short time after.</span>
         </div>
       </div>
       <a href="https://littlefightnyc.com" class="ds-footer-credit" target="_blank" rel="noreferrer">Designed and Built by Little Fight NYC</a>
     </div>
     <div class="ds-footer-links">
-      <a href="/voyage">Voyage</a>
-      <a href="/about">About</a>
-      <a href="/contact">Contact</a>
-      <a href="/privacy">Privacy</a>
-      <a href="/terms">Terms &amp; Usage</a>
-      <a href="/sitemap">Sitemap</a>
+      <div class="ds-footer-link-group">
+        <span class="ds-footer-link-label">Explore</span>
+        <a href="/events">Events</a>
+        <a href="/voyage">Voyage</a>
+        <a href="/about">About</a>
+      </div>
+      <div class="ds-footer-link-group">
+        <span class="ds-footer-link-label">Support</span>
+        <a href="/contact">Contact</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms &amp; Usage</a>
+        <a href="/sitemap">Sitemap</a>
+      </div>
     </div>
   </div>
 </footer>`;

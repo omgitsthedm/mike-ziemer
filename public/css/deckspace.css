@@ -171,19 +171,19 @@ input[type="button"] {
   flex-wrap: wrap;
   max-width: 960px;
   margin: 0 auto;
-  padding: 0 6px;
-  gap: 0;
+  padding: 0 8px;
+  gap: 8px;
 }
 
 #ds-logo {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 9px;
   color: #ffffff;
   text-decoration: none;
-  padding: 3px 8px 3px 0;
-  border-right: 1px solid #334488;
-  margin-right: 4px;
+  padding: 6px 10px 6px 0;
+  border-right: 1px solid rgba(255,255,255,0.14);
+  margin-right: 2px;
 }
 #ds-logo:hover {
   color: #ffcc00;
@@ -201,34 +201,35 @@ input[type="button"] {
   line-height: 1;
 }
 .ds-brand-name {
-  font-size: 16px;
+  font-size: 17px;
   font-weight: bold;
-  letter-spacing: -0.35px;
+  letter-spacing: -0.25px;
   color: #ffffff;
 }
 .ds-brand-tag {
-  font-size: 9px;
+  font-size: 8px;
   text-transform: uppercase;
-  letter-spacing: 0.6px;
-  color: #a9c4ff;
+  letter-spacing: 0.9px;
+  color: #d3e3ff;
 }
 
 #ds-nav-links {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 0;
+  gap: 2px;
   flex: 1;
 }
 
 #ds-nav-links a {
   color: #ccddff;
   font-size: 11px;
-  padding: 6px 7px;
-  min-height: 30px;
+  padding: 7px 9px;
+  min-height: 34px;
   display: inline-flex;
   align-items: center;
   white-space: nowrap;
+  border-radius: 999px;
   transition:
     background var(--dur-fast) var(--ease-out-quart),
     color var(--dur-fast) var(--ease-out-quart),
@@ -337,20 +338,20 @@ input[type="button"] {
   margin: 0 auto;
   padding: 10px 8px 14px;
   display: flex;
-  gap: 8px;
+  gap: 18px;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   flex-wrap: wrap;
 }
 .ds-footer-brand {
   display: grid;
-  gap: 6px;
+  gap: 8px;
   align-items: start;
 }
 .ds-footer-brand-row {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  align-items: flex-start;
+  gap: 10px;
 }
 .ds-footer-logo-link {
   display: inline-flex;
@@ -358,14 +359,24 @@ input[type="button"] {
   flex-shrink: 0;
 }
 .ds-footer-logo {
-  width: 22px;
-  height: 22px;
+  width: 28px;
+  height: 28px;
 }
 .ds-footer-copy {
-  max-width: 620px;
+  max-width: 520px;
+  display: grid;
+  gap: 3px;
   font-size: 11px;
   color: #4b5d79;
   line-height: 1.45;
+}
+.ds-footer-title {
+  font-size: 13px;
+  color: #173a82;
+  line-height: 1.1;
+}
+.ds-footer-copy span {
+  display: block;
 }
 .ds-footer-credit {
   color: #ff6600;
@@ -379,13 +390,31 @@ input[type="button"] {
 }
 .ds-footer-links {
   display: flex;
-  gap: 10px;
+  gap: 18px;
   flex-wrap: wrap;
   justify-content: flex-end;
+}
+.ds-footer-link-group {
+  display: grid;
+  gap: 4px;
+  min-width: 112px;
+}
+.ds-footer-link-label {
+  font-size: 9px;
+  color: #6b7c97;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: bold;
 }
 .ds-footer-links a {
   font-size: 11px;
   font-weight: bold;
+  color: #173a82;
+  text-decoration: none;
+}
+.ds-footer-links a:hover {
+  color: #cc5200;
+  text-decoration: underline;
 }
 
 /* ============================================================
@@ -4203,6 +4232,17 @@ a.ds-btn-orange:hover {
   color: #fff;
   text-decoration: none;
   box-shadow: var(--shadow-lift);
+}
+.nav-link-public {
+  border: 1px solid rgba(255,255,255,0.16);
+  border-radius: 999px;
+  padding: 0 10px;
+  min-height: 34px;
+}
+.nav-link-join {
+  min-height: 34px;
+  border-radius: 999px;
+  padding: 0 12px;
 }
 
 /* Hamburger button — hidden by default, shown below 640px */
