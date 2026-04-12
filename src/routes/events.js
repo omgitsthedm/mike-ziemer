@@ -37,7 +37,7 @@ events.get('/events', async (c) => {
 
   // Fetch all visible public events for the sailing, ordered by time
   let evQuery = db.from('events')
-    .select('id, title, location, start_at, category, event_type, rsvp_count, description')
+    .select('id, title, location, start_at, category, event_type, rsvp_count, description, cover_image_url')
     .eq('sailing_id', c.env.SAILING_ID)
     .eq('moderation_status', 'visible')
     .eq('visibility', 'public')
@@ -50,6 +50,21 @@ events.get('/events', async (c) => {
 
   const { data: allEventsRaw } = await evQuery;
   const allEvents = filterEventsForView(allEventsRaw || [], view);
+  const eventIds = allEvents.map((event) => event.id);
+  let attendeeRows = [];
+  if (eventIds.length) {
+    const { data } = await db.from('event_rsvps')
+      .select('event_id, users!event_rsvps_user_id_fkey(username, display_name, profiles(avatar_thumb_url))')
+      .in('event_id', eventIds)
+      .eq('status', 'going')
+      .limit(600);
+    attendeeRows = data || [];
+  }
+  const attendeesByEvent = {};
+  attendeeRows.forEach((row) => {
+    if (!attendeesByEvent[row.event_id]) attendeesByEvent[row.event_id] = [];
+    if (attendeesByEvent[row.event_id].length < 5) attendeesByEvent[row.event_id].push(row.users);
+  });
 
   // Group by calendar date
   const dayMap = new Map();
@@ -68,7 +83,7 @@ events.get('/events', async (c) => {
     ? `Cruise Events by ${userFilter}`
     : 'Cruise Events and Plans';
 
-  const body = eventsSchedulePage({ viewer, sailing, days, activeCategory: category, activeView: view });
+  const body = eventsSchedulePage({ viewer, sailing, days, activeCategory: category, activeView: view, attendeesByEvent, cdnBase: c.env.R2_PUBLIC_URL || '' });
 
   return c.html(layoutCtx(c, {
     title,
@@ -477,7 +492,7 @@ function queryHref({ category = '', view = 'all' }) {
   return qs ? `/events?${qs}` : '/events';
 }
 
-function eventsSchedulePage({ viewer, sailing, days, activeCategory = '', activeView = 'all' }) {
+function eventsSchedulePage({ viewer, sailing, days, activeCategory = '', activeView = 'all', attendeesByEvent = {}, cdnBase = '' }) {
   const shipName = sailing?.ship_name || 'the ship';
   const allEvents = days.flatMap(([, evs]) => evs || []);
   const now = new Date();
@@ -669,12 +684,28 @@ function eventsSchedulePage({ viewer, sailing, days, activeCategory = '', active
       const desc = teaser(ev.description, ev.event_type === 'official'
         ? 'Official ship programming with a cleaner clock and a clearer plan.'
         : 'Passenger-created plan. Public and open to people on this sailing.');
+      const cover = ev.cover_image_url
+        ? `<img src="${esc(absUrl(cdnBase, ev.cover_image_url))}" alt="Event art for ${esc(ev.title)}" width="96" height="96" class="ss-event-cover-image" loading="lazy">`
+        : `<div class="ss-event-cover-fallback ${eventCategoryClass(ev.category)}">${icon()}</div>`;
+      const attendeePreview = attendeesByEvent[ev.id] || [];
+      const attendeeLead = attendeePreview[0]?.display_name || attendeePreview[0]?.username || '';
+      const attendeeCopy = attendeePreview.length
+        ? `${esc(attendeeLead)}${ev.rsvp_count > 1 ? ` and ${Math.max((ev.rsvp_count || attendeePreview.length) - 1, 0)} more going` : ' is going'}`
+        : `${ev.rsvp_count || 0} going so far`;
+      const attendeeFaces = attendeePreview.length
+        ? attendeePreview.map((person) => {
+            const thumbUrl = absUrl(cdnBase, person?.profiles?.avatar_thumb_url);
+            return thumbUrl && !isLegacyAvatarUrl(thumbUrl)
+              ? `<img src="${esc(thumbUrl)}" width="24" height="24" alt="${esc(person?.display_name || person?.username || 'Passenger')}" class="ss-event-attendee-face" loading="lazy">`
+              : pixelAvatarImg(person?.display_name || 'Passenger', person?.username || person?.display_name || '', 24, 'ss-event-attendee-face ss-event-attendee-pixel');
+          }).join('')
+        : '';
       return `<article class="ss-event-card ss-event-card-${tone} ${eventCategoryClass(ev.category)}">
   <div class="ss-event-time-block">
     <span class="ss-event-time-main">${fmtTime(ev.start_at)}</span>
     <span class="ss-event-time-sub">${esc(eventMomentLabel(ev.start_at))}</span>
   </div>
-  <div class="ss-event-icon-block">${icon()}</div>
+  <div class="ss-event-visual">${cover}</div>
   <div class="ss-event-copy">
     <div class="ss-event-chip-row">
       <span class="ss-event-chip ss-event-chip-${tone}">${ev.event_type === 'official' ? 'Official' : 'Passenger Plan'}</span>
@@ -687,6 +718,10 @@ function eventsSchedulePage({ viewer, sailing, days, activeCategory = '', active
       <span>${ic.mapPin(11)} ${esc(ev.location || 'Location coming soon')}</span>
       <span>${ic.clock(11)} ${esc(eventWindowLabel(ev))}</span>
       <span>${ev.event_type === 'official' ? `${ic.ship(11)} Ship-run` : `${ic.users(11)} Guest-led`}</span>
+    </div>
+    <div class="ss-event-social-row">
+      ${attendeeFaces ? `<div class="ss-event-attendees">${attendeeFaces}</div>` : ''}
+      <div class="ss-event-attendance-copy">${attendeeCopy}</div>
     </div>
   </div>
   <div class="ss-event-action">

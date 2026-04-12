@@ -351,5 +351,17 @@ export async function getReports(db, { status = 'pending', page = 1, limit = 30 
 }
 
 export async function getSailing(db, sailingId) {
-  return q(db.from('sailings').select('*').eq('id', sailingId).single());
+  const sailing = await q(db.from('sailings').select('*').eq('id', sailingId).single());
+  return {
+    ...sailing,
+    ship_name: normalizeDeckspaceLabel(sailing?.ship_name),
+    name: normalizeDeckspaceLabel(sailing?.name),
+  };
+}
+
+function normalizeDeckspaceLabel(value) {
+  if (!value) return value;
+  const text = String(value).trim();
+  if (/^ms\s+deckspace$/i.test(text)) return 'DeckSpace';
+  return text;
 }

@@ -658,6 +658,12 @@ const DEMO_PROMO_IMAGES = [
   'https://booking.whettravel.com/Booking/Styles/WhetTravel/images/GC_EMO2.jpg',
 ];
 
+function demoEventImage(seed, index = 0) {
+  if (index === 0) return DEMO_PROMO_IMAGES[0];
+  if (index === 1) return DEMO_PROMO_IMAGES[1];
+  return `https://picsum.photos/seed/${encodeURIComponent(`shattered-shores-event-${seed}`)}/1200/760`;
+}
+
 function demoSeedKey(sailingId) {
   return `sailing:${sailingId}:demo_meta`;
 }
@@ -831,6 +837,7 @@ function buildOfficialDemoEvents(base) {
 
   return templates.map((item) => ({
     ...item,
+    cover_image_url: item.cover_image_url || demoEventImage(item.title, item.day + item.hour),
     event_type: 'official',
     visibility: 'public',
     moderation_status: 'visible',
@@ -870,6 +877,7 @@ function buildPassengerDemoEvents(base, passengers) {
       title,
       description,
       location,
+      cover_image_url: demoEventImage(`${host.username}-${title}`, index + 10),
       visibility: 'public',
       moderation_status: 'visible',
       start_at: isoForDemo(base, day, hour, index % 2 ? 30 : 0),
@@ -1210,6 +1218,13 @@ admin.post('/admin/demo/seed', async (c) => {
       c.env.KV?.put(`sailing:${sailingId}:weather`, JSON.stringify(weather), { expirationTtl: 86400 * 7 }).catch(() => {}),
       c.env.KV?.put(`sailing:${sailingId}:bulletin`, JSON.stringify(bulletin), { expirationTtl: 86400 * 7 }).catch(() => {}),
     ]);
+
+    await db.from('sailings')
+      .update({
+        name: 'Shattered Shores 2027',
+        ship_name: 'DeckSpace',
+      })
+      .eq('id', sailingId);
 
     const demoHash = await hashPassword(DEMO_PASSWORD);
 
