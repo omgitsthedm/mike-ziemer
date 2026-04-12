@@ -878,6 +878,15 @@ function buildPassengerDemoEvents(base, passengers) {
   });
 }
 
+function demoEventTitles() {
+  const base = demoBaseDate();
+  const passengers = buildDemoPassengers();
+  return [
+    ...buildOfficialDemoEvents(base).map((event) => event.title),
+    ...buildPassengerDemoEvents(base, passengers).map((event) => event.title),
+  ];
+}
+
 function buildFriendshipRows(passengers, userMap) {
   const rows = [];
   const seen = new Set();
@@ -1061,6 +1070,22 @@ async function clearDemoState(db, env, sailingId, expectedUsernames = []) {
       .catch(() => {});
   }
 
+  const titles = demoEventTitles();
+  if (titles.length) {
+    await db.from('events')
+      .delete()
+      .eq('sailing_id', sailingId)
+      .in('title', titles)
+      .catch(() => {});
+  }
+
+  const fallbackVoyageDates = buildDemoVoyageDays(demoBaseDate()).map((day) => day.day_date);
+  await db.from('voyage_days')
+    .delete()
+    .eq('sailing_id', sailingId)
+    .in('day_date', fallbackVoyageDates)
+    .catch(() => {});
+
   await Promise.all([
     env.KV?.delete(`sailing:${sailingId}:weather`).catch(() => {}),
     env.KV?.delete(`sailing:${sailingId}:bulletin`).catch(() => {}),
@@ -1081,7 +1106,11 @@ admin.get('/admin/demo', async (c) => {
     c.env.KV?.get(`sailing:${c.env.SAILING_ID}:bulletin`).catch(() => null),
     c.env.KV?.get(demoSeedKey(c.env.SAILING_ID)).catch(() => null),
   ]);
-  const demoMeta = metaJson ? JSON.parse(metaJson) : null;
+  let demoMeta = null;
+  if (metaJson) {
+    try { demoMeta = JSON.parse(metaJson); } catch (_) {}
+  }
+  const errorMsg = c.req.query('error') || '';
 
   const { data: demoUsers } = await db.from('users')
     .select('id, username')
@@ -1128,6 +1157,7 @@ admin.get('/admin/demo', async (c) => {
       Demo login password is <code>${DEMO_PASSWORD}</code>. Re-running resets the demo cohort first so the client demo returns to a known state.
     </p>
     ${demoMeta ? `<p style="font-size:11px;margin:0 0 10px;color:#666">Last seeded ${relTime(demoMeta.seeded_at)} &middot; ${esc(demoMeta.version || DEMO_META_VERSION)}</p>` : ''}
+    ${errorMsg ? `<div class="ds-flash error" style="margin:0 0 10px">${esc(errorMsg)}</div>` : ''}
     <form method="POST" action="/admin/demo/seed" style="display:inline-block;margin-right:6px">
       ${csrfField(csrf)}
       <button type="submit" class="ds-btn ds-btn-orange">Reset &amp; Seed Demo &raquo;</button>
@@ -1146,153 +1176,175 @@ admin.get('/admin/demo', async (c) => {
 });
 
 admin.post('/admin/demo/seed', async (c) => {
-  const db        = getDb(c.env);
-  const sailingId = c.env.SAILING_ID;
-  const now       = new Date().toISOString();
-  const baseDate  = demoBaseDate();
-  const demoPassengers = buildDemoPassengers();
-  const demoUsernames = demoPassengers.map((passenger) => passenger.username);
-  const voyageDays = buildDemoVoyageDays(baseDate);
+  try {
+    const db        = getDb(c.env);
+    const sailingId = c.env.SAILING_ID;
+    const now       = new Date().toISOString();
+    const baseDate  = demoBaseDate();
+    const demoPassengers = buildDemoPassengers();
+    const demoUsernames = demoPassengers.map((passenger) => passenger.username);
+    const voyageDays = buildDemoVoyageDays(baseDate);
 
-  await clearDemoState(db, c.env, sailingId, demoUsernames);
+    await clearDemoState(db, c.env, sailingId, demoUsernames);
 
-  const weather = {
-    temp_f: 82,
-    temp_c: 28,
-    conditions: 'Warm Seas',
-    wind_knots: 11,
-    wind_dir: 'ESE',
-    wave_ft: '2-4',
-    icon: 'sun',
-    location: 'Straits of Florida',
-    updated_at: now,
-  };
-  const bulletin = {
-    text: 'Welcome to Shattered Shores. Tonight: Sail Away Sad Songs on the Pool Deck, Top 8 Originals Mixer in the Atrium Lounge, and Midnight Emo Karaoke after hours.',
-    author: 'Shattered Shores Crew',
-    created_at: now,
-  };
-  await Promise.all([
-    c.env.KV?.put(`sailing:${sailingId}:weather`, JSON.stringify(weather), { expirationTtl: 86400 * 7 }).catch(() => {}),
-    c.env.KV?.put(`sailing:${sailingId}:bulletin`, JSON.stringify(bulletin), { expirationTtl: 86400 * 7 }).catch(() => {}),
-  ]);
+    const weather = {
+      temp_f: 82,
+      temp_c: 28,
+      conditions: 'Warm Seas',
+      wind_knots: 11,
+      wind_dir: 'ESE',
+      wave_ft: '2-4',
+      icon: 'sun',
+      location: 'Straits of Florida',
+      updated_at: now,
+    };
+    const bulletin = {
+      text: 'Welcome to Shattered Shores. Tonight: Sail Away Sad Songs on the Pool Deck, Top 8 Originals Mixer in the Atrium Lounge, and Midnight Emo Karaoke after hours.',
+      author: 'Shattered Shores Crew',
+      created_at: now,
+    };
+    await Promise.all([
+      c.env.KV?.put(`sailing:${sailingId}:weather`, JSON.stringify(weather), { expirationTtl: 86400 * 7 }).catch(() => {}),
+      c.env.KV?.put(`sailing:${sailingId}:bulletin`, JSON.stringify(bulletin), { expirationTtl: 86400 * 7 }).catch(() => {}),
+    ]);
 
-  const demoHash = await hashPassword(DEMO_PASSWORD);
+    const demoHash = await hashPassword(DEMO_PASSWORD);
 
-  const { data: crewRows } = await db.from('users').insert([{
-    sailing_id: sailingId,
-    username: DEMO_CREW_USERNAME,
-    display_name: 'Shattered Shores Crew',
-    password_hash: demoHash,
-    account_status: 'active',
-    activation_status: 'active',
-    role: 'moderator',
-    last_active_at: now,
-    created_at: new Date(Date.now() - 3 * 86400000).toISOString(),
-  }]).select('id, username');
-  const crewId = crewRows?.[0]?.id;
-
-  await db.from('profiles').upsert({
-    user_id: crewId,
-    about_me: 'Official host account for the Shattered Shores client demo. This account posts public bulletins and runs official programming.',
-    hometown: 'On Board',
-    vibe_tags: ['official','updates','schedule'],
-    social_intent: 'Public host account for demo content',
-    status_text: 'posting tonight’s update',
-    song_title: 'The Sharpest Lives',
-    song_artist: 'My Chemical Romance',
-    theme_id: 'night',
-  }, { onConflict: 'user_id' }).catch(() => {});
-
-  await db.from('users').insert(
-    demoPassengers.map((passenger, index) => ({
+    await db.from('users').upsert([{
       sailing_id: sailingId,
-      username: passenger.username,
-      display_name: passenger.display_name,
+      username: DEMO_CREW_USERNAME,
+      display_name: 'Shattered Shores Crew',
       password_hash: demoHash,
       account_status: 'active',
       activation_status: 'active',
-      role: 'passenger',
-      last_active_at: new Date(Date.now() - (index < 18 ? (index + 1) * 60000 : (index + 4) * 540000)).toISOString(),
-      created_at: new Date(Date.now() - ((index % 9) + 1) * 86400000).toISOString(),
-    }))
-  ).select('id').catch(() => {});
+      role: 'moderator',
+      last_active_at: now,
+      created_at: new Date(Date.now() - 3 * 86400000).toISOString(),
+    }], { onConflict: 'sailing_id,username' });
 
-  const { data: allDemoUsers } = await db.from('users')
-    .select('id, username')
-    .eq('sailing_id', sailingId)
-    .in('username', [DEMO_CREW_USERNAME, ...demoUsernames]);
-  const userMap = Object.fromEntries((allDemoUsers || []).map((row) => [row.username, row.id]));
+    await db.from('users').upsert(
+      demoPassengers.map((passenger, index) => ({
+        sailing_id: sailingId,
+        username: passenger.username,
+        display_name: passenger.display_name,
+        password_hash: demoHash,
+        account_status: 'active',
+        activation_status: 'active',
+        role: 'passenger',
+        last_active_at: new Date(Date.now() - (index < 18 ? (index + 1) * 60000 : (index + 4) * 540000)).toISOString(),
+        created_at: new Date(Date.now() - ((index % 9) + 1) * 86400000).toISOString(),
+      })),
+      { onConflict: 'sailing_id,username' }
+    );
 
-  await db.from('profiles').upsert(
-    demoPassengers.map((passenger) => ({
-      user_id: userMap[passenger.username],
-      about_me: passenger.about_me,
-      hometown: passenger.hometown,
-      vibe_tags: passenger.vibe_tags,
-      who_id_like_to_meet: passenger.who_id_like_to_meet,
-      social_intent: passenger.social_intent,
-      status_text: passenger.status_text,
-      song_title: passenger.song_title,
-      song_artist: passenger.song_artist,
-      theme_id: passenger.theme_id || 'classic',
-      updated_at: now,
-    })),
-    { onConflict: 'user_id' }
-  ).catch(() => {});
-
-  await db.from('voyage_days').upsert(
-    voyageDays.map((day) => ({ sailing_id: sailingId, ...day })),
-    { onConflict: 'sailing_id,day_date' }
-  ).catch(() => {});
-
-  const friendshipRows = buildFriendshipRows(demoPassengers, userMap);
-  if (friendshipRows.length) await db.from('friendships').insert(friendshipRows).catch(() => {});
-
-  const topFriendRows = buildTopFriendsRows(demoPassengers, userMap);
-  if (topFriendRows.length) await db.from('top_friends').insert(topFriendRows).catch(() => {});
-
-  const wallPostRows = buildWallPostRows(demoPassengers, userMap);
-  if (wallPostRows.length) await db.from('wall_posts').insert(wallPostRows).catch(() => {});
-
-  const officialEvents = buildOfficialDemoEvents(baseDate).map((event) => ({ ...event, sailing_id: sailingId, creator_user_id: crewId }));
-  const passengerEvents = buildPassengerDemoEvents(baseDate, demoPassengers).map((event) => ({
-    ...event,
-    sailing_id: sailingId,
-    creator_user_id: userMap[event.creator_username],
-  }));
-  const allEventsToInsert = [...officialEvents, ...passengerEvents].map(({ creator_username, day, hour, minute, ...event }) => event);
-  const { data: createdEvents } = await db.from('events').insert(allEventsToInsert).select('id, title, creator_user_id, event_type, start_at');
-  const eventRows = createdEvents || [];
-
-  const rsvpRows = buildEventRsvpRows(demoPassengers, userMap, eventRows);
-  if (rsvpRows.length) await db.from('event_rsvps').insert(rsvpRows).catch(() => {});
-
-  const photoRows = buildPhotoRows(demoPassengers, userMap, sailingId, eventRows);
-  if (photoRows.length) await db.from('photos').insert(photoRows).catch(() => {});
-
-  const notificationRows = buildNotificationRows(wallPostRows, eventRows, rsvpRows);
-  if (notificationRows.length) await db.from('notifications').insert(notificationRows).catch(() => {});
-
-  await c.env.KV?.put(demoSeedKey(sailingId), JSON.stringify({
-    version: DEMO_META_VERSION,
-    seeded_at: now,
-    usernames: demoUsernames,
-    crew_username: DEMO_CREW_USERNAME,
-    voyageDates: voyageDays.map((day) => day.day_date),
-    counts: {
-      passengers: demoPassengers.length,
-      friendships: friendshipRows.length,
-      topFriends: topFriendRows.length,
-      wallPosts: wallPostRows.length,
-      events: allEventsToInsert.length,
-      rsvps: rsvpRows.length,
-      photos: photoRows.length,
-      notifications: notificationRows.length,
+    const { data: allDemoUsers } = await db.from('users')
+      .select('id, username')
+      .eq('sailing_id', sailingId)
+      .in('username', [DEMO_CREW_USERNAME, ...demoUsernames]);
+    const userMap = Object.fromEntries((allDemoUsers || []).map((row) => [row.username, row.id]));
+    const crewId = userMap[DEMO_CREW_USERNAME];
+    const missingUsers = demoUsernames.filter((username) => !userMap[username]);
+    if (!crewId || missingUsers.length) {
+      throw new Error(`Demo user provisioning incomplete (${missingUsers.length} passenger accounts missing).`);
     }
-  }), { expirationTtl: 86400 * 14 }).catch(() => {});
 
-  return c.redirect('/admin/demo');
+    await db.from('profiles').upsert({
+      user_id: crewId,
+      about_me: 'Official host account for the Shattered Shores client demo. This account posts public bulletins and runs official programming.',
+      hometown: 'On Board',
+      vibe_tags: ['official','updates','schedule'],
+      social_intent: 'Public host account for demo content',
+      status_text: 'posting tonight’s update',
+      song_title: 'The Sharpest Lives',
+      song_artist: 'My Chemical Romance',
+      theme_id: 'night',
+    }, { onConflict: 'user_id' }).catch(() => {});
+
+    await db.from('profiles').upsert(
+      demoPassengers.map((passenger) => ({
+        user_id: userMap[passenger.username],
+        about_me: passenger.about_me,
+        hometown: passenger.hometown,
+        vibe_tags: passenger.vibe_tags,
+        who_id_like_to_meet: passenger.who_id_like_to_meet,
+        social_intent: passenger.social_intent,
+        status_text: passenger.status_text,
+        song_title: passenger.song_title,
+        song_artist: passenger.song_artist,
+        theme_id: passenger.theme_id || 'classic',
+        updated_at: now,
+      })),
+      { onConflict: 'user_id' }
+    ).catch(() => {});
+
+    await db.from('voyage_days')
+      .delete()
+      .eq('sailing_id', sailingId)
+      .in('day_date', voyageDays.map((day) => day.day_date))
+      .catch(() => {});
+
+    await db.from('voyage_days').insert(
+      voyageDays.map((day) => ({ sailing_id: sailingId, ...day }))
+    ).catch(() => {});
+
+    const friendshipRows = buildFriendshipRows(demoPassengers, userMap);
+    if (friendshipRows.length) await db.from('friendships').insert(friendshipRows).catch(() => {});
+
+    const topFriendRows = buildTopFriendsRows(demoPassengers, userMap);
+    if (topFriendRows.length) await db.from('top_friends').insert(topFriendRows).catch(() => {});
+
+    const wallPostRows = buildWallPostRows(demoPassengers, userMap);
+    if (wallPostRows.length) await db.from('wall_posts').insert(wallPostRows).catch(() => {});
+
+    await db.from('events')
+      .delete()
+      .eq('sailing_id', sailingId)
+      .in('title', demoEventTitles())
+      .catch(() => {});
+
+    const officialEvents = buildOfficialDemoEvents(baseDate).map((event) => ({ ...event, sailing_id: sailingId, creator_user_id: crewId }));
+    const passengerEvents = buildPassengerDemoEvents(baseDate, demoPassengers).map((event) => ({
+      ...event,
+      sailing_id: sailingId,
+      creator_user_id: userMap[event.creator_username],
+    }));
+    const allEventsToInsert = [...officialEvents, ...passengerEvents].map(({ creator_username, day, hour, minute, ...event }) => event);
+    const { data: createdEvents, error: eventsError } = await db.from('events').insert(allEventsToInsert).select('id, title, creator_user_id, event_type, start_at');
+    if (eventsError) throw eventsError;
+    const eventRows = createdEvents || [];
+
+    const rsvpRows = buildEventRsvpRows(demoPassengers, userMap, eventRows);
+    if (rsvpRows.length) await db.from('event_rsvps').insert(rsvpRows).catch(() => {});
+
+    const photoRows = buildPhotoRows(demoPassengers, userMap, sailingId, eventRows);
+    if (photoRows.length) await db.from('photos').insert(photoRows).catch(() => {});
+
+    const notificationRows = buildNotificationRows(wallPostRows, eventRows, rsvpRows);
+    if (notificationRows.length) await db.from('notifications').insert(notificationRows).catch(() => {});
+
+    await c.env.KV?.put(demoSeedKey(sailingId), JSON.stringify({
+      version: DEMO_META_VERSION,
+      seeded_at: now,
+      usernames: demoUsernames,
+      crew_username: DEMO_CREW_USERNAME,
+      voyageDates: voyageDays.map((day) => day.day_date),
+      counts: {
+        passengers: demoPassengers.length,
+        friendships: friendshipRows.length,
+        topFriends: topFriendRows.length,
+        wallPosts: wallPostRows.length,
+        events: allEventsToInsert.length,
+        rsvps: rsvpRows.length,
+        photos: photoRows.length,
+        notifications: notificationRows.length,
+      }
+    }), { expirationTtl: 86400 * 14 }).catch(() => {});
+
+    return c.redirect('/admin/demo');
+  } catch (err) {
+    console.error('[Demo Seed Error]', err);
+    return c.redirect('/admin/demo?error=' + encodeURIComponent(err?.message || 'Demo seeding failed.'));
+  }
 });
 
 admin.post('/admin/demo/clear', async (c) => {
