@@ -1251,59 +1251,73 @@ admin.post('/admin/demo/seed', async (c) => {
       throw new Error(`Demo user provisioning incomplete (${missingUsers.length} passenger accounts missing).`);
     }
 
-    await db.from('profiles').upsert({
-      user_id: crewId,
-      about_me: 'Official host account for the Shattered Shores client demo. This account posts public bulletins and runs official programming.',
-      hometown: 'On Board',
-      vibe_tags: ['official','updates','schedule'],
-      social_intent: 'Public host account for demo content',
-      status_text: 'posting tonight’s update',
-      song_title: 'The Sharpest Lives',
-      song_artist: 'My Chemical Romance',
-      theme_id: 'night',
-    }, { onConflict: 'user_id' }).catch(() => {});
+    try {
+      await db.from('profiles').upsert({
+        user_id: crewId,
+        about_me: 'Official host account for the Shattered Shores client demo. This account posts public bulletins and runs official programming.',
+        hometown: 'On Board',
+        vibe_tags: ['official','updates','schedule'],
+        social_intent: 'Public host account for demo content',
+        status_text: 'posting tonight’s update',
+        song_title: 'The Sharpest Lives',
+        song_artist: 'My Chemical Romance',
+        theme_id: 'night',
+      }, { onConflict: 'user_id' });
+    } catch (_) {}
 
-    await db.from('profiles').upsert(
-      demoPassengers.map((passenger) => ({
-        user_id: userMap[passenger.username],
-        about_me: passenger.about_me,
-        hometown: passenger.hometown,
-        vibe_tags: passenger.vibe_tags,
-        who_id_like_to_meet: passenger.who_id_like_to_meet,
-        social_intent: passenger.social_intent,
-        status_text: passenger.status_text,
-        song_title: passenger.song_title,
-        song_artist: passenger.song_artist,
-        theme_id: passenger.theme_id || 'classic',
-        updated_at: now,
-      })),
-      { onConflict: 'user_id' }
-    ).catch(() => {});
+    try {
+      await db.from('profiles').upsert(
+        demoPassengers.map((passenger) => ({
+          user_id: userMap[passenger.username],
+          about_me: passenger.about_me,
+          hometown: passenger.hometown,
+          vibe_tags: passenger.vibe_tags,
+          who_id_like_to_meet: passenger.who_id_like_to_meet,
+          social_intent: passenger.social_intent,
+          status_text: passenger.status_text,
+          song_title: passenger.song_title,
+          song_artist: passenger.song_artist,
+          theme_id: passenger.theme_id || 'classic',
+          updated_at: now,
+        })),
+        { onConflict: 'user_id' }
+      );
+    } catch (_) {}
 
-    await db.from('voyage_days')
-      .delete()
-      .eq('sailing_id', sailingId)
-      .in('day_date', voyageDays.map((day) => day.day_date))
-      .catch(() => {});
+    try {
+      await db.from('voyage_days')
+        .delete()
+        .eq('sailing_id', sailingId)
+        .in('day_date', voyageDays.map((day) => day.day_date));
+    } catch (_) {}
 
-    await db.from('voyage_days').insert(
-      voyageDays.map((day) => ({ sailing_id: sailingId, ...day }))
-    ).catch(() => {});
+    try {
+      await db.from('voyage_days').insert(
+        voyageDays.map((day) => ({ sailing_id: sailingId, ...day }))
+      );
+    } catch (_) {}
 
     const friendshipRows = buildFriendshipRows(demoPassengers, userMap);
-    if (friendshipRows.length) await db.from('friendships').insert(friendshipRows).catch(() => {});
+    if (friendshipRows.length) {
+      try { await db.from('friendships').insert(friendshipRows); } catch (_) {}
+    }
 
     const topFriendRows = buildTopFriendsRows(demoPassengers, userMap);
-    if (topFriendRows.length) await db.from('top_friends').insert(topFriendRows).catch(() => {});
+    if (topFriendRows.length) {
+      try { await db.from('top_friends').insert(topFriendRows); } catch (_) {}
+    }
 
     const wallPostRows = buildWallPostRows(demoPassengers, userMap);
-    if (wallPostRows.length) await db.from('wall_posts').insert(wallPostRows).catch(() => {});
+    if (wallPostRows.length) {
+      try { await db.from('wall_posts').insert(wallPostRows); } catch (_) {}
+    }
 
-    await db.from('events')
-      .delete()
-      .eq('sailing_id', sailingId)
-      .in('title', demoEventTitles())
-      .catch(() => {});
+    try {
+      await db.from('events')
+        .delete()
+        .eq('sailing_id', sailingId)
+        .in('title', demoEventTitles());
+    } catch (_) {}
 
     const officialEvents = buildOfficialDemoEvents(baseDate).map((event) => ({ ...event, sailing_id: sailingId, creator_user_id: crewId }));
     const passengerEvents = buildPassengerDemoEvents(baseDate, demoPassengers).map((event) => ({
@@ -1317,13 +1331,19 @@ admin.post('/admin/demo/seed', async (c) => {
     const eventRows = createdEvents || [];
 
     const rsvpRows = buildEventRsvpRows(demoPassengers, userMap, eventRows);
-    if (rsvpRows.length) await db.from('event_rsvps').insert(rsvpRows).catch(() => {});
+    if (rsvpRows.length) {
+      try { await db.from('event_rsvps').insert(rsvpRows); } catch (_) {}
+    }
 
     const photoRows = buildPhotoRows(demoPassengers, userMap, sailingId, eventRows);
-    if (photoRows.length) await db.from('photos').insert(photoRows).catch(() => {});
+    if (photoRows.length) {
+      try { await db.from('photos').insert(photoRows); } catch (_) {}
+    }
 
     const notificationRows = buildNotificationRows(wallPostRows, eventRows, rsvpRows);
-    if (notificationRows.length) await db.from('notifications').insert(notificationRows).catch(() => {});
+    if (notificationRows.length) {
+      try { await db.from('notifications').insert(notificationRows); } catch (_) {}
+    }
 
     await c.env.KV?.put(demoSeedKey(sailingId), JSON.stringify({
       version: DEMO_META_VERSION,
