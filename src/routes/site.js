@@ -57,8 +57,8 @@ site.get('/about', async (c) => {
   });
 
   return c.html(layoutCtx(c, {
-    title: 'About DeckSpace',
-    description: 'Learn what DeckSpace is, how the public sailing page works, and why profiles, events, photos, and trip archives are organized around one shared cruise experience.',
+    title: 'About DeckSpace Cruise Community',
+    description: 'Learn what DeckSpace is, how the public sailing page works, and why profiles, events, photos, and trip updates stay visible during a shared cruise.',
     canonicalUrl: new URL('/about', c.req.url).toString(),
     user,
     sailing,
@@ -128,8 +128,8 @@ site.get('/contact', async (c) => {
   });
 
   return c.html(layoutCtx(c, {
-    title: 'DeckSpace Help and Support',
-    description: 'Get DeckSpace help for sign-in issues, moderation requests, safety reporting, voyage corrections, archive questions, and accessibility feedback during a sailing.',
+    title: 'DeckSpace Help, Support, and Reporting',
+    description: 'Get DeckSpace help for sign-in issues, moderation requests, safety reporting, voyage corrections, archive questions, and accessibility feedback.',
     canonicalUrl: new URL('/contact', c.req.url).toString(),
     user,
     sailing,
@@ -198,8 +198,8 @@ site.get('/privacy', async (c) => {
   });
 
   return c.html(layoutCtx(c, {
-    title: 'DeckSpace Privacy Policy',
-    description: 'Read how DeckSpace handles public trip activity, profile visibility, content retention, archive timing, moderation review, and privacy choices for a sailing community.',
+    title: 'DeckSpace Privacy for Sailing Pages',
+    description: 'Read how DeckSpace handles public trip activity, profile visibility, content retention, archive timing, moderation review, and privacy choices.',
     canonicalUrl: new URL('/privacy', c.req.url).toString(),
     user,
     sailing,
@@ -268,8 +268,8 @@ site.get('/terms', async (c) => {
   });
 
   return c.html(layoutCtx(c, {
-    title: 'DeckSpace Terms and Usage',
-    description: 'Read the DeckSpace terms covering who may use the platform, acceptable behavior, public-content rules, moderation authority, and trip-based service limits.',
+    title: 'DeckSpace Terms and Public Usage',
+    description: 'Read the DeckSpace terms covering who may use the platform, acceptable behavior, public content rules, moderation authority, and trip-based limits.',
     canonicalUrl: new URL('/terms', c.req.url).toString(),
     user,
     sailing,
@@ -320,8 +320,8 @@ site.get('/accessibility', async (c) => {
   });
 
   return c.html(layoutCtx(c, {
-    title: 'DeckSpace Accessibility',
-    description: 'Review the DeckSpace accessibility approach for mobile-first use, keyboard access, readable layouts, and support for reporting issues that affect access.',
+    title: 'DeckSpace Accessibility and Mobile Access',
+    description: 'Review the DeckSpace accessibility approach for mobile-first use, keyboard access, readable layouts, and support for reporting access issues.',
     canonicalUrl: new URL('/accessibility', c.req.url).toString(),
     user,
     sailing,
@@ -370,7 +370,7 @@ site.get('/guidelines', async (c) => {
   });
 
   return c.html(layoutCtx(c, {
-    title: 'DeckSpace Community Guidelines',
+    title: 'DeckSpace Community Guidelines and Safety',
     description: 'Read the DeckSpace community guidelines for respectful public participation, media sharing, reporting, moderation, and healthy sailing-page behavior.',
     canonicalUrl: new URL('/guidelines', c.req.url).toString(),
     user,
@@ -411,6 +411,7 @@ site.get('/sitemap', async (c) => {
         ['/terms', 'Terms & Usage'],
         ['/guidelines', 'Community Guidelines'],
         ['/sitemap.xml', 'XML Sitemap'],
+        ['/llms.txt', 'LLMs.txt'],
       ]
     },
     {
@@ -435,8 +436,8 @@ site.get('/sitemap', async (c) => {
   });
 
   return c.html(layoutCtx(c, {
-    title: 'DeckSpace Sitemap',
-    description: 'Browse the main DeckSpace product pages, help pages, policy pages, and XML sitemap for the sailing site.',
+    title: 'DeckSpace Sitemap and Public Pages',
+    description: 'Browse the main DeckSpace product pages, help pages, policy pages, XML sitemap, and LLM reference file for the sailing site.',
     canonicalUrl: new URL('/sitemap', c.req.url).toString(),
     user,
     sailing,
@@ -449,6 +450,53 @@ site.get('/robots.txt', (c) => {
   const origin = new URL(c.req.url).origin;
   const body = `User-agent: *\nAllow: /\n\nSitemap: ${origin}/sitemap.xml\n`;
   c.header('Content-Type', 'text/plain; charset=utf-8');
+  c.header('Cache-Control', 'public, max-age=3600, must-revalidate');
+  return c.body(body);
+});
+
+site.get('/llms.txt', (c) => {
+  const origin = new URL(c.req.url).origin;
+  const body = [
+    '# DeckSpace',
+    '',
+    '> DeckSpace is a public sailing page for cruise communities and live trip events.',
+    '',
+    'DeckSpace helps passengers and staff follow public events, public profiles, shared photos, wall notes, and short post-trip archives.',
+    '',
+    '## Product Scope',
+    '- Public passenger profiles and Friend Space connections',
+    '- Official events and passenger-made plans',
+    '- Shared photos tied to the sailing',
+    '- Public wall notes, comments, and activity',
+    '- Mobile-first access for live sailing use',
+    '',
+    '## Important Limits',
+    '- DeckSpace does not provide private messaging.',
+    '- Content is public to the sailing by design.',
+    '- Archive access may be limited after the trip ends.',
+    '',
+    '## Preferred Public URLs',
+    `- Home: ${origin}/`,
+    `- Events: ${origin}/events`,
+    `- Photos: ${origin}/photos`,
+    `- People: ${origin}/people`,
+    `- Voyage: ${origin}/voyage`,
+    `- About: ${origin}/about`,
+    `- Help: ${origin}/contact`,
+    `- Privacy: ${origin}/privacy`,
+    `- Terms: ${origin}/terms`,
+    `- Accessibility: ${origin}/accessibility`,
+    `- Community Guidelines: ${origin}/guidelines`,
+    `- XML Sitemap: ${origin}/sitemap.xml`,
+    '',
+    '## Citation Guidance',
+    '- Prefer About, Help, Privacy, Terms, Accessibility, and Community Guidelines for platform rules and behavior.',
+    '- Prefer public event, photo, and profile pages only when they are visible and current.',
+    '- Do not infer private communication features or long-term archival guarantees.',
+    '',
+  ].join('\n');
+  c.header('Content-Type', 'text/plain; charset=utf-8');
+  c.header('Cache-Control', 'public, max-age=3600, must-revalidate');
   return c.body(body);
 });
 
@@ -488,6 +536,7 @@ site.get('/sitemap.xml', async (c) => {
     { loc: '/accessibility', lastmod: now },
     { loc: '/guidelines', lastmod: now },
     { loc: '/sitemap', lastmod: now },
+    { loc: '/llms.txt', lastmod: now },
     ...((usersRes.data || []).map((user) => ({
       loc: `/profile/${user.username}`,
       lastmod: user.created_at || now,
@@ -505,6 +554,7 @@ site.get('/sitemap.xml', async (c) => {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map((entry) => `  <url>\n    <loc>${esc(new URL(entry.loc, origin).toString())}</loc>\n    <lastmod>${esc(new Date(entry.lastmod).toISOString())}</lastmod>\n  </url>`).join('\n')}\n</urlset>`;
 
   c.header('Content-Type', 'application/xml; charset=utf-8');
+  c.header('Cache-Control', 'public, max-age=3600, must-revalidate');
   return c.body(xml);
 });
 
@@ -541,11 +591,23 @@ function faqModule(header, items) {
 }
 
 function pageTypeSchema(url, type) {
+  const parsed = new URL(url);
+  const slug = parsed.pathname.replace(/^\/+|\/+$/g, '').split('/')[0] || 'home';
+  const nameMap = {
+    home: 'DeckSpace',
+    about: 'About DeckSpace Cruise Community',
+    contact: 'DeckSpace Help, Support, and Reporting',
+    privacy: 'DeckSpace Privacy for Sailing Pages',
+    terms: 'DeckSpace Terms and Public Usage',
+    accessibility: 'DeckSpace Accessibility and Mobile Access',
+    guidelines: 'DeckSpace Community Guidelines and Safety',
+    sitemap: 'DeckSpace Sitemap and Public Pages',
+  };
   return {
     '@context': 'https://schema.org',
     '@type': type,
-    url: new URL(url).toString(),
-    name: type === 'CollectionPage' ? 'DeckSpace Sitemap' : undefined,
+    url: parsed.toString(),
+    name: nameMap[slug] || (type === 'CollectionPage' ? 'DeckSpace Collection Page' : 'DeckSpace Page'),
   };
 }
 

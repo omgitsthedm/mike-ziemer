@@ -600,7 +600,7 @@ function landingPage({ sailing, cdnBase, newPeople, weather, tonightEvents = [],
 
   <section class="landing-boarding-panel">
     <div class="landing-logo-wrap">
-      <img src="/images/deckspace-logo.png" alt="DeckSpace" class="landing-brand-logo" width="120" height="120" decoding="async">
+      <img src="/images/deckspace-logo-160.png" alt="DeckSpace" class="landing-brand-logo" width="120" height="120" decoding="async">
       <div class="landing-logo-sub">your cruise, your crew, your page</div>
     </div>
     <p class="landing-boarding-copy">

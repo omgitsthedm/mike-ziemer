@@ -61,6 +61,7 @@ export function layout({
   const metaDescription = description || defaultMetaDescription(title, sailing);
   const heading = pageHeading || title || 'DeckSpace';
   const robotsContent = buildRobotsContent(currentUrl, noIndex);
+  const pageIsNoIndex = robotsContent.includes('noindex');
   const schemaBlocks = buildSchemaBlocks({
     currentUrl,
     canonicalHref,
@@ -69,6 +70,7 @@ export function layout({
     socialImage,
     structuredData,
     cspNonce,
+    pageIsNoIndex,
   });
 
   return `<!DOCTYPE html>
@@ -96,8 +98,10 @@ export function layout({
   <meta name="twitter:description" content="${esc(metaDescription)}">
   <meta name="twitter:image" content="${esc(socialImage)}">
   <link rel="stylesheet" href="/css/deckspace.css">
+  <link rel="manifest" href="/site.webmanifest">
   <link rel="icon" type="image/png" sizes="64x64" href="/images/deckspace-favicon.png">
   <link rel="apple-touch-icon" href="/images/deckspace-apple-touch.png">
+  ${origin ? `<link rel="alternate" type="text/plain" title="LLMs.txt" href="${esc(origin)}/llms.txt">` : ''}
   ${schemaBlocks}
 </head>
 <body class="${bodyClass}">
@@ -220,8 +224,8 @@ function renderNav(user, activeNav, notifCount, csrfToken = '') {
 
   return `<nav id="ds-nav" role="navigation" aria-label="Main navigation">
   <div id="ds-nav-inner">
-    <a href="/" id="ds-logo" aria-label="DeckSpace home">
-      <img src="/images/deckspace-mark.png" alt="" class="ds-brand-wordmark" width="28" height="28" decoding="async">
+    <a href="/" id="ds-logo">
+      <img src="/images/deckspace-favicon.png" alt="" class="ds-brand-wordmark" width="28" height="28" decoding="async">
       <span class="ds-brand-lockup">
         <span class="ds-brand-name">DeckSpace</span>
         <span class="ds-brand-tag">Cruise Social</span>
@@ -352,7 +356,8 @@ function defaultNoIndex(currentUrl) {
   }
 }
 
-function buildSchemaBlocks({ currentUrl, canonicalHref, pageTitle, metaDescription, socialImage, structuredData, cspNonce }) {
+function buildSchemaBlocks({ currentUrl, canonicalHref, pageTitle, metaDescription, socialImage, structuredData, cspNonce, pageIsNoIndex }) {
+  if (pageIsNoIndex) return '';
   const defaults = buildDefaultStructuredData({ currentUrl, canonicalHref, pageTitle, metaDescription, socialImage });
   const customBlocks = Array.isArray(structuredData)
     ? structuredData
@@ -414,7 +419,7 @@ function buildDefaultStructuredData({ currentUrl, canonicalHref, pageTitle, meta
       '@id': organizationId,
       name: 'DeckSpace',
       url: origin,
-      logo: `${origin}/images/deckspace-logo.png`,
+      logo: `${origin}/images/deckspace-logo-160.png`,
       description: 'DeckSpace is a public sailing page for events, photos, profiles, and short-lived trip archives.',
       contactPoint: [{
         '@type': 'ContactPoint',
@@ -509,7 +514,7 @@ function renderFooter() {
           <span>DeckSpace is the shared page for this sailing. It stays useful during the trip and may remain in read-only mode for a short time after.</span>
         </div>
       </div>
-      <a href="https://littlefightnyc.com" class="ds-footer-credit" target="_blank" rel="noreferrer">Designed and Built by Little Fight NYC</a>
+      <a href="https://littlefightnyc.com" class="ds-footer-credit" target="_blank" rel="noopener noreferrer">Designed and Built by Little Fight NYC</a>
     </div>
     <div class="ds-footer-links">
       <div class="ds-footer-link-group">
@@ -533,6 +538,7 @@ function renderFooter() {
         <a href="/terms">Terms &amp; Usage</a>
         <a href="/sitemap">Sitemap</a>
         <a href="/sitemap.xml">XML Sitemap</a>
+        <a href="/llms.txt">LLMs.txt</a>
       </div>
     </div>
   </div>

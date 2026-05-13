@@ -1,0 +1,21 @@
+{
+  "name": "DeckSpace",
+  "short_name": "DeckSpace",
+  "description": "DeckSpace is the public sailing page for events, photos, profiles, and shared trip updates.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6f8ff",
+  "theme_color": "#003399",
+  "icons": [
+    {
+      "src": "/images/deckspace-favicon.png",
+      "sizes": "64x64",
+      "type": "image/png"
+    },
+    {
+      "src": "/images/deckspace-apple-touch.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}
