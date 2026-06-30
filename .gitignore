@@ -1,9 +1,29 @@
-node_modules/
-.wrangler/
-dist/
-.env
-.env.local
+
+!.env.example
+!.env.sample
+.cache/
 .dev.vars
-*.local
 .DS_Store
+.env
+.env.*
+.env.local
+.netlify/
+.next/
+.vercel/
+.wrangler/
+*.env
+*.local
+*.log
+*.zip
+# --- dependencies / build output ---
+# --- local cruft ---
+# --- secrets (NEVER commit) ---
+backup/
+build/
+coverage/
+dist-*/
+dist/
+node_modules/
+out/
 supabase/.temp/
+tmp/
